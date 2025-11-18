@@ -1683,7 +1683,8 @@ const closeEditTeamModal = () => {
     <FaTrash />
   </button>
   
-  {/* Add Bracket Button */}
+  {/* Add Bracket Button - Only show if brackets < 5 */}
+{(!event.brackets || event.brackets.length < 5) && (
   <button
     onClick={() => handleCreateBracket(event)}
     className="bracket-view-btn"
@@ -1701,6 +1702,8 @@ const closeEditTeamModal = () => {
   >
     <FaPlus /> Add Bracket
   </button>
+)}
+
 </div>
                           </div>
 
