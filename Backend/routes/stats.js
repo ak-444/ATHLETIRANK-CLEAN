@@ -324,20 +324,21 @@ router.post("/matches/:matchId/stats", async (req, res) => {
   try {
     await conn.beginTransaction();
 
-    // Get match details first to know the bracket and round info
-    const [matchDetails] = await conn.query(
-      `SELECT m.*, b.elimination_type, b.sport_type 
-       FROM matches m 
-       JOIN brackets b ON m.bracket_id = b.id 
-       WHERE m.id = ?`, 
-      [matchId]
-    );
+    // Around line 220 in statsRoutes.js - Get event_id
+const [matchDetails] = await conn.query(
+  `SELECT m.*, b.elimination_type, b.sport_type, b.event_id 
+   FROM matches m 
+   JOIN brackets b ON m.bracket_id = b.id 
+   WHERE m.id = ?`, 
+  [matchId]
+);
 
-    if (matchDetails.length === 0) {
-      throw new Error("Match not found");
-    }
+if (matchDetails.length === 0) {
+  throw new Error("Match not found");
+}
 
     const match = matchDetails[0];
+    const eventId = match.event_id; 
     console.log("Match details:", match);
 
     // Clear existing stats and awards
@@ -465,88 +466,90 @@ router.post("/matches/:matchId/stats", async (req, res) => {
       );
 
       overtimePeriods = Math.max(overtimePeriods, playerOvertimePeriods);
+// FIXED: Build INSERT statement with correct column count (59 columns including event_id)
+const insertQuery = `
+  INSERT INTO player_stats (
+    event_id, match_id, player_id, points, assists, rebounds, two_points_made, three_points_made, 
+    free_throws_made, steals, blocks, fouls, turnovers, technical_fouls,
+    serves, service_aces, serve_errors, receptions, reception_errors, digs, 
+    kills, attack_attempts, attack_errors, volleyball_assists, volleyball_blocks, assist_errors,
+    overtime_periods, overtime_two_points_made, overtime_three_points_made, 
+    overtime_free_throws_made, overtime_assists, overtime_rebounds, overtime_steals, 
+    overtime_blocks, overtime_fouls, overtime_technical_fouls, overtime_turnovers,
+    two_points_made_per_quarter, three_points_made_per_quarter, free_throws_made_per_quarter,
+    assists_per_quarter, rebounds_per_quarter, steals_per_quarter, blocks_per_quarter,
+    fouls_per_quarter, technical_fouls_per_quarter, turnovers_per_quarter,
+    kills_per_set, attack_attempts_per_set, attack_errors_per_set, serves_per_set,
+    service_aces_per_set, serve_errors_per_set, receptions_per_set, reception_errors_per_set,
+    digs_per_set, volleyball_assists_per_set, volleyball_blocks_per_set, assist_errors_per_set,
+    blocking_errors_per_set, ball_handling_errors_per_set
+  ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+`;
 
-      // FIXED: Build INSERT statement with correct column order (58 columns total)
-      const insertQuery = `
-        INSERT INTO player_stats (
-          match_id, player_id, points, assists, rebounds, two_points_made, three_points_made, 
-          free_throws_made, steals, blocks, fouls, turnovers, technical_fouls,
-          serves, service_aces, serve_errors, receptions, reception_errors, digs, 
-          kills, attack_attempts, attack_errors, volleyball_assists, volleyball_blocks, assist_errors,
-          overtime_periods, overtime_two_points_made, overtime_three_points_made, 
-          overtime_free_throws_made, overtime_assists, overtime_rebounds, overtime_steals, 
-          overtime_blocks, overtime_fouls, overtime_technical_fouls, overtime_turnovers,
-          two_points_made_per_quarter, three_points_made_per_quarter, free_throws_made_per_quarter,
-          assists_per_quarter, rebounds_per_quarter, steals_per_quarter, blocks_per_quarter,
-          fouls_per_quarter, technical_fouls_per_quarter, turnovers_per_quarter,
-          kills_per_set, attack_attempts_per_set, attack_errors_per_set, serves_per_set,
-          service_aces_per_set, serve_errors_per_set, receptions_per_set, reception_errors_per_set,
-          digs_per_set, volleyball_assists_per_set, volleyball_blocks_per_set, assist_errors_per_set
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-      `;
-
-      // Prepare all values in the correct order (58 values total)
-      const insertValues = [
-        matchId,                                                    // 1
-        playerId,                                                   // 2
-        totalPointsForPlayer,                                       // 3
-        totalAssists,                                               // 4
-        totalRebounds,                                              // 5
-        totalTwoPointsMade,                                         // 6
-        totalThreePointsMade,                                       // 7
-        totalFreeThrowsMade,                                        // 8
-        totalSteals,                                                // 9
-        totalBlocks,                                                // 10
-        totalFouls,                                                 // 11
-        totalTurnovers,                                             // 12
-        totalTechnicalFouls,                                       // 13
-        totalServes,                                                // 14
-        totalServiceAces,                                           // 15
-        totalServeErrors,                                           // 16
-        totalReceptions,                                            // 17
-        totalReceptionErrors,                                       // 18
-        totalDigs,                                                  // 19
-        totalKills,                                                // 20
-        totalAttackAttempts,                                        // 21
-        totalAttackErrors,                                          // 22
-        totalVolleyballAssists,                                     // 23
-        totalVolleyballBlocks,                                      // 24
-        totalAssistErrors,                                          // 25
-        playerOvertimePeriods,                                      // 26
-        serializeArray(overtimeTwoPoints),                          // 27
-        serializeArray(overtimeThreePoints),                        // 28
-        serializeArray(overtimeFreeThrows),                         // 29
-        serializeArray(overtimeAssists),                            // 30
-        serializeArray(overtimeRebounds),                           // 31
-        serializeArray(overtimeSteals),                             // 32
-        serializeArray(overtimeBlocks),                             // 33
-        serializeArray(overtimeFouls),                              // 34
-        serializeArray(overtimeTechnicalFouls),                     // 35
-        serializeArray(overtimeTurnovers),                           // 36
-        serializeArray(twoPointsPerQuarter, 4),                     // 37
-        serializeArray(threePointsPerQuarter, 4),                   // 38
-        serializeArray(freeThrowsPerQuarter, 4),                    // 39
-        serializeArray(assistsPerQuarter, 4),                        // 40
-        serializeArray(reboundsPerQuarter, 4),                      // 41
-        serializeArray(stealsPerQuarter, 4),                        // 42
-        serializeArray(blocksPerQuarter, 4),                        // 43
-        serializeArray(foulsPerQuarter, 4),                         // 44
-        serializeArray(technicalFoulsPerQuarter, 4),               // 45
-        serializeArray(turnoversPerQuarter, 4),                      // 46
-        serializeArray(killsPerSet, 5),                              // 47
-        serializeArray(attackAttemptsPerSet, 5),                     // 48
-        serializeArray(attackErrorsPerSet, 5),                       // 49
-        serializeArray(servesPerSet, 5),                             // 50
-        serializeArray(serviceAcesPerSet, 5),                       // 51
-        serializeArray(serveErrorsPerSet, 5),                       // 52
-        serializeArray(receptionsPerSet, 5),                         // 53
-        serializeArray(receptionErrorsPerSet, 5),                   // 54
-        serializeArray(digsPerSet, 5),                               // 55
-        serializeArray(volleyballAssistsPerSet, 5),                 // 56
-        serializeArray(volleyballBlocksPerSet, 5),                   // 57
-        serializeArray(assistErrorsPerSet, 5)                        // 58
-      ];
-
+// Prepare all values in the correct order (61 values total)
+const insertValues = [
+  eventId,                                                    // 1 - EVENT ID
+  matchId,                                                    // 2
+  playerId,                                                   // 3
+  totalPointsForPlayer,                                       // 4
+  totalAssists,                                               // 5
+  totalRebounds,                                              // 6
+  totalTwoPointsMade,                                         // 7
+  totalThreePointsMade,                                       // 8
+  totalFreeThrowsMade,                                        // 9
+  totalSteals,                                                // 10
+  totalBlocks,                                                // 11
+  totalFouls,                                                 // 12
+  totalTurnovers,                                             // 13
+  totalTechnicalFouls,                                        // 14
+  totalServes,                                                // 15
+  totalServiceAces,                                           // 16
+  totalServeErrors,                                           // 17
+  totalReceptions,                                            // 18
+  totalReceptionErrors,                                       // 19
+  totalDigs,                                                  // 20
+  totalKills,                                                 // 21
+  totalAttackAttempts,                                        // 22
+  totalAttackErrors,                                          // 23
+  totalVolleyballAssists,                                     // 24
+  totalVolleyballBlocks,                                      // 25
+  totalAssistErrors,                                          // 26
+  playerOvertimePeriods,                                      // 27
+  serializeArray(overtimeTwoPoints),                          // 28
+  serializeArray(overtimeThreePoints),                        // 29
+  serializeArray(overtimeFreeThrows),                         // 30
+  serializeArray(overtimeAssists),                            // 31
+  serializeArray(overtimeRebounds),                           // 32
+  serializeArray(overtimeSteals),                             // 33
+  serializeArray(overtimeBlocks),                             // 34
+  serializeArray(overtimeFouls),                              // 35
+  serializeArray(overtimeTechnicalFouls),                     // 36
+  serializeArray(overtimeTurnovers),                          // 37
+  serializeArray(twoPointsPerQuarter, 4),                     // 38
+  serializeArray(threePointsPerQuarter, 4),                   // 39
+  serializeArray(freeThrowsPerQuarter, 4),                    // 40
+  serializeArray(assistsPerQuarter, 4),                       // 41
+  serializeArray(reboundsPerQuarter, 4),                      // 42
+  serializeArray(stealsPerQuarter, 4),                        // 43
+  serializeArray(blocksPerQuarter, 4),                        // 44
+  serializeArray(foulsPerQuarter, 4),                         // 45
+  serializeArray(technicalFoulsPerQuarter, 4),                // 46
+  serializeArray(turnoversPerQuarter, 4),                     // 47
+  serializeArray(killsPerSet, 5),                             // 48
+  serializeArray(attackAttemptsPerSet, 5),                    // 49
+  serializeArray(attackErrorsPerSet, 5),                      // 50
+  serializeArray(servesPerSet, 5),                            // 51
+  serializeArray(serviceAcesPerSet, 5),                       // 52
+  serializeArray(serveErrorsPerSet, 5),                       // 53
+  serializeArray(receptionsPerSet, 5),                        // 54
+  serializeArray(receptionErrorsPerSet, 5),                   // 55
+  serializeArray(digsPerSet, 5),                              // 56
+  serializeArray(volleyballAssistsPerSet, 5),                 // 57
+  serializeArray(volleyballBlocksPerSet, 5),                  // 58
+  serializeArray(assistErrorsPerSet, 5),                      // 59
+  serializeArray(player.blocking_errors_per_set || player.blocking_errors, 5),    // 60
+  serializeArray(player.ball_handling_errors_per_set || player.ball_handling_errors, 5)  // 61
+];
         try {
           await conn.query(insertQuery, insertValues);
           console.log(`Successfully saved stats for player ${playerId} (index ${i})`);
