@@ -312,9 +312,15 @@ useEffect(() => {
     if (validationError) setValidationError("");
   };
 
-  const handleContinueToTeams = () => {
+const handleContinueToTeams = () => {
   if (!eventData.name.trim() || !eventData.startDate || !eventData.endDate) {
     setValidationError("Please fill in all event fields.");
+    return;
+  }
+
+  // Add date validation
+  if (new Date(eventData.endDate) < new Date(eventData.startDate)) {
+    setValidationError("Event End Date cannot be earlier than Event Start Date.");
     return;
   }
 
@@ -323,7 +329,6 @@ useEffect(() => {
     return;
   }
 
-  // Just move to next step, don't create event yet
   setCurrentStep(2);
   setValidationError("");
 };
@@ -1154,29 +1159,39 @@ if (createdTeams.length > maxTeams) {
                       />
                     </div>
 
-                    <div className="bracket-form-group">
-                      <label htmlFor="startDate">Start Date *</label>
-                      <input
-                        type="date"
-                        id="startDate"
-                        name="startDate"
-                        value={eventData.startDate}
-                        onChange={handleEventInputChange}
-                        required
-                      />
-                    </div>
+                    <div style={{ 
+  display: 'grid', 
+  gridTemplateColumns: '1fr 1fr', 
+  gap: '20px',
+  '@media (max-width: 768px)': {
+    gridTemplateColumns: '1fr'
+  }
+}}>
+  <div className="bracket-form-group">
+    <label htmlFor="startDate">Event Start Date *</label>
+    <input
+      type="date"
+      id="startDate"
+      name="startDate"
+      value={eventData.startDate}
+      onChange={handleEventInputChange}
+      required
+    />
+  </div>
 
-                    <div className="bracket-form-group">
-                      <label htmlFor="endDate">End Date *</label>
-                      <input
-                        type="date"
-                        id="endDate"
-                        name="endDate"
-                        value={eventData.endDate}
-                        onChange={handleEventInputChange}
-                        required
-                      />
-                    </div>
+  <div className="bracket-form-group">
+    <label htmlFor="endDate">Event End Date *</label>
+    <input
+      type="date"
+      id="endDate"
+      name="endDate"
+      value={eventData.endDate}
+      onChange={handleEventInputChange}
+      min={eventData.startDate}
+      required
+    />
+  </div>
+</div>
 
                     <div className="bracket-form-group">
                       <label htmlFor="numberOfBrackets">Number of Brackets *</label>
@@ -1536,27 +1551,29 @@ if (createdTeams.length > maxTeams) {
                         </div>
                       )}
 
-                      <div className="bracket-form-actions" style={{ marginTop: '20px' }}>
+                     <div className="bracket-form-actions" style={{ marginTop: '20px' }}>
+                      {validPlayerCount >= 12 && validPlayerCount <= 15 && (
                         <button 
                           onClick={handleAddTeam}
                           className="bracket-submit-btn"
-                  disabled={loading || validPlayerCount < 12 || validPlayerCount > 15 || (createdTeams.length >= maxTeams && !editingTeamId)}
+                          disabled={loading || (createdTeams.length >= maxTeams && !editingTeamId)}
                         >
-                         {loading ? (editingTeamId ? "Updating..." : "Adding...") : 
+                          {loading ? (editingTeamId ? "Updating..." : "Adding...") : 
                           editingTeamId ? "Update Team" :
                           createdTeams.length >= maxTeams ? `Team Limit Reached (${maxTeams}/${maxTeams})` : "Add Team"}
                         </button>
-                        <button
-                          type="button"
-                          className="bracket-cancel-btn"
-                          onClick={() => {
-                            setCurrentTeam({ teamName: "", sport: "", players: [] });
-                            setEditingTeamId(null);
-                          }}
-                        >
-                          Clear Form
-                        </button>
-                      </div>
+                      )}
+                      <button
+                        type="button"
+                        className="bracket-cancel-btn"
+                        onClick={() => {
+                          setCurrentTeam({ teamName: "", sport: "", players: [] });
+                          setEditingTeamId(null);
+                        }}
+                      >
+                        Clear Form
+                      </button>
+                    </div>
                     </div>
                   )}
 
@@ -1678,18 +1695,28 @@ title={createdTeams.length >= maxTeams ? "Maximum team limit reached" : "Add Tea
                     </div>
                   )}
 
-                  {createdTeams.length >= 2 && (
-                    <div className="bracket-form-actions" style={{ marginTop: '20px', borderTop: '2px solid rgba(255, 255, 255, 0.1)', paddingTop: '20px' }}>
-                      <button 
-                        onClick={handleProceedToBracket}
-                        className="bracket-submit-btn"
-                        style={{ width: '100%' }}
-                      >
-                        Proceed to Create Brackets
-                        <FaChevronRight style={{ marginLeft: '8px' }} />
-                      </button>
-                    </div>
-                  )}
+         <div className="bracket-form-actions" style={{ 
+  marginTop: '20px', 
+  borderTop: '2px solid rgba(255, 255, 255, 0.1)', 
+  paddingTop: '20px'
+}}>
+  <button 
+    onClick={() => setCurrentStep(1)}
+    className="bracket-cancel-btn"
+  >
+    <FaChevronLeft style={{ marginRight: '8px' }} />
+    Back to Event
+  </button>
+  {createdTeams.length >= 2 && (
+    <button 
+      onClick={handleProceedToBracket}
+      className="bracket-submit-btn"
+    >
+      Proceed to Create Brackets
+      <FaChevronRight style={{ marginLeft: '8px' }} />
+    </button>
+  )}
+</div>
                 </div>
               </div>
             )}
@@ -2785,6 +2812,17 @@ title={createdTeams.length >= maxTeams ? "Maximum team limit reached" : "Add Tea
           background: #1976d2;
           transform: translateY(-1px);
         }
+
+        /* Date input white icon styling */
+input[type="date"]::-webkit-calendar-picker-indicator {
+  filter: invert(1);
+  cursor: pointer;
+}
+
+input[type="date"]::-webkit-inner-spin-button,
+input[type="date"]::-webkit-clear-button {
+  filter: invert(1);
+}
 
         .add-team-btn:disabled {
           background: #64748b;
