@@ -79,6 +79,40 @@ const StaffStats = ({ sidebarOpen }) => {
   const [isSyncing, setIsSyncing] = useState(false);
   const [toasts, setToasts] = useState([]);
 
+  // AUDIT LOGS
+const [auditLogs, setAuditLogs] = useState([]);
+const [showAuditLog, setShowAuditLog] = useState(false);
+const [currentUserEmail, setCurrentUserEmail] = useState('');
+  const [currentUserRole, setCurrentUserRole] = useState('');
+  
+  // Add this useEffect to get current user info from localStorage/session
+useEffect(() => {
+  // Get user info from your auth system
+  const userStr = localStorage.getItem('user');
+  if (userStr) {
+    try {
+      const user = JSON.parse(userStr);
+      setCurrentUserEmail(user.email || '');
+      setCurrentUserRole(user.role || '');
+    } catch (err) {
+      console.error('Error parsing user data:', err);
+    }
+  }
+}, []);
+
+// Add function to fetch audit logs
+const fetchAuditLogs = async (matchId) => {
+  try {
+    const res = await fetch(`http://localhost:5000/api/stats/matches/${matchId}/audit-logs`);
+    if (res.ok) {
+      const logs = await res.json();
+      setAuditLogs(logs);
+    }
+  } catch (err) {
+    console.error('Error fetching audit logs:', err);
+  }
+};
+
 
   const STORAGE_KEYS = {
     PENDING_SYNCS: 'staff_stats_pending_syncs',
@@ -727,18 +761,18 @@ if (selectedGame?.sport_type === "volleyball") {
                  <div className="quick-score-stats-grid">
                   {statButtons.map((stat) => {
                     const colorMap = {
-  'bg-blue-600': '#2563eb',
-  'bg-purple-600': '#9333ea',
-  'bg-green-600': '#16a34a',
-  'bg-orange-600': '#ea580c',
-  'bg-teal-600': '#0d9488',
-  'bg-yellow-600': '#ca8a04',
-  'bg-red-600': '#dc2626',
-  'bg-red-800': '#991b1b',
-  'bg-red-900': '#7f1d1d',  // ADD THIS LINE
-  'bg-red-950': '#450a0a',  // ADD THIS LINE (optional, for even darker)
-  'bg-gray-600': '#4b5563',
-  'bg-pink-600': '#db2777'
+                  'bg-blue-600': '#2563eb',
+                  'bg-purple-600': '#9333ea',
+                  'bg-green-600': '#16a34a',
+                  'bg-orange-600': '#ea580c',
+                  'bg-teal-600': '#0d9488',
+                  'bg-yellow-600': '#ca8a04',
+                  'bg-red-600': '#dc2626',
+                  'bg-red-800': '#991b1b',
+                  'bg-red-900': '#7f1d1d',  // ADD THIS LINE
+                  'bg-red-950': '#450a0a',  // ADD THIS LINE (optional, for even darker)
+                  'bg-gray-600': '#4b5563',
+                  'bg-pink-600': '#db2777'
 };
                     const bgColor = colorMap[stat.color.split(' ')[0]] || '#4b5563';
                     
@@ -784,6 +818,143 @@ if (selectedGame?.sport_type === "volleyball") {
       </div>
     );
   };
+
+        // ADD: Audit Log Display Component
+const AuditLogDisplay = () => {
+  if (auditLogs.length === 0) {
+    return (
+      <div style={{
+        padding: '20px',
+        textAlign: 'center',
+        color: 'var(--text-muted)',
+        fontSize: '14px'
+      }}>
+        No update history available for this match.
+      </div>
+    );
+  }
+
+  return (
+    <div style={{
+      padding: '20px',
+      maxHeight: '400px',
+      overflowY: 'auto'
+    }}>
+      {auditLogs.map((log, index) => {
+        const changes = JSON.parse(log.changes_summary || '{}');
+        const date = new Date(log.created_at);
+        const isFirst = index === auditLogs.length - 1;
+        
+        return (
+          <div
+            key={log.id}
+            style={{
+              padding: '16px',
+              marginBottom: '12px',
+              background: isFirst ? 'rgba(16, 185, 129, 0.1)' : 'rgba(59, 130, 246, 0.1)',
+              border: `1px solid ${isFirst ? 'rgba(16, 185, 129, 0.3)' : 'rgba(59, 130, 246, 0.3)'}`,
+              borderRadius: '8px'
+            }}
+          >
+            <div style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'start',
+              marginBottom: '12px'
+            }}>
+              <div>
+                <div style={{
+                  fontSize: '14px',
+                  fontWeight: '700',
+                  color: 'var(--text-primary)',
+                  marginBottom: '4px'
+                }}>
+                  {log.action_type === 'create' ? '📝 Initial Entry' : '✏️ Updated'}
+                  {isFirst && (
+                    <span style={{
+                      marginLeft: '8px',
+                      padding: '2px 8px',
+                      background: 'rgba(16, 185, 129, 0.2)',
+                      color: '#10b981',
+                      borderRadius: '4px',
+                      fontSize: '11px',
+                      fontWeight: '600'
+                    }}>
+                      LATEST
+                    </span>
+                  )}
+                </div>
+                <div style={{
+                  fontSize: '13px',
+                  color: 'var(--text-secondary)',
+                  fontWeight: '600'
+                }}>
+                  By: {log.user_name || log.user_email}
+                  <span style={{
+                    marginLeft: '8px',
+                    padding: '2px 6px',
+                    background: log.user_role === 'admin' ? 'rgba(239, 68, 68, 0.2)' : 'rgba(59, 130, 246, 0.2)',
+                    color: log.user_role === 'admin' ? '#ef4444' : '#3b82f6',
+                    borderRadius: '3px',
+                    fontSize: '11px',
+                    fontWeight: '600',
+                    textTransform: 'uppercase'
+                  }}>
+                    {log.user_role}
+                  </span>
+                </div>
+              </div>
+              <div style={{
+                fontSize: '12px',
+                color: 'var(--text-muted)',
+                textAlign: 'right'
+              }}>
+                <div>{date.toLocaleDateString()}</div>
+                <div>{date.toLocaleTimeString()}</div>
+              </div>
+            </div>
+            
+            <div style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))',
+              gap: '12px',
+              paddingTop: '12px',
+              borderTop: '1px solid rgba(255, 255, 255, 0.1)'
+            }}>
+              <div>
+                <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginBottom: '4px' }}>
+                  Final Score
+                </div>
+                <div style={{ fontSize: '15px', fontWeight: '700', color: 'var(--text-primary)' }}>
+                  {changes.team1_score} - {changes.team2_score}
+                </div>
+              </div>
+              {changes.overtime_periods > 0 && (
+                <div>
+                  <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginBottom: '4px' }}>
+                    Overtime
+                  </div>
+                  <div style={{ fontSize: '15px', fontWeight: '700', color: '#f59e0b' }}>
+                    {changes.overtime_periods} OT
+                  </div>
+                </div>
+              )}
+              <div>
+                <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginBottom: '4px' }}>
+                  Players Updated
+                </div>
+                <div style={{ fontSize: '15px', fontWeight: '700', color: 'var(--text-primary)' }}>
+                  {changes.players_updated}
+                </div>
+              </div>
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+};
+
 
   // Control Bar Component - UPDATED with centered layout
  // Control Bar Component - UPDATED with centered layout
@@ -2182,6 +2353,9 @@ if (selectedGame?.sport_type === "volleyball") {
 
     await initializePlayerStats(game);
     setLoading(false);
+
+  await fetchAuditLogs(game.id);
+
   };
 
   // ============================================
@@ -2189,7 +2363,13 @@ if (selectedGame?.sport_type === "volleyball") {
   // ============================================
   const saveStatistics = async () => {
     if (!selectedGame) return;
+     // Validate user info
+  if (!currentUserEmail || !currentUserRole) {
+    alert('User information missing. Please log in again.');
+    return;
+  }
     setLoading(true);
+    
 
     try {
       // Calculate totals (keep your existing calculation code)
@@ -2224,6 +2404,9 @@ if (selectedGame?.sport_type === "volleyball") {
       const statsData = {
         team1_id: selectedGame.team1_id,
         team2_id: selectedGame.team2_id,
+          userEmail: currentUserEmail,  // ADD THIS
+      userRole: currentUserRole,    // ADD THIS
+      isUpdate: selectedGame.status === 'completed', // ADD THIS
         players: playerStats.map((p) => ({
           player_id: p.player_id,
           team_id: p.team_id,
@@ -2384,6 +2567,8 @@ if (selectedGame?.sport_type === "volleyball") {
         throw new Error(errorData.error || `Failed to save stats: ${statsRes.status}`);
       }
 
+      
+
     const bracketRes = await fetch(
         `http://localhost:5000/api/brackets/matches/${selectedGame.id}/complete`,
         {
@@ -2398,6 +2583,7 @@ if (selectedGame?.sport_type === "volleyball") {
       }
       
       const bracketData = await bracketRes.json();
+       await fetchAuditLogs(selectedGame.id);
 
       // Check if we're in admin edit mode
       if (isEditMode && cameFromAdmin) {
@@ -2413,7 +2599,7 @@ if (selectedGame?.sport_type === "volleyball") {
   await handleGameSelect(selectedGame);
   setLoading(false);
   return;
-}
+      }
 
       // Prepare success page data for normal staff stat entry
       let advancementMessage = "";
@@ -2461,9 +2647,9 @@ if (selectedGame?.sport_type === "volleyball") {
       // If save fails, offer to save offline
       const errorMessage = err.message || "Unknown error occurred";
       if (confirm(`Failed to save: ${errorMessage}\n\nWould you like to save offline and sync later?`)) {
-        saveToLocalStorage(selectedGame.id, statsData, 'save_stats');
-        alert('📱 Statistics saved offline. Will sync when connection is restored.');
-      } else {
+  saveToLocalStorage(selectedGame.id, statsData, 'save_stats');
+  alert('📱 Statistics saved offline. Will sync when connection is restored.');
+} else {
         // Show error to user
         setError(`Failed to save statistics: ${errorMessage}`);
         setTimeout(() => setError(null), 5000);
@@ -4110,60 +4296,81 @@ const handleNextMatch = async () => {
                     )}
                   </h2>
                   <div style={{ display: 'flex', gap: '10px' }}>
-  {/* Only show Edit Stats button for admins, NOT for staff */}
- {isViewOnlyMode && !isEditMode && cameFromAdmin && (
+                    {/* Only show Edit Stats button for admins, NOT for staff */}
+                  {isViewOnlyMode && !isEditMode && cameFromAdmin && (
+                    <button 
+                      onClick={() => {
+                        setIsEditMode(true);
+                        setShowBenchPlayers({ team1: true, team2: true });
+                        setShowBothTeams(true);
+                        setHideButtons(false); // This should already be here
+                      }}
+                        className="stats-edit-button"
+                        style={{
+                          padding: '10px 20px',
+                          background: '#3b82f6',
+                          color: 'white',
+                          border: 'none',
+                          borderRadius: '6px',
+                          cursor: 'pointer',
+                          fontSize: '14px',
+                          fontWeight: '600',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '8px'
+                        }}
+                      >
+                        <FaEdit /> Edit Stats
+                      </button>
+                            )}
+                              {/* ADD THE AUDIT LOG BUTTON - Only show if match has been completed or has existing stats */}
+{selectedGame.status === 'completed' && (
   <button 
-    onClick={() => {
-      setIsEditMode(true);
-      setShowBenchPlayers({ team1: true, team2: true });
-      setShowBothTeams(true);
-      setHideButtons(false); // This should already be here
+    onClick={() => setShowAuditLog(!showAuditLog)}
+    style={{
+      padding: '10px 20px',
+      background: showAuditLog ? '#8b5cf6' : '#3b82f6',
+      color: 'white',
+      border: 'none',
+      borderRadius: '6px',
+      cursor: 'pointer',
+      fontSize: '14px',
+      fontWeight: '600',
+      display: 'flex',
+      alignItems: 'center',
+      gap: '8px'
     }}
-      className="stats-edit-button"
-      style={{
-        padding: '10px 20px',
-        background: '#3b82f6',
-        color: 'white',
-        border: 'none',
-        borderRadius: '6px',
-        cursor: 'pointer',
-        fontSize: '14px',
-        fontWeight: '600',
-        display: 'flex',
-        alignItems: 'center',
-        gap: '8px'
-      }}
-    >
-      <FaEdit /> Edit Stats
-    </button>
-  )}
-                 <button 
-  onClick={() => {
-    if (cameFromAdmin) {
-      // Save context to return to the exact manage matches page
-      sessionStorage.setItem('adminEventsReturnContext', JSON.stringify({
-        selectedEvent: selectedEvent,
-        selectedBracket: selectedBracket,
-        contentTab: 'matches',
-        bracketViewType: 'list'
-      }));
-      sessionStorage.removeItem('selectedMatchData');
-      sessionStorage.removeItem('adminEventsContext');
-      navigate('/AdminDashboard/events');
-    } else if (cameFromStaffEvents) {
-      sessionStorage.setItem('staffEventsContext', JSON.stringify({
-        selectedEvent: selectedEvent,
-        selectedBracket: selectedBracket
-      }));
-      navigate('/StaffDashboard/events');
-    } else {
-      setSelectedGame(null);
-    }
-  }}
-  className="stats-back-button"
->
-  Back to {cameFromAdmin ? 'Manage Matches' : 'Games'}
-</button>
+  >
+    <FaUsers /> {showAuditLog ? 'Hide' : 'Show'} Update History
+  </button>
+)}
+                                  <button 
+                          onClick={() => {
+                            if (cameFromAdmin) {
+                              // Save context to return to the exact manage matches page
+                              sessionStorage.setItem('adminEventsReturnContext', JSON.stringify({
+                                selectedEvent: selectedEvent,
+                                selectedBracket: selectedBracket,
+                                contentTab: 'matches',
+                                bracketViewType: 'list'
+                              }));
+                              sessionStorage.removeItem('selectedMatchData');
+                              sessionStorage.removeItem('adminEventsContext');
+                              navigate('/AdminDashboard/events');
+                            } else if (cameFromStaffEvents) {
+                              sessionStorage.setItem('staffEventsContext', JSON.stringify({
+                                selectedEvent: selectedEvent,
+                                selectedBracket: selectedBracket
+                              }));
+                              navigate('/StaffDashboard/events');
+                            } else {
+                              setSelectedGame(null);
+                            }
+                          }}
+                          className="stats-back-button"
+                        >
+                          Back to {cameFromAdmin ? 'Manage Matches' : 'Games'}
+                        </button>
                   </div>
                 </div>
                 <div className="stats-game-meta">
@@ -4178,9 +4385,45 @@ const handleNextMatch = async () => {
                   )}
                 </div>
               </div>
+                {/* ADD THE AUDIT LOG PANEL RIGHT HERE */}
+                {showAuditLog && (
+                  <div style={{
+                    background: '#1a2332',
+                    borderRadius: '12px',
+                    border: '1px solid #2d3748',
+                    marginTop: '20px',
+                    overflow: 'hidden'
+                  }}>
+                    <div style={{
+                      padding: '20px',
+                      background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                      borderBottom: '1px solid #2d3748'
+                    }}>
+                      <h3 style={{
+                        margin: 0,
+                        color: 'white',
+                        fontSize: '18px',
+                        fontWeight: '700',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '10px'
+                      }}>
+                        <FaUsers /> Match Update History
+                      </h3>
+                      <p style={{
+                        margin: '8px 0 0 0',
+                        color: 'rgba(255, 255, 255, 0.8)',
+                        fontSize: '13px'
+                      }}>
+                        Track who entered and updated statistics for this match
+                      </p>
+                    </div>
+                    <AuditLogDisplay />
+                  </div>
+                )}
 
-              {/* Period Navigation - Always show in view-only mode for staff to select quarters/OT */}
-              {renderPeriodNavigation()}
+                {/* Period Navigation - Always show in view-only mode for staff to select quarters/OT */}
+                {renderPeriodNavigation()}
 
               {/* Overtime Controls - Show read-only version in view-only mode for navigation */}
               {isViewOnlyMode && !isEditMode && overtimePeriods > 0 && (

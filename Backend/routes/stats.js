@@ -177,6 +177,29 @@ router.get("/teams/:teamId/players", async (req, res) => {
   }
 });
 
+// Add this new route to get audit logs for a match
+router.get("/matches/:matchId/audit-logs", async (req, res) => {
+  try {
+    const { matchId } = req.params;
+    
+    const query = `
+      SELECT 
+        mal.*,
+        u.username as user_name
+      FROM match_audit_logs mal
+      LEFT JOIN users u ON mal.user_email = u.email
+      WHERE mal.match_id = ?
+      ORDER BY mal.created_at DESC
+    `;
+    
+    const [logs] = await db.pool.query(query, [matchId]);
+    res.json(logs);
+  } catch (err) {
+    console.error("Error fetching audit logs:", err);
+    res.status(500).json({ error: "Failed to fetch audit logs" });
+  }
+});
+
 // Get existing stats for a match - UPDATED to include assist_errors
 router.get("/matches/:matchId/stats", async (req, res) => {
   try {
@@ -285,13 +308,12 @@ router.get("/matches/:matchId/stats", async (req, res) => {
     res.status(500).json({ error: "Failed to fetch stats" });
   }
 });
-
-// Enhanced Save stats for a match - FIXED: Corrected INSERT query
 router.post("/matches/:matchId/stats", async (req, res) => {
-  const { players, team1_id, team2_id, awards = [] } = req.body;
+  const { players, team1_id, team2_id, awards = [], userEmail, userRole, isUpdate } = req.body;
   const matchId = req.params.matchId;
 
   console.log("Saving stats for match:", matchId);
+  console.log("User:", userEmail, "Role:", userRole, "Is Update:", isUpdate);
   console.log("Request body keys:", Object.keys(req.body));
   console.log("Players count:", players?.length || 0);
   console.log("Team1 ID:", team1_id, "Team2 ID:", team2_id);
@@ -305,6 +327,12 @@ router.post("/matches/:matchId/stats", async (req, res) => {
   if (!team1_id || !team2_id) {
     console.error("Missing team IDs:", { team1_id, team2_id });
     return res.status(400).json({ error: "Both team1_id and team2_id are required" });
+  }
+
+  // Validate user information for audit log
+  if (!userEmail || !userRole) {
+    console.error("Missing user info for audit:", { userEmail, userRole });
+    return res.status(400).json({ error: "User information is required for audit logging" });
   }
   
   // Log first player structure for debugging
@@ -324,22 +352,30 @@ router.post("/matches/:matchId/stats", async (req, res) => {
   try {
     await conn.beginTransaction();
 
-    // Around line 220 in statsRoutes.js - Get event_id
-const [matchDetails] = await conn.query(
-  `SELECT m.*, b.elimination_type, b.sport_type, b.event_id 
-   FROM matches m 
-   JOIN brackets b ON m.bracket_id = b.id 
-   WHERE m.id = ?`, 
-  [matchId]
-);
+    // Get match and event details for audit log
+    const [matchDetails] = await conn.query(
+      `SELECT m.*, b.elimination_type, b.sport_type, b.event_id 
+       FROM matches m 
+       JOIN brackets b ON m.bracket_id = b.id 
+       WHERE m.id = ?`, 
+      [matchId]
+    );
 
-if (matchDetails.length === 0) {
-  throw new Error("Match not found");
-}
+    if (matchDetails.length === 0) {
+      throw new Error("Match not found");
+    }
 
     const match = matchDetails[0];
-    const eventId = match.event_id; 
+    const eventId = match.event_id;
+    const bracketId = match.bracket_id;
     console.log("Match details:", match);
+
+    // Check if this is an update by seeing if stats already exist
+    const [existingStats] = await conn.query(
+      "SELECT COUNT(*) as count FROM player_stats WHERE match_id = ?",
+      [matchId]
+    );
+    const actionType = existingStats[0].count > 0 ? 'update' : 'create';
 
     // Clear existing stats and awards
     await conn.query("DELETE FROM player_stats WHERE match_id = ?", [matchId]);
@@ -466,90 +502,90 @@ if (matchDetails.length === 0) {
       );
 
       overtimePeriods = Math.max(overtimePeriods, playerOvertimePeriods);
-// FIXED: Build INSERT statement with correct column count (59 columns including event_id)
-const insertQuery = `
-  INSERT INTO player_stats (
-    event_id, match_id, player_id, points, assists, rebounds, two_points_made, three_points_made, 
-    free_throws_made, steals, blocks, fouls, turnovers, technical_fouls,
-    serves, service_aces, serve_errors, receptions, reception_errors, digs, 
-    kills, attack_attempts, attack_errors, volleyball_assists, volleyball_blocks, assist_errors,
-    overtime_periods, overtime_two_points_made, overtime_three_points_made, 
-    overtime_free_throws_made, overtime_assists, overtime_rebounds, overtime_steals, 
-    overtime_blocks, overtime_fouls, overtime_technical_fouls, overtime_turnovers,
-    two_points_made_per_quarter, three_points_made_per_quarter, free_throws_made_per_quarter,
-    assists_per_quarter, rebounds_per_quarter, steals_per_quarter, blocks_per_quarter,
-    fouls_per_quarter, technical_fouls_per_quarter, turnovers_per_quarter,
-    kills_per_set, attack_attempts_per_set, attack_errors_per_set, serves_per_set,
-    service_aces_per_set, serve_errors_per_set, receptions_per_set, reception_errors_per_set,
-    digs_per_set, volleyball_assists_per_set, volleyball_blocks_per_set, assist_errors_per_set,
-    blocking_errors_per_set, ball_handling_errors_per_set
-  ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-`;
 
-// Prepare all values in the correct order (61 values total)
-const insertValues = [
-  eventId,                                                    // 1 - EVENT ID
-  matchId,                                                    // 2
-  playerId,                                                   // 3
-  totalPointsForPlayer,                                       // 4
-  totalAssists,                                               // 5
-  totalRebounds,                                              // 6
-  totalTwoPointsMade,                                         // 7
-  totalThreePointsMade,                                       // 8
-  totalFreeThrowsMade,                                        // 9
-  totalSteals,                                                // 10
-  totalBlocks,                                                // 11
-  totalFouls,                                                 // 12
-  totalTurnovers,                                             // 13
-  totalTechnicalFouls,                                        // 14
-  totalServes,                                                // 15
-  totalServiceAces,                                           // 16
-  totalServeErrors,                                           // 17
-  totalReceptions,                                            // 18
-  totalReceptionErrors,                                       // 19
-  totalDigs,                                                  // 20
-  totalKills,                                                 // 21
-  totalAttackAttempts,                                        // 22
-  totalAttackErrors,                                          // 23
-  totalVolleyballAssists,                                     // 24
-  totalVolleyballBlocks,                                      // 25
-  totalAssistErrors,                                          // 26
-  playerOvertimePeriods,                                      // 27
-  serializeArray(overtimeTwoPoints),                          // 28
-  serializeArray(overtimeThreePoints),                        // 29
-  serializeArray(overtimeFreeThrows),                         // 30
-  serializeArray(overtimeAssists),                            // 31
-  serializeArray(overtimeRebounds),                           // 32
-  serializeArray(overtimeSteals),                             // 33
-  serializeArray(overtimeBlocks),                             // 34
-  serializeArray(overtimeFouls),                              // 35
-  serializeArray(overtimeTechnicalFouls),                     // 36
-  serializeArray(overtimeTurnovers),                          // 37
-  serializeArray(twoPointsPerQuarter, 4),                     // 38
-  serializeArray(threePointsPerQuarter, 4),                   // 39
-  serializeArray(freeThrowsPerQuarter, 4),                    // 40
-  serializeArray(assistsPerQuarter, 4),                       // 41
-  serializeArray(reboundsPerQuarter, 4),                      // 42
-  serializeArray(stealsPerQuarter, 4),                        // 43
-  serializeArray(blocksPerQuarter, 4),                        // 44
-  serializeArray(foulsPerQuarter, 4),                         // 45
-  serializeArray(technicalFoulsPerQuarter, 4),                // 46
-  serializeArray(turnoversPerQuarter, 4),                     // 47
-  serializeArray(killsPerSet, 5),                             // 48
-  serializeArray(attackAttemptsPerSet, 5),                    // 49
-  serializeArray(attackErrorsPerSet, 5),                      // 50
-  serializeArray(servesPerSet, 5),                            // 51
-  serializeArray(serviceAcesPerSet, 5),                       // 52
-  serializeArray(serveErrorsPerSet, 5),                       // 53
-  serializeArray(receptionsPerSet, 5),                        // 54
-  serializeArray(receptionErrorsPerSet, 5),                   // 55
-  serializeArray(digsPerSet, 5),                              // 56
-  serializeArray(volleyballAssistsPerSet, 5),                 // 57
-  serializeArray(volleyballBlocksPerSet, 5),                  // 58
-  serializeArray(assistErrorsPerSet, 5),                      // 59
-  serializeArray(player.blocking_errors_per_set || player.blocking_errors, 5),    // 60
-  serializeArray(player.ball_handling_errors_per_set || player.ball_handling_errors, 5)  // 61
-];
+        const insertQuery = `
+          INSERT INTO player_stats (
+            event_id, match_id, player_id, points, assists, rebounds, two_points_made, three_points_made, 
+            free_throws_made, steals, blocks, fouls, turnovers, technical_fouls,
+            serves, service_aces, serve_errors, receptions, reception_errors, digs, 
+            kills, attack_attempts, attack_errors, volleyball_assists, volleyball_blocks, assist_errors,
+            overtime_periods, overtime_two_points_made, overtime_three_points_made, 
+            overtime_free_throws_made, overtime_assists, overtime_rebounds, overtime_steals, 
+            overtime_blocks, overtime_fouls, overtime_technical_fouls, overtime_turnovers,
+            two_points_made_per_quarter, three_points_made_per_quarter, free_throws_made_per_quarter,
+            assists_per_quarter, rebounds_per_quarter, steals_per_quarter, blocks_per_quarter,
+            fouls_per_quarter, technical_fouls_per_quarter, turnovers_per_quarter,
+            kills_per_set, attack_attempts_per_set, attack_errors_per_set, serves_per_set,
+            service_aces_per_set, serve_errors_per_set, receptions_per_set, reception_errors_per_set,
+            digs_per_set, volleyball_assists_per_set, volleyball_blocks_per_set, assist_errors_per_set,
+            blocking_errors_per_set, ball_handling_errors_per_set
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        `;
+
+        const insertValues = [
+          eventId,
+          matchId,
+          playerId,
+          totalPointsForPlayer,
+          totalAssists,
+          totalRebounds,
+          totalTwoPointsMade,
+          totalThreePointsMade,
+          totalFreeThrowsMade,
+          totalSteals,
+          totalBlocks,
+          totalFouls,
+          totalTurnovers,
+          totalTechnicalFouls,
+          totalServes,
+          totalServiceAces,
+          totalServeErrors,
+          totalReceptions,
+          totalReceptionErrors,
+          totalDigs,
+          totalKills,
+          totalAttackAttempts,
+          totalAttackErrors,
+          totalVolleyballAssists,
+          totalVolleyballBlocks,
+          totalAssistErrors,
+          playerOvertimePeriods,
+          serializeArray(overtimeTwoPoints),
+          serializeArray(overtimeThreePoints),
+          serializeArray(overtimeFreeThrows),
+          serializeArray(overtimeAssists),
+          serializeArray(overtimeRebounds),
+          serializeArray(overtimeSteals),
+          serializeArray(overtimeBlocks),
+          serializeArray(overtimeFouls),
+          serializeArray(overtimeTechnicalFouls),
+          serializeArray(overtimeTurnovers),
+          serializeArray(twoPointsPerQuarter, 4),
+          serializeArray(threePointsPerQuarter, 4),
+          serializeArray(freeThrowsPerQuarter, 4),
+          serializeArray(assistsPerQuarter, 4),
+          serializeArray(reboundsPerQuarter, 4),
+          serializeArray(stealsPerQuarter, 4),
+          serializeArray(blocksPerQuarter, 4),
+          serializeArray(foulsPerQuarter, 4),
+          serializeArray(technicalFoulsPerQuarter, 4),
+          serializeArray(turnoversPerQuarter, 4),
+          serializeArray(killsPerSet, 5),
+          serializeArray(attackAttemptsPerSet, 5),
+          serializeArray(attackErrorsPerSet, 5),
+          serializeArray(servesPerSet, 5),
+          serializeArray(serviceAcesPerSet, 5),
+          serializeArray(serveErrorsPerSet, 5),
+          serializeArray(receptionsPerSet, 5),
+          serializeArray(receptionErrorsPerSet, 5),
+          serializeArray(digsPerSet, 5),
+          serializeArray(volleyballAssistsPerSet, 5),
+          serializeArray(volleyballBlocksPerSet, 5),
+          serializeArray(assistErrorsPerSet, 5),
+          serializeArray(player.blocking_errors_per_set || player.blocking_errors, 5),
+          serializeArray(player.ball_handling_errors_per_set || player.ball_handling_errors, 5)
+        ];
+
         try {
           await conn.query(insertQuery, insertValues);
           console.log(`Successfully saved stats for player ${playerId} (index ${i})`);
@@ -565,7 +601,6 @@ const insertValues = [
             stack: insertErr.stack
           });
           
-          // Log the first few values to help debug
           console.error('First 10 values:', insertValues.slice(0, 10));
           console.error('Sample JSON values:', {
             overtimeTwoPoints: serializeArray(overtimeTwoPoints),
@@ -619,6 +654,39 @@ const insertValues = [
       [team1Total, team2Total, overtimePeriods, matchId]
     );
 
+    // **NEW: Create audit log entry with changes summary**
+    const changesSummary = {
+      team1_score: team1Total,
+      team2_score: team2Total,
+      winner_id: team1Total > team2Total ? team1_id : team2_id,
+      overtime_periods: overtimePeriods,
+      players_updated: players.length,
+      timestamp: new Date().toISOString(),
+      regulation_scores: {
+        team1: team1RegulationTotal,
+        team2: team2RegulationTotal
+      },
+      overtime_scores: overtimePeriods > 0 ? {
+        team1: team1OvertimeTotal,
+        team2: team2OvertimeTotal
+      } : null
+    };
+
+    await conn.query(
+      `INSERT INTO match_audit_logs 
+       (match_id, event_id, bracket_id, user_email, user_role, action_type, changes_summary) 
+       VALUES (?, ?, ?, ?, ?, ?, ?)`,
+      [
+        matchId,
+        eventId,
+        bracketId,
+        userEmail,
+        userRole,
+        actionType,
+        JSON.stringify(changesSummary)
+      ]
+    );
+
     await conn.commit();
     console.log("Stats saved successfully:", { 
       team1Total, 
@@ -628,7 +696,9 @@ const insertValues = [
       team1OvertimeTotal,
       team2OvertimeTotal,
       overtimePeriods,
-      matchId
+      matchId,
+      auditLogged: true,
+      actionType
     });
     
     res.json({ 
@@ -643,7 +713,8 @@ const insertValues = [
         team1: team1OvertimeTotal,
         team2: team2OvertimeTotal,
         periods: overtimePeriods
-      }
+      },
+      auditLogged: true
     });
     
   } catch (err) {
@@ -656,10 +727,9 @@ const insertValues = [
       message: err.message
     });
     
-    // Provide more helpful error message
     let errorMessage = "Failed to save stats: " + err.message;
     if (err.code === 'ER_BAD_FIELD_ERROR' || err.message.includes('Unknown column')) {
-      errorMessage += "\n\nSome database columns may be missing. Please run the database migration to add the required columns (two_points_made_per_quarter, kills_per_set, etc.).";
+      errorMessage += "\n\nSome database columns may be missing. Please run the database migration to add the required columns.";
     }
     
     res.status(500).json({ error: errorMessage });
@@ -667,7 +737,6 @@ const insertValues = [
     conn.release();
   }
 });
-
 // Get match awards
 router.get("/matches/:matchId/awards", async (req, res) => {
   try {
