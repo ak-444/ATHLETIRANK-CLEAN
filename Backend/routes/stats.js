@@ -986,6 +986,8 @@ router.get("/events/:eventId/players-statistics", async (req, res) => {
           SUM(ps.attack_errors) as attack_errors,
           SUM(ps.reception_errors) as reception_errors,
           SUM(COALESCE(ps.assist_errors, 0)) as assist_errors,
+          SUM(COALESCE(ps.blocking_errors, 0)) as blocking_errors,
+          SUM(COALESCE(ps.ball_handling_errors, 0)) as ball_handling_errors,
           -- Total counts for export
           SUM(ps.kills) as total_kills,
           SUM(ps.volleyball_assists) as total_volleyball_assists,

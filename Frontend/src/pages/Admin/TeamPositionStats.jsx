@@ -24,26 +24,35 @@ const TeamPositionStats = ({ selectedEvent, selectedBracket }) => {
     return position.toLowerCase().trim();
   };
 
-  // Helper function to calculate position-based scores
+  const getNumber = (value) => Number(value) || 0;
+
+  // Helper function to calculate position-based scores using award formulas
   const calculatePositionScore = (player, positionType) => {
-    const assists = player.volleyball_assists || player.assists || 0;
-    const kills = player.kills || 0;
-    const blocks = player.volleyball_blocks || player.blocks || 0;
-    const digs = player.digs || 0;
-    const aces = player.service_aces || 0;
-    const receptions = player.receptions || 0;
+    const assists = getNumber(player.volleyball_assists || player.assists);
+    const kills = getNumber(player.kills);
+    const blocks = getNumber(player.volleyball_blocks || player.blocks);
+    const digs = getNumber(player.digs);
+    const aces = getNumber(player.service_aces);
+    const receptions = getNumber(player.receptions);
+
+    const assistErrors = getNumber(player.assist_errors);
+    const serveErrors = getNumber(player.serve_errors);
+    const attackErrors = getNumber(player.attack_errors);
+    const receptionErrors = getNumber(player.reception_errors);
+    const blockingErrors = getNumber(player.blocking_errors);
+    const ballHandlingErrors = getNumber(player.ball_handling_errors);
 
     switch(positionType) {
       case 'setter':
-        return assists; // Playmaking efficiency
+        return assists - (assistErrors + ballHandlingErrors + serveErrors);
       case 'libero':
-        return digs + receptions; // Defensive efficiency
+        return (digs + receptions) - (receptionErrors + ballHandlingErrors + blockingErrors);
       case 'outsideHitter':
-        return kills + aces + blocks; // Offensive Scoring
+        return (kills + aces + blocks) - (attackErrors + serveErrors + blockingErrors);
       case 'oppositeHitter':
-        return kills + blocks + aces; // Attacking power
+        return (kills + blocks + aces) - (attackErrors + blockingErrors);
       case 'blocker':
-        return blocks + kills; // Blocking
+        return (blocks + kills) - (blockingErrors + attackErrors);
       default:
         return 0;
     }
@@ -133,48 +142,81 @@ const TeamPositionStats = ({ selectedEvent, selectedBracket }) => {
   const getStatColumns = () => {
     switch(selectedPosition) {
       case 'setter':
-        return ['Assists', 'Service Aces'];
+        return ['AST', 'AST ERR', 'BHE', 'SE', 'Score'];
       case 'outsideHitter':
-        return ['Kills', 'Aces', 'Blocks'];
+        return ['Kills', 'Aces', 'Blocks', 'AE', 'SE', 'BE', 'Score'];
       case 'oppositeHitter':
-        return ['Kills', 'Blocks', 'Aces'];
+        return ['Kills', 'Blocks', 'Aces', 'AE', 'BE', 'Score'];
       case 'libero':
-        return ['Digs', 'Receptions'];
+        return ['Digs', 'Receptions', 'RE', 'BHE', 'BE', 'Score'];
       case 'blocker':
-        return ['Blocks', 'Kills'];
+        return ['Blocks', 'Kills', 'BE', 'AE', 'Score'];
       default:
         return [];
     }
   };
 
   const getStatValues = (player) => {
+    const assists = getNumber(player.volleyball_assists || player.assists);
+    const kills = getNumber(player.kills);
+    const blocks = getNumber(player.volleyball_blocks || player.blocks);
+    const digs = getNumber(player.digs);
+    const aces = getNumber(player.service_aces);
+    const receptions = getNumber(player.receptions);
+
+    const assistErrors = getNumber(player.assist_errors);
+    const serveErrors = getNumber(player.serve_errors);
+    const attackErrors = getNumber(player.attack_errors);
+    const receptionErrors = getNumber(player.reception_errors);
+    const blockingErrors = getNumber(player.blocking_errors);
+    const ballHandlingErrors = getNumber(player.ball_handling_errors);
+
+    const score = calculatePositionScore(player, selectedPosition);
+
     switch(selectedPosition) {
       case 'setter':
         return [
-          player.volleyball_assists || player.assists || 0, 
-          player.service_aces || 0
+          assists,
+          assistErrors,
+          ballHandlingErrors,
+          serveErrors,
+          score
         ];
       case 'outsideHitter':
         return [
-          player.kills || 0, 
-          player.service_aces || 0,
-          player.volleyball_blocks || player.blocks || 0
+          kills,
+          aces,
+          blocks,
+          attackErrors,
+          serveErrors,
+          blockingErrors,
+          score
         ];
       case 'oppositeHitter':
         return [
-          player.kills || 0, 
-          player.volleyball_blocks || player.blocks || 0,
-          player.service_aces || 0
+          kills,
+          blocks,
+          aces,
+          attackErrors,
+          blockingErrors,
+          score
         ];
       case 'libero':
         return [
-          player.digs || 0, 
-          player.receptions || 0
+          digs,
+          receptions,
+          receptionErrors,
+          ballHandlingErrors,
+          blockingErrors,
+          score
         ];
       case 'blocker':
         return [
-          player.volleyball_blocks || player.blocks || 0, 
-          player.kills || 0
+          blocks,
+          kills,
+          blockingErrors,
+          attackErrors,
+          score
         ];
       default:
         return [];

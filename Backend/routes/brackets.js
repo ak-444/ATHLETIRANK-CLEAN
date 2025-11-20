@@ -2,6 +2,9 @@ const express = require("express");
 const router = express.Router();
 const db = require("../config/database");
 const fisherYatesShuffle = require("../utils/fisherYates");
+const {
+  handleRoundRobinKnockoutMatchCompletion,
+} = require("../utils/roundRobinKnockoutLogic");
 
 // Enhanced helper function to create proper double elimination structure
 function createDoubleEliminationStructure(totalTeams) {
@@ -782,7 +785,7 @@ router.post("/:id/generate", async (req, res) => {
 // POST complete a match - WITH CORRECTED 5-TEAM SINGLE & 7-TEAM DOUBLE LOGIC
 router.post("/matches/:id/complete", async (req, res) => {
   const matchId = req.params.id;
-  const { winner_id, scores } = req.body;
+  const { winner_id, scores, is_draw } = req.body;
 
   try {
     const [matches] = await db.pool.query(
@@ -823,7 +826,28 @@ router.post("/matches/:id/complete", async (req, res) => {
     let tournamentComplete = false;
     let bracketReset = false;
     
-    if (eliminationType === "single") {
+    if (eliminationType === "round_robin_knockout") {
+      const result = await handleRoundRobinKnockoutMatchCompletion(match, {
+        winner_id,
+        scores,
+        is_draw,
+      });
+
+      if (result?.error) {
+        return res
+          .status(result.error.status)
+          .json({ error: result.error.message });
+      }
+
+      return res.json({
+        success: true,
+        message: result.message,
+        rrComplete: result.rrComplete,
+        knockoutAdvanced: result.knockoutAdvanced,
+        tournamentComplete: result.tournamentComplete,
+        is_draw: result.isDraw,
+      });
+    } else if (eliminationType === "single") {
       // SPECIAL HANDLING FOR 5 TEAMS - FIXED
       if (totalTeams === 5) {
         if (match.round_number === 1) {

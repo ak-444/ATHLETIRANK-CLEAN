@@ -19,6 +19,7 @@ const matchesRoutes = require('./routes/matches'); // Add this
 const awardsRoutes = require('./routes/awards');
 const statsUsersRoutes = require('./routes/stats_users');
 const roundRobinRoutes = require('./routes/roundRobinBrackets'); // Round robin
+const roundRobinKnockoutRoutes = require('./routes/roundRobinKnockout');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -47,6 +48,7 @@ app.use('/api/matches', matchesRoutes); // Add this
 app.use('/api/awards', awardsRoutes);
 app.use('/api', statsUsersRoutes);
 app.use('/api/round-robin', roundRobinRoutes); // For round robin
+app.use('/api/round-robin-knockout', roundRobinKnockoutRoutes);
 
 // Test route
 app.get('/api/test', (req, res) => {

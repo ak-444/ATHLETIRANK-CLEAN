@@ -2,6 +2,16 @@ import React, { useState, useEffect } from 'react';
 import { Calendar, Clock, Plus, X, Edit, Trash2, BarChart3, Zap, CheckCircle, Trophy, AlertCircle, ChevronDown, ChevronUp } from 'lucide-react';
 
 const TournamentScheduleList = ({ matches = [], eventId, bracketId, onRefresh, onViewStats, isStaffView, onInputStats }) => {
+  const PLACEMENT_LABELS = {
+    1: "Champion",
+    2: "Runner-Up",
+    3: "Third Place"
+  };
+  const PLACEMENT_COLORS = {
+    1: "#fbbf24",
+    2: "#cbd5ff",
+    3: "#fb923c"
+  };
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState('all');
   const [filterRound, setFilterRound] = useState('all');
@@ -27,6 +37,10 @@ const TournamentScheduleList = ({ matches = [], eventId, bracketId, onRefresh, o
   const [showStandings, setShowStandings] = useState(false);
   const [groupByRound, setGroupByRound] = useState(true);
   const [collapsedRounds, setCollapsedRounds] = useState({});
+  const [remoteStandings, setRemoteStandings] = useState(null);
+  const [placementOverrides, setPlacementOverrides] = useState({});
+  const [standingsLoading, setStandingsLoading] = useState(false);
+  const [standingsError, setStandingsError] = useState("");
 
   const getUniqueRoundsForScheduling = () => {
     const rounds = [...new Set(unscheduledMatches.map(m => m.round_number))].sort((a, b) => a - b);
@@ -65,31 +79,45 @@ const TournamentScheduleList = ({ matches = [], eventId, bracketId, onRefresh, o
     }
   };
 
-  const formatRoundDisplay = (match) => {
-    if (!match) return '';
-    const roundNum = match.round_number;
-    
-    if (match.bracket_type === 'round_robin') {
-      return `Round ${roundNum}`;
-    }
-    
-    if (roundNum === 200) return 'Grand Final';
-    if (roundNum === 201) return 'Bracket Reset';
-    if (match.bracket_type === 'championship') {
-      return `Championship Round ${roundNum - 199}`;
-    }
-    
-    if (match.bracket_type === 'loser' || (roundNum >= 101 && roundNum < 200)) {
-      return `LB Round ${roundNum - 100}`;
-    }
-    
-    if (match.bracket_type === 'winner' || roundNum < 100) {
-      return `Round ${roundNum}`;
-    }
-    
+const formatRoundDisplay = (match) => {
+  if (!match) return '';
+  const roundNum = match.round_number;
+  
+  // Handle Round Robin + Knockout bracket types FIRST
+  if (match.bracket_type === 'knockout_semifinal') {
+    return 'Semifinals';
+  }
+  
+  if (match.bracket_type === 'knockout_final') {
+    return 'Championship Finals';
+  }
+  
+  if (match.bracket_type === 'knockout_third_place') {
+    return 'Third Place Match';
+  }
+  
+  // Then handle Round Robin
+  if (match.bracket_type === 'round_robin') {
     return `Round ${roundNum}`;
-  };
-
+  }
+  
+  // Existing code for other types
+  if (roundNum === 200) return 'Grand Final';
+  if (roundNum === 201) return 'Bracket Reset';
+  if (match.bracket_type === 'championship') {
+    return `Championship Round ${roundNum - 199}`;
+  }
+  
+  if (match.bracket_type === 'loser' || (roundNum >= 101 && roundNum < 200)) {
+    return `LB Round ${roundNum - 100}`;
+  }
+  
+  if (match.bracket_type === 'winner' || roundNum < 100) {
+    return `Round ${roundNum}`;
+  }
+  
+  return `Round ${roundNum}`;
+};
   const formatScheduleDisplay = (schedule) => {
     if (!schedule || !schedule.date) return null;
     
@@ -174,6 +202,59 @@ const TournamentScheduleList = ({ matches = [], eventId, bracketId, onRefresh, o
   };
 
   const isRoundRobin = matches.length > 0 && matches[0].bracket_type === 'round_robin';
+  const hasKnockoutPhase = matches.some(match =>
+    ['knockout_semifinal', 'knockout_final', 'knockout_third_place'].includes(match.bracket_type)
+  );
+
+  useEffect(() => {
+    if (!bracketId || !isRoundRobin) {
+      setRemoteStandings(null);
+      setPlacementOverrides({});
+      setStandingsError("");
+      return;
+    }
+
+    const controller = new AbortController();
+    const fetchStandings = async () => {
+      setStandingsLoading(true);
+      setStandingsError("");
+      try {
+        const res = await fetch(
+          `http://localhost:5000/api/round-robin-knockout/${bracketId}/standings`,
+          { signal: controller.signal }
+        );
+        if (!res.ok) {
+          throw new Error("Failed to fetch standings");
+        }
+        const data = await res.json();
+        setRemoteStandings(Array.isArray(data.standings) ? data.standings : []);
+        setPlacementOverrides(data.placement_overrides || {});
+      } catch (err) {
+        if (err.name !== "AbortError") {
+          console.error("Error fetching standings:", err);
+          setRemoteStandings(null);
+          setPlacementOverrides({});
+          if (hasKnockoutPhase) {
+            setStandingsError("Unable to load final standings. Showing local calculation.");
+          }
+        }
+      } finally {
+        if (!controller.signal.aborted) {
+          setStandingsLoading(false);
+        }
+      }
+    };
+
+    if (hasKnockoutPhase) {
+      fetchStandings();
+    } else {
+      setRemoteStandings(null);
+      setPlacementOverrides({});
+      setStandingsError("");
+    }
+
+    return () => controller.abort();
+  }, [bracketId, hasKnockoutPhase, isRoundRobin]);
   
   const unscheduledMatches = matches.filter(m => 
     m.status !== 'bye' && 
@@ -250,20 +331,60 @@ const TournamentScheduleList = ({ matches = [], eventId, bracketId, onRefresh, o
     });
   };
 
-  const standings = calculateStandings();
+  const remoteStandingsNormalized = remoteStandings
+    ? remoteStandings.map(team => ({
+        team: team.team_name,
+        played: team.played,
+        won: team.wins,
+        drawn: team.draws,
+        lost: team.losses,
+        goalsFor: team.goals_for,
+        goalsAgainst: team.goals_against,
+        goalDifference: team.goal_difference,
+        points: team.points,
+        team_id: team.team_id
+      }))
+    : null;
+
+  const standings = remoteStandingsNormalized || calculateStandings();
   const allMatchesCompleted = matches.every(m => m.status === 'completed' || m.status === 'bye');
 
-  // Group matches by round
-  const groupedMatches = filteredMatches.reduce((acc, match) => {
-    const round = match.round_number;
-    if (!acc[round]) {
-      acc[round] = [];
-    }
-    acc[round].push(match);
-    return acc;
-  }, {});
+ // Group matches by round or bracket type for RR + Knockout
+const groupedMatches = filteredMatches.reduce((acc, match) => {
+  let groupKey;
+  
+  // For knockout matches, group by bracket_type
+  if (match.bracket_type === 'knockout_semifinal') {
+    groupKey = 'knockout_semifinal';
+  } else if (match.bracket_type === 'knockout_final') {
+    groupKey = 'knockout_final';
+  } else if (match.bracket_type === 'knockout_third_place') {
+    groupKey = 'knockout_third_place';
+  } else {
+    // For round robin and other types, group by round_number
+    groupKey = match.round_number;
+  }
+  
+  if (!acc[groupKey]) {
+    acc[groupKey] = [];
+  }
+  acc[groupKey].push(match);
+  return acc;
+}, {});
 
-  const sortedRounds = Object.keys(groupedMatches).sort((a, b) => Number(a) - Number(b));
+// Sort groups: round robin rounds first, then knockout stages
+const sortedRounds = Object.keys(groupedMatches).sort((a, b) => {
+  const knockoutOrder = {
+    'knockout_semifinal': 1000,
+    'knockout_third_place': 1001,
+    'knockout_final': 1002
+  };
+  
+  const aOrder = knockoutOrder[a] || Number(a);
+  const bOrder = knockoutOrder[b] || Number(b);
+  
+  return aOrder - bOrder;
+});
 
   const toggleRound = (roundNumber) => {
     setCollapsedRounds(prev => ({
@@ -875,9 +996,9 @@ const TournamentScheduleList = ({ matches = [], eventId, bracketId, onRefresh, o
               <option key={round.value} value={round.value}>{round.label}</option>
             ))}
           </select>
-          {!isRoundRobin && (
-            <button 
-              onClick={() => setShowTBDMatches(!showTBDMatches)} 
+         {(!isRoundRobin || matches.some(m => m.bracket_type === 'knockout_semifinal' || m.bracket_type === 'knockout_final')) && (
+  <button 
+    onClick={() => setShowTBDMatches(!showTBDMatches)} 
               style={{ 
                 padding: '12px 20px', 
                 border: 'none', 
@@ -1127,6 +1248,30 @@ const TournamentScheduleList = ({ matches = [], eventId, bracketId, onRefresh, o
             </div>
 
             <div style={{ padding: '20px' }}>
+              {standingsLoading && (
+                <div style={{ 
+                  textAlign: 'center', 
+                  padding: '20px', 
+                  color: '#94a3b8', 
+                  fontStyle: 'italic' 
+                }}>
+                  Loading standings...
+                </div>
+              )}
+              {!standingsLoading && standingsError && (
+                <div style={{
+                  marginBottom: '16px',
+                  padding: '12px 16px',
+                  borderRadius: '8px',
+                  background: 'rgba(251, 191, 36, 0.1)',
+                  border: '1px solid rgba(251, 191, 36, 0.4)',
+                  color: '#fbbf24',
+                  fontSize: '12px',
+                  fontWeight: '600'
+                }}>
+                  {standingsError}
+                </div>
+              )}
               {standings.length === 0 ? (
                 <div style={{ textAlign: 'center', padding: '40px 20px', color: '#64748b' }}>
                   <BarChart3 style={{ width: '48px', height: '48px', margin: '0 auto 12px', opacity: 0.3 }} />
@@ -1134,9 +1279,17 @@ const TournamentScheduleList = ({ matches = [], eventId, bracketId, onRefresh, o
                 </div>
               ) : (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                  {standings.map((team, index) => (
+                  {standings.map((team, index) => {
+                    const placementRank = team.team_id ? placementOverrides[team.team_id] : null;
+                    const placementLabel = placementRank ? (PLACEMENT_LABELS[placementRank] || `Rank ${placementRank}`) : null;
+                    const rankDisplay = placementRank
+                      ? (placementRank === 1 && allMatchesCompleted ? '👑' : placementRank)
+                      : (index === 0 && allMatchesCompleted ? '👑' : index + 1);
+                    const labelColor = placementRank ? PLACEMENT_COLORS[placementRank] || '#fbbf24' : '#64748b';
+
+                    return (
                     <div 
-                      key={team.team} 
+                      key={team.team_id || team.team} 
                       style={{
                         background: index === 0 && allMatchesCompleted 
                           ? 'linear-gradient(135deg, rgba(245, 158, 11, 0.2) 0%, rgba(217, 119, 6, 0.1) 100%)' 
@@ -1183,7 +1336,7 @@ const TournamentScheduleList = ({ matches = [], eventId, bracketId, onRefresh, o
                               ? '0 4px 12px rgba(245, 158, 11, 0.4)' 
                               : 'none'
                           }}>
-                            {index === 0 && allMatchesCompleted ? '👑' : index + 1}
+                            {rankDisplay}
                           </span>
                           <div>
                             <div style={{ 
@@ -1193,13 +1346,25 @@ const TournamentScheduleList = ({ matches = [], eventId, bracketId, onRefresh, o
                             }}>
                               {team.team}
                             </div>
-                            <div style={{ 
-                              color: '#64748b', 
-                              fontSize: '12px', 
-                              marginTop: '2px',
-                              fontWeight: '600'
-                            }}>
-                              {team.played} {team.played === 1 ? 'match' : 'matches'}
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', marginTop: '2px' }}>
+                              <div style={{ 
+                                color: '#64748b', 
+                                fontSize: '12px', 
+                                fontWeight: '600'
+                              }}>
+                                {team.played} {team.played === 1 ? 'match' : 'matches'}
+                              </div>
+                              {placementLabel && (
+                                <div style={{
+                                  color: labelColor,
+                                  fontSize: '11px',
+                                  fontWeight: '700',
+                                  letterSpacing: '0.5px',
+                                  textTransform: 'uppercase'
+                                }}>
+                                  {placementLabel}
+                                </div>
+                              )}
                             </div>
                           </div>
                         </div>
@@ -1284,7 +1449,8 @@ const TournamentScheduleList = ({ matches = [], eventId, bracketId, onRefresh, o
                         </div>
                       </div>
                     </div>
-                  ))}
+                    );
+                  })}
                 </div>
               )}
             </div>

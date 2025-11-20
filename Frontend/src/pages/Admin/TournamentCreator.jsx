@@ -1026,12 +1026,15 @@ if (createdTeams.length > maxTeams) {
       }
 
       // Generate matches based on bracket type
-      let generateEndpoint;
-      if (bracket.bracketType === 'round_robin') {
-        generateEndpoint = `http://localhost:5000/api/round-robin/${newBracket.id}/generate`;
-      } else {
-        generateEndpoint = `http://localhost:5000/api/brackets/${newBracket.id}/generate`;
-      }
+     let generateEndpoint;
+if (bracket.bracketType === 'round_robin') {
+  generateEndpoint = `http://localhost:5000/api/round-robin/${newBracket.id}/generate`;
+} else if (bracket.bracketType === 'round_robin_knockout') {
+  // NEW: Add endpoint for round robin + knockout
+  generateEndpoint = `http://localhost:5000/api/round-robin-knockout/${newBracket.id}/generate`;
+} else {
+  generateEndpoint = `http://localhost:5000/api/brackets/${newBracket.id}/generate`;
+}
 
       console.log(`Generating matches for ${bracket.bracketType} bracket at: ${generateEndpoint}`);
 
@@ -1785,35 +1788,41 @@ title={createdTeams.length >= maxTeams ? "Maximum team limit reached" : "Add Tea
                         </div>
 
                         <div className="bracket-form-group">
-                          <label htmlFor={`bracketType-${bracket.id}`}>Bracket Type *</label>
-                          <select 
-                            id={`bracketType-${bracket.id}`}
-                            name="bracketType"
-                            value={bracket.bracketType}
-                            onChange={(e) => handleBracketInputChange(bracket.id, 'bracketType', e.target.value)}
-                            style={{ fontSize: '16px' }}
-                          >
-                            <option value="single">Single Elimination</option>
-                            <option value="double">Double Elimination</option>
-                            <option value="round_robin">Round Robin</option>
-                          </select>
-                          
-                        {bracket.bracketType === 'single' && (
-                            <small style={{ color: '#94a3b8', fontSize: '14px', marginTop: '5px', display: 'block' }}>
-                              One loss eliminates a team from the tournament
-                            </small>
-                          )}
-                          {bracket.bracketType === 'double' && (
-                            <small style={{ color: '#94a3b8', fontSize: '14px', marginTop: '5px', display: 'block' }}>
-                              Teams must lose twice to be eliminated from the tournament
-                            </small>
-                          )}
-                          {bracket.bracketType === 'round_robin' && (
-                            <small style={{ color: '#94a3b8', fontSize: '14px', marginTop: '5px', display: 'block' }}>
-                              All teams play each other once - winner determined by standings
-                            </small>
-                          )}
-                        </div>
+  <label htmlFor={`bracketType-${bracket.id}`}>Bracket Type *</label>
+  <select 
+    id={`bracketType-${bracket.id}`}
+    name="bracketType"
+    value={bracket.bracketType}
+    onChange={(e) => handleBracketInputChange(bracket.id, 'bracketType', e.target.value)}
+    style={{ fontSize: '16px' }}
+  >
+    <option value="single">Single Elimination</option>
+    <option value="double">Double Elimination</option>
+    <option value="round_robin">Round Robin</option>
+    <option value="round_robin_knockout">Round Robin + Knockout</option>
+  </select>
+  
+  {bracket.bracketType === 'single' && (
+    <small style={{ color: '#94a3b8', fontSize: '14px', marginTop: '5px', display: 'block' }}>
+      One loss eliminates a team from the tournament
+    </small>
+  )}
+  {bracket.bracketType === 'double' && (
+    <small style={{ color: '#94a3b8', fontSize: '14px', marginTop: '5px', display: 'block' }}>
+      Teams must lose twice to be eliminated from the tournament
+    </small>
+  )}
+  {bracket.bracketType === 'round_robin' && (
+    <small style={{ color: '#94a3b8', fontSize: '14px', marginTop: '5px', display: 'block' }}>
+      All teams play each other once - winner determined by standings
+    </small>
+  )}
+  {bracket.bracketType === 'round_robin_knockout' && (
+    <small style={{ color: '#94a3b8', fontSize: '14px', marginTop: '5px', display: 'block' }}>
+      Round Robin phase followed by knockout playoffs (Top 4 advance)
+    </small>
+  )}
+</div>
                         <div className="bracket-form-group">
                           <label>Assigned Teams</label>
                           {bracket.selectedTeamIds.length === 0 ? (

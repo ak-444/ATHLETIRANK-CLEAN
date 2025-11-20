@@ -788,6 +788,10 @@
   border-top: 2px solid var(--border-color);
 }
 
+.seasonal-efficiency-section {
+  margin-top: 2rem;
+}
+
 /* Header */
 .seasonal-position-header {
   margin-bottom: 2rem;

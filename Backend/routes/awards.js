@@ -81,17 +81,17 @@ router.get("/brackets/:bracketId/mvp-awards", async (req, res) => {
       return res.status(404).json({ error: "Bracket not found" });
     }
     
-    // Check if ALL matches in the bracket are completed
+    // FIXED: Check if ALL matches in the bracket are completed OR bye
     const [matchesStatus] = await db.pool.query(`
       SELECT 
         COUNT(*) as total_matches,
-        COUNT(CASE WHEN status = 'completed' THEN 1 END) as completed_matches,
-        COUNT(CASE WHEN status != 'completed' AND status != 'hidden' THEN 1 END) as pending_matches
+        COUNT(CASE WHEN status = 'completed' OR status = 'bye' THEN 1 END) as completed_matches,
+        COUNT(CASE WHEN status != 'completed' AND status != 'hidden' AND status != 'bye' THEN 1 END) as pending_matches
       FROM matches 
       WHERE bracket_id = ?
     `, [bracketId]);
     
-    // Only show awards if ALL matches are completed (no pending matches)
+    // Only show awards if ALL matches are completed or bye (no pending matches)
     if (matchesStatus[0].total_matches === 0) {
       return res.json({ 
         awards: null, 

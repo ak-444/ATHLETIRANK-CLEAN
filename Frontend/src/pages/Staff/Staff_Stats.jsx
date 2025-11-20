@@ -26,6 +26,7 @@ import {
   FaCheckCircle, 
   FaCloudUploadAlt
 } from "react-icons/fa";
+
 import "../../style/Staff_Stats.css";
 
 const StaffStats = ({ sidebarOpen }) => {
@@ -503,11 +504,18 @@ const [savedMatchData, setSavedMatchData] = useState(null);
 const hasMoreMatches = () => {
   if (!selectedBracket) return false;
   
-  // You can make this async by using useEffect, but for simplicity:
-  // We'll check if there are any scheduled/pending matches
+  // Check if there are any ACTUAL pending/scheduled matches (excluding 'bye', 'hidden', and 'completed' matches)
+  // A match is considered available if:
+  // 1. It belongs to the current bracket
+  // 2. Its status is exactly 'pending' or 'scheduled' (not 'bye', 'hidden', or 'completed')
+  // 3. It's not the current match being edited
+  // 4. Both teams are assigned (team1_id and team2_id are not null)
   return games.some(m => 
     m.bracket_id === selectedBracket.id && 
     (m.status === 'pending' || m.status === 'scheduled') &&
+    m.status !== 'completed' &&
+    m.team1_id !== null && 
+    m.team2_id !== null &&
     m.id !== selectedGame?.id
   );
 };
@@ -2695,9 +2703,12 @@ const handleNextMatch = async () => {
     const allMatches = await res.json();
     const visibleMatches = allMatches.filter(m => m.status !== 'hidden');
     
-    // Filter for both 'pending' AND 'scheduled' matches
+    // Filter for 'pending' AND 'scheduled' matches that have BOTH teams assigned
+    // This excludes bye matches and matches waiting for winners
     const pendingMatches = visibleMatches.filter(m => 
-      m.status === 'pending' || m.status === 'scheduled'
+      (m.status === 'pending' || m.status === 'scheduled') &&
+      m.team1_id !== null && 
+      m.team2_id !== null
     );
     
     if (pendingMatches.length > 0) {

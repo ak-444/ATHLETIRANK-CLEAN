@@ -5,6 +5,7 @@ import CustomBracket from "../../components/CustomBracket";
 import DoubleEliminationBracket from "../../components/DoubleEliminationBracket";
 import TournamentScheduleList from "../../components/TournamentScheduleList";
 import RoundRobinBracketDisplay from "../../components/RoundRobin";
+import RoundRobinKnockoutBracket from '../../components/RoundRobinKnockoutBracket';
 import "../../style/Staff_Events.css";
 
 const StaffEvents = ({ sidebarOpen }) => {
@@ -20,7 +21,7 @@ const StaffEvents = ({ sidebarOpen }) => {
   const [bracketMatches, setBracketMatches] = useState([]);
   const [loadingDetails, setLoadingDetails] = useState(false);
   const [bracketViewType, setBracketViewType] = useState("bracket"); // Default to "bracket" for staff
-
+const [standings, setStandings] = useState([]);
   // Search and filter states
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
@@ -151,33 +152,43 @@ const StaffEvents = ({ sidebarOpen }) => {
   });
 
   // Handle bracket selection
-  const handleBracketSelect = async (event, bracket) => {
-    setSelectedEvent(event);
-    setSelectedBracket(bracket);
-    setActiveTab("results");
-    setContentTab("matches");
-    setBracketViewType("bracket"); // Default to bracket view for staff
-    setLoadingDetails(true);
-    setError(null);
+ const handleBracketSelect = async (event, bracket) => {
+  setSelectedEvent(event);
+  setSelectedBracket(bracket);
+  setActiveTab("results");
+  setContentTab("matches");
+  setBracketViewType("bracket");
+  setLoadingDetails(true);
+  setError(null);
 
-    try {
-      const res = await fetch(`http://localhost:5000/api/brackets/${bracket.id}/matches`);
-      if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
-      
-      const data = await res.json();
-      const visibleMatches = data.filter(match => match.status !== 'hidden');
-      setMatches(visibleMatches);
-      setBracketMatches(visibleMatches);
-
-      if (visibleMatches.length === 0) {
-        setError("No matches found for this bracket.");
-      }
-    } catch (err) {
-      setError("Failed to load matches: " + err.message);
-    } finally {
-      setLoadingDetails(false);
+  try {
+    // Use correct endpoint based on bracket type
+    let matchesEndpoint;
+    if (bracket.elimination_type === 'round_robin') {
+      matchesEndpoint = `http://localhost:5000/api/round-robin/${bracket.id}/matches`;
+    } else if (bracket.elimination_type === 'round_robin_knockout') {
+      matchesEndpoint = `http://localhost:5000/api/round-robin-knockout/${bracket.id}/matches`;
+    } else {
+      matchesEndpoint = `http://localhost:5000/api/brackets/${bracket.id}/matches`;
     }
-  };
+    
+    const res = await fetch(matchesEndpoint);
+    if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
+    
+    const data = await res.json();
+    const visibleMatches = data.filter(match => match.status !== 'hidden');
+    setMatches(visibleMatches);
+    setBracketMatches(visibleMatches);
+
+    if (visibleMatches.length === 0) {
+      setError("No matches found for this bracket.");
+    }
+  } catch (err) {
+    setError("Failed to load matches: " + err.message);
+  } finally {
+    setLoadingDetails(false);
+  }
+};
 
   // Navigate to stats input (for editing)
   const handleInputStats = (match) => {
@@ -369,12 +380,14 @@ const StaffEvents = ({ sidebarOpen }) => {
                                     {bracket.sport_type?.toUpperCase() || 'N/A'}
                                   </span>
                                 </td>
-                               <td style={{ fontSize: '15px' }}>
+                       <td style={{ fontSize: '15px' }}>
   {bracket.elimination_type === 'double' 
     ? 'Double Elim.' 
     : bracket.elimination_type === 'round_robin'
       ? 'Round Robin'
-      : 'Single Elim.'}
+      : bracket.elimination_type === 'round_robin_knockout'
+        ? 'RR + Knockout'
+        : 'Single Elim.'}
 </td>
                                 <td style={{ fontSize: '15px' }}>{bracket.team_count || 0}</td>
                                 <td>
@@ -423,7 +436,15 @@ const StaffEvents = ({ sidebarOpen }) => {
                   <div className="event-details-info">
                     <span><strong>Event:</strong> {selectedEvent.name}</span>
                     <span><strong>Sport:</strong> {capitalize(selectedBracket.sport_type)}</span>
-                    <span><strong>Type:</strong> {selectedBracket.elimination_type === 'double' ? 'Double Elimination' : 'Single Elimination'}</span>
+                    <span><strong>Type:</strong> {
+  selectedBracket.elimination_type === 'double' 
+    ? 'Double Elimination' 
+    : selectedBracket.elimination_type === 'round_robin'
+      ? 'Round Robin'
+      : selectedBracket.elimination_type === 'round_robin_knockout'
+        ? 'RR + Knockout'
+        : 'Single Elimination'
+}</span>
                     <span><strong>Teams:</strong> {selectedBracket.team_count || 0}</span>
                   </div>
                 </div>
@@ -508,26 +529,32 @@ const StaffEvents = ({ sidebarOpen }) => {
                         </div>
 
                         {/* Conditional Rendering Based on View Type */}
-                           {bracketViewType === "bracket" ? (
-  // UPDATED: Handle all three bracket types
+                {bracketViewType === "bracket" ? (
   <>
     {selectedBracket.elimination_type === 'single' && (
-      <CustomBracket
-        matches={bracketMatches}
-        eliminationType={selectedBracket.elimination_type}
+      <CustomBracket 
+        matches={bracketMatches} 
+        eliminationType={selectedBracket.elimination_type} 
       />
     )}
     
     {selectedBracket.elimination_type === 'double' && (
-      <DoubleEliminationBracket
-        matches={bracketMatches}
-        eliminationType={selectedBracket.elimination_type}
+      <DoubleEliminationBracket 
+        matches={bracketMatches} 
+        eliminationType={selectedBracket.elimination_type} 
       />
     )}
     
     {selectedBracket.elimination_type === 'round_robin' && (
-      <RoundRobinBracketDisplay
+      <RoundRobinBracketDisplay 
+        matches={bracketMatches} 
+      />
+    )}
+    
+    {selectedBracket.elimination_type === 'round_robin_knockout' && (
+      <RoundRobinKnockoutBracket 
         matches={bracketMatches}
+        standings={standings}
       />
     )}
   </>

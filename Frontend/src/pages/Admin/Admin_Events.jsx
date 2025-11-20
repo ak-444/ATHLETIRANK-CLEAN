@@ -9,6 +9,7 @@ import {
 } from "react-icons/fa";
 import CustomBracket from "../../components/CustomBracket";
 import DoubleEliminationBracket from "../../components/DoubleEliminationBracket";
+import RoundRobinKnockoutBracket from '../../components/RoundRobinKnockoutBracket';
 import "../../style/Admin_Events.css";
 import TournamentScheduleList from "../../components/TournamentScheduleList";
 import RoundRobinBracketDisplay from "../../components/RoundRobin";
@@ -426,14 +427,17 @@ useEffect(() => {
     setError(null);
     setRoundFilter("all");
 
-    try {
-      // Use correct endpoint based on bracket type
-      let matchesEndpoint;
-      if (bracket.elimination_type === 'round_robin') {
-        matchesEndpoint = `http://localhost:5000/api/round-robin/${bracket.id}/matches`;
-      } else {
-        matchesEndpoint = `http://localhost:5000/api/brackets/${bracket.id}/matches`;
-      }
+     try {
+    // Use correct endpoint based on bracket type
+    let matchesEndpoint;
+    if (bracket.elimination_type === 'round_robin') {
+      matchesEndpoint = `http://localhost:5000/api/round-robin/${bracket.id}/matches`;
+    } else if (bracket.elimination_type === 'round_robin_knockout') {
+      // NEW: Add endpoint for round robin + knockout
+      matchesEndpoint = `http://localhost:5000/api/round-robin-knockout/${bracket.id}/matches`;
+    } else {
+      matchesEndpoint = `http://localhost:5000/api/brackets/${bracket.id}/matches`;
+    }
       
       const res = await fetch(matchesEndpoint);
       if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
@@ -536,27 +540,31 @@ useEffect(() => {
         setLoadingAwards(true);
         setErrorAwards(null);
 
-        try {
+          try {
+        // NEW: Load standings for both round_robin and round_robin_knockout
+        if (selectedBracket.elimination_type === 'round_robin' || 
+            selectedBracket.elimination_type === 'round_robin_knockout') {
           const standingsRes = await fetch(`http://localhost:5000/api/awards/brackets/${selectedBracket.id}/standings`);
           const standingsData = await standingsRes.json();
           setStandings(standingsData.standings || []);
-
-          const awardsRes = await fetch(`http://localhost:5000/api/awards/brackets/${selectedBracket.id}/mvp-awards`);
-          const awardsData = await awardsRes.json();
-          
-          setMvpData(awardsData.awards?.mvp || null);
-          setAwards(awardsData.awards || null);
-        } catch (err) {
-          setErrorAwards("Failed to load awards data: " + err.message);
-          console.error("Error loading awards:", err);
-        } finally {
-          setLoadingAwards(false);
         }
-      }
-    };
 
-    loadAwardsData();
-  }, [contentTab, selectedBracket]);
+        const awardsRes = await fetch(`http://localhost:5000/api/awards/brackets/${selectedBracket.id}/mvp-awards`);
+        const awardsData = await awardsRes.json();
+        
+        setMvpData(awardsData.awards?.mvp || null);
+        setAwards(awardsData.awards || null);
+      } catch (err) {
+        setErrorAwards("Failed to load awards data: " + err.message);
+        console.error("Error loading awards:", err);
+      } finally {
+        setLoadingAwards(false);
+      }
+    }
+  };
+
+  loadAwardsData();
+}, [contentTab, selectedBracket]);
 
   // Export standings to CSV
   const exportStandings = () => {
@@ -1737,13 +1745,15 @@ const closeEditTeamModal = () => {
                                             {bracket.sport_type?.toUpperCase() || 'N/A'}
                                           </span>
                                         </td>
-                                        <td style={{ fontSize: '14px' }}>
-                                          {bracket.elimination_type === 'double' 
-                                            ? 'Double Elim.' 
-                                            : bracket.elimination_type === 'round_robin'
-                                              ? 'Round Robin'
-                                              : 'Single Elim.'}
-                                        </td>
+                                       <td style={{ fontSize: '14px' }}>
+  {bracket.elimination_type === 'double' 
+    ? 'Double Elim.' 
+    : bracket.elimination_type === 'round_robin'
+      ? 'Round Robin'
+      : bracket.elimination_type === 'round_robin_knockout'
+        ? 'RR + Knockout'
+        : 'Single Elim.'}
+</td>
                                         <td style={{ fontSize: '14px', fontWeight: '600' }}>
                                           {bracket.team_count || 0}
                                         </td>
@@ -1930,13 +1940,15 @@ const closeEditTeamModal = () => {
                   <div className="event-details-info">
                     <span><strong>Event:</strong> {selectedEvent.name}</span>
                     <span><strong>Sport:</strong> {capitalize(selectedBracket.sport_type)}</span>
-                    <span><strong>Type:</strong> {
-                      selectedBracket.elimination_type === 'double' 
-                        ? 'Double Elimination' 
-                        : selectedBracket.elimination_type === 'round_robin'
-                          ? 'Round Robin'
-                          : 'Single Elimination'
-                    }</span>
+                  <span><strong>Type:</strong> {
+  selectedBracket.elimination_type === 'double' 
+    ? 'Double Elimination' 
+    : selectedBracket.elimination_type === 'round_robin'
+      ? 'Round Robin'
+      : selectedBracket.elimination_type === 'round_robin_knockout'
+        ? 'RR + Knockout'
+        : 'Single Elimination'
+}</span>
                     <span><strong>Teams:</strong> {selectedBracket.team_count || 0}</span>
                     {/* ADD THIS SPAN */}
                    
@@ -2066,8 +2078,7 @@ const closeEditTeamModal = () => {
   </button>
 </div>
     </div>
-
-    {bracketViewType === "bracket" ? (
+{bracketViewType === "bracket" ? (
   <>
     {selectedBracket.elimination_type === 'single' && (
       <CustomBracket 
@@ -2086,6 +2097,13 @@ const closeEditTeamModal = () => {
     {selectedBracket.elimination_type === 'round_robin' && (
       <RoundRobinBracketDisplay 
         matches={bracketMatches} 
+      />
+    )}
+    
+    {selectedBracket.elimination_type === 'round_robin_knockout' && (
+      <RoundRobinKnockoutBracket 
+        matches={bracketMatches}
+        standings={standings}
       />
     )}
   </>
@@ -2253,7 +2271,9 @@ const closeEditTeamModal = () => {
                                 >
                                   {selectedBracket.awards_disclosed ? <FaEye /> : <FaEyeSlash />}
                                   {selectedBracket.awards_disclosed ? 'Awards Public' : 'Awards Hidden'}
-                                </button>
+                                          </button>
+                                          
+                                          
                                 
                                 {/* Keep existing Export CSV button */}
                                 <button 
@@ -3149,7 +3169,8 @@ const closeEditTeamModal = () => {
                       >
                         <option value="single">Single Elimination</option>
                         <option value="double">Double Elimination</option>
-                        <option value="round_robin">Round Robin</option>
+                                  <option value="round_robin">Round Robin</option>
+                                    <option value="round_robin_knockout">Round Robin + Knockout</option>
                       </select>
                       {editTeamModal.hasCompletedMatches && (
                         <div style={{ color: 'var(--text-muted)', fontSize: '12px', marginTop: '4px' }}>
