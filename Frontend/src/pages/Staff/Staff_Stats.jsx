@@ -504,20 +504,20 @@ const [savedMatchData, setSavedMatchData] = useState(null);
 const hasMoreMatches = () => {
   if (!selectedBracket) return false;
   
-  // Check if there are any ACTUAL pending/scheduled matches (excluding 'bye', 'hidden', and 'completed' matches)
-  // A match is considered available if:
-  // 1. It belongs to the current bracket
-  // 2. Its status is exactly 'pending' or 'scheduled' (not 'bye', 'hidden', or 'completed')
-  // 3. It's not the current match being edited
-  // 4. Both teams are assigned (team1_id and team2_id are not null)
-  return games.some(m => 
+  // Get all matches from this bracket that are:
+  // 1. NOT the current match being edited
+  // 2. Status is 'pending' or 'scheduled' (not completed, hidden, or bye)
+  // 3. Both teams are assigned (not TBD - no null team IDs)
+  const availableMatches = games.filter(m => 
     m.bracket_id === selectedBracket.id && 
+    m.id !== selectedGame?.id &&
     (m.status === 'pending' || m.status === 'scheduled') &&
-    m.status !== 'completed' &&
+    m.status !== 'bye' &&
     m.team1_id !== null && 
-    m.team2_id !== null &&
-    m.id !== selectedGame?.id
+    m.team2_id !== null
   );
+  
+  return availableMatches.length > 0;
 };
   // ============================================
   // NEW FUNCTION: Check if player should be disabled
@@ -2537,7 +2537,8 @@ if (selectedGame?.sport_type === "volleyball") {
             overtimePeriods: overtimePeriods,
             advancementMessage: '',
             isBracketReset: false,
-            isOffline: true
+            isOffline: true,
+             hasMoreMatches: remainingMatches.length > 0  // ADD THIS LINE
           });
           setShowSuccessPage(true);
         }
@@ -2701,25 +2702,26 @@ const handleNextMatch = async () => {
   try {
     const res = await fetch(`http://localhost:5000/api/stats/${selectedBracket.id}/matches`);
     const allMatches = await res.json();
-    const visibleMatches = allMatches.filter(m => m.status !== 'hidden');
-    
-    // Filter for 'pending' AND 'scheduled' matches that have BOTH teams assigned
-    // This excludes bye matches and matches waiting for winners
-    const pendingMatches = visibleMatches.filter(m => 
-      (m.status === 'pending' || m.status === 'scheduled') &&
+
+    const remainingMatches = allMatches.filter(m => 
+      m.status !== 'hidden' &&
+      m.status !== 'completed' &&
+      m.status !== 'bye' &&
+      m.id !== selectedGame.id &&
       m.team1_id !== null && 
       m.team2_id !== null
     );
     
-    if (pendingMatches.length > 0) {
-      pendingMatches.sort((a, b) => a.round_number - b.round_number);
-      const nextMatch = pendingMatches[0];
+    if (availableMatches.length > 0) {
+      // Sort by round number to get the next logical match
+      availableMatches.sort((a, b) => a.round_number - b.round_number);
+      const nextMatch = availableMatches[0];
       
       setShowSuccessPage(false);
       setSavedMatchData(null);
       handleGameSelect(nextMatch);
     } else {
-      alert("No more pending matches in this bracket!");
+      alert("🎉 All matches have been completed! No more pending matches in this bracket.");
       handleBackToMatchList();
     }
   } catch (err) {
@@ -4130,24 +4132,24 @@ const handleNextMatch = async () => {
                   <FaArrowLeft />
                   Back to Matches List
                 </button>
-                {hasMoreMatches() && (
-                  <button 
-                    onClick={handleNextMatch}
-                    className="bracket-submit-btn"
-                    style={{ 
-                      width: '100%', 
-                      background: '#10b981', 
-                      fontSize: '16px', 
-                      display: 'flex', 
-                      alignItems: 'center', 
-                      justifyContent: 'center', 
-                      gap: '8px' 
-                    }}
-                  >
-                    Next Match
-                    <FaArrowRight />
-                  </button>
-                )}
+               {savedMatchData.hasMoreMatches && (
+                <button 
+                  onClick={handleNextMatch}
+                  className="bracket-submit-btn"
+                  style={{ 
+                    width: '100%', 
+                    background: '#10b981', 
+                    fontSize: '16px', 
+                    display: 'flex', 
+                    alignItems: 'center', 
+                    justifyContent: 'center', 
+                    gap: '8px' 
+                  }}
+                >
+                  Next Match
+                  <FaArrowRight />
+                </button>
+              )}
               </div>
             </div>
           </div>

@@ -1099,9 +1099,11 @@ if (bracket.bracketType === 'round_robin') {
           <h1>Create Tournament</h1>
           <p>Complete tournament setup in 3 easy steps</p>
         </div>
-
-        <div className="dashboard-main">
-          <div className="bracket-content">
+<div className="dashboard-main">
+ <div className="bracket-content" style={{ 
+  maxWidth: currentStep === 1 ? '900px' : '100%', 
+  margin: '0 auto' 
+}}>
             {/* Progress Steps */}
             <div className="tournament-progress">
               <div className={`progress-step ${currentStep >= 1 ? 'active' : ''} ${currentStep > 1 ? 'completed' : ''}`}>
@@ -1142,10 +1144,22 @@ if (bracket.bracketType === 'round_robin') {
   </div>
 )}
             {/* Step 1: Create Event */}
-            {currentStep === 1 && (
-              <div className="bracket-create-section">
-                <div className="bracket-form-container">
-                  <h2>Step 1: Create Event</h2>
+    {currentStep === 1 && (
+  <div className="bracket-create-section" style={{ 
+    display: 'flex', 
+    justifyContent: 'center', 
+    alignItems: 'center',
+    padding: '40px 20px',
+    maxWidth: '900px',  // ADD THIS - adjust value (850px, 800px, 750px)
+                margin: '0 auto',     // ADD THIS - to center it
+    animation: 'fadeInSlide 0.5s ease-out'
+  }}>
+    <div className="bracket-form-container" style={{ 
+      maxWidth: '800px', 
+      width: '100%',
+      margin: '0 auto' 
+    }}>
+                 <h2 style={{marginBottom: '10px' }}>Step 1: Create Event</h2>
                   <p className="step-description">Set up your tournament event details</p>
                   
                   <div className="bracket-form">
@@ -1216,15 +1230,15 @@ if (bracket.bracketType === 'round_robin') {
                       </small>
                     </div>
 
-                   <div className="bracket-form-actions">
-                    <button 
-                      onClick={handleContinueToTeams}
-                      className="bracket-submit-btn"
-                    >
-                      Continue to Teams
-                      <FaChevronRight style={{ marginLeft: '8px' }} />
-                    </button>
-                  </div>
+                  <div className="bracket-form-actions" style={{ marginTop: '30px' }}>
+  <button 
+    onClick={handleContinueToTeams}
+    className="bracket-submit-btn"
+  >
+    Continue to Teams
+    <FaChevronRight style={{ marginLeft: '8px' }} />
+  </button>
+</div>
                   </div>
                 </div>
               </div>
@@ -1232,7 +1246,9 @@ if (bracket.bracketType === 'round_robin') {
 
             {/* Step 2: Add Teams */}
             {currentStep === 2 && (
-              <div className="bracket-create-section">
+  <div className="bracket-create-section" style={{
+    animation: 'fadeInSlide 0.5s ease-out'
+  }}>
                 <div className="bracket-form-container">
                   <h2>Step 2: Add Teams</h2>
                   <p className="step-description">
@@ -1353,40 +1369,42 @@ if (bracket.bracketType === 'round_robin') {
                           </button>
                         </div>
                       )}
-                      <div className="bracket-form-group">
-                        <label htmlFor="teamName">Team Name *</label>
-                        <input
-                          type="text"
-                          id="teamName"
-                          name="teamName"
-                          value={currentTeam.teamName}
-                          onChange={handleTeamInputChange}
-                          placeholder="Enter team name"
-                          style={{ fontSize: '16px' }}
-                        />
-                      </div>
+                      <div style={{ display: 'flex', gap: '20px', alignItems: 'flex-start' }}>
+  <div className="bracket-form-group" style={{ flex: 1 }}>
+    <label htmlFor="teamName">Team Name *</label>
+    <input
+      type="text"
+      id="teamName"
+      name="teamName"
+      value={currentTeam.teamName}
+      onChange={handleTeamInputChange}
+      placeholder="Enter team name"
+      style={{ fontSize: '16px' }}
+    />
+  </div>
 
-                     <div className="bracket-form-group">
-                      <label htmlFor="sport">Sport *</label>
-                      <select
-                        id="sport"
-                        name="sport"
-                        value={currentTeam.sport}
-                        onChange={handleTeamInputChange}
-                        disabled={editingTeamId !== null}
-                        style={{ fontSize: '16px', opacity: editingTeamId !== null ? 0.6 : 1 }}
-                      >
-                          <option value="">Select a sport</option>
-                          {Object.keys(positions).map((sport) => (
-                            <option key={sport} value={sport}>{sport}</option>
-                          ))}
-                      </select>
-                        {editingTeamId && (
-                          <small style={{ color: '#94a3b8', fontSize: '12px', marginTop: '5px', display: 'block' }}>
-                            Sport cannot be changed when editing a team
-                          </small>
-                        )}
-                      </div>
+  <div className="bracket-form-group" style={{ flex: 1 }}>
+    <label htmlFor="sport">Sport *</label>
+    <select
+      id="sport"
+      name="sport"
+      value={currentTeam.sport}
+      onChange={handleTeamInputChange}
+      disabled={editingTeamId !== null}
+      style={{ fontSize: '16px', opacity: editingTeamId !== null ? 0.6 : 1 }}
+    >
+      <option value="">Select a sport</option>
+      {Object.keys(positions).map((sport) => (
+        <option key={sport} value={sport}>{sport}</option>
+      ))}
+    </select>
+    {editingTeamId && (
+      <small style={{ color: '#94a3b8', fontSize: '12px', marginTop: '5px', display: 'block' }}>
+        Sport cannot be changed when editing a team
+      </small>
+    )}
+  </div>
+</div>
                     {/* Players Section */}
                       {currentTeam.sport && (
   <div className="admin-teams-players-section">
@@ -1725,8 +1743,10 @@ title={createdTeams.length >= maxTeams ? "Maximum team limit reached" : "Add Tea
             )}
 
             {/* Step 3: Create Multiple Brackets */}
-            {currentStep === 3 && (
-              <div className="bracket-create-section">
+         {currentStep === 3 && (
+  <div className="bracket-create-section" style={{
+    animation: 'fadeInSlide 0.5s ease-out'
+  }}>
                 <div className="bracket-form-container">
                   <h2>Step 3: Create Brackets</h2>
                   <p className="step-description">Set up {eventData.numberOfBrackets} bracket{eventData.numberOfBrackets > 1 ? 's' : ''} for your tournament</p>
@@ -1752,76 +1772,78 @@ title={createdTeams.length >= maxTeams ? "Maximum team limit reached" : "Add Tea
                       </div>
 
                       <div className="bracket-form">
-                        <div className="bracket-form-group">
-                          <label htmlFor={`bracketName-${bracket.id}`}>Bracket Name</label>
-                          <input
-                            type="text"
-                            id={`bracketName-${bracket.id}`}
-                            name="bracketName"
-                            value={bracket.bracketName}
-                            onChange={(e) => handleBracketInputChange(bracket.id, 'bracketName', e.target.value)}
-                            placeholder={`Leave empty to auto-generate (e.g., ${createdEvent?.name} - Basketball Bracket ${index + 1})`}
-                            style={{ fontSize: '16px' }}
-                          />
-                        </div>
+                <div style={{ display: 'flex', gap: '20px', alignItems: 'flex-start' }}>
+  <div className="bracket-form-group" style={{ flex: 1 }}>
+    <label htmlFor={`bracketName-${bracket.id}`}>Bracket Name</label>
+    <input
+      type="text"
+      id={`bracketName-${bracket.id}`}
+      name="bracketName"
+      value={bracket.bracketName}
+      onChange={(e) => handleBracketInputChange(bracket.id, 'bracketName', e.target.value)}
+      placeholder={`Leave empty to auto-generate (e.g., ${createdEvent?.name} - Basketball Bracket ${index + 1})`}
+      style={{ fontSize: '16px' }}
+    />
+  </div>
 
-                        <div className="bracket-form-group">
-                          <label htmlFor={`sport-${bracket.id}`}>Sport *</label>
-                          <select
-                            id={`sport-${bracket.id}`}
-                            name="sport"
-                            value={bracket.sport}
-                            onChange={(e) => handleBracketInputChange(bracket.id, 'sport', e.target.value)}
-                            disabled={bracket.selectedTeamIds.length > 0}
-                            style={{ fontSize: '16px' }}
-                          >
-                            <option value="">Select a sport</option>
-                            {Object.keys(positions).map((sport) => (
-                              <option key={sport} value={sport}>{sport}</option>
-                            ))}
-                          </select>
-                          {bracket.selectedTeamIds.length > 0 && bracket.sport && (
-                            <small style={{ color: '#10b981', fontSize: '14px', marginTop: '5px', display: 'block' }}>
-                              ✓ Sport auto-detected from assigned teams: {capitalize(bracket.sport)}
-                            </small>
-                          )}
-                        </div>
+  <div className="bracket-form-group" style={{ flex: 1 }}>
+    <label htmlFor={`sport-${bracket.id}`}>Sport *</label>
+    <select
+      id={`sport-${bracket.id}`}
+      name="sport"
+      value={bracket.sport}
+      onChange={(e) => handleBracketInputChange(bracket.id, 'sport', e.target.value)}
+      disabled={bracket.selectedTeamIds.length > 0}
+      style={{ fontSize: '16px' }}
+    >
+      <option value="">Select a sport</option>
+      {Object.keys(positions).map((sport) => (
+        <option key={sport} value={sport}>{sport}</option>
+      ))}
+    </select>
+    {bracket.selectedTeamIds.length > 0 && bracket.sport && (
+      <small style={{ color: '#10b981', fontSize: '14px', marginTop: '5px', display: 'block' }}>
+        ✓ Sport auto-detected from assigned teams: {capitalize(bracket.sport)}
+      </small>
+    )}
+  </div>
 
-                        <div className="bracket-form-group">
-  <label htmlFor={`bracketType-${bracket.id}`}>Bracket Type *</label>
-  <select 
-    id={`bracketType-${bracket.id}`}
-    name="bracketType"
-    value={bracket.bracketType}
-    onChange={(e) => handleBracketInputChange(bracket.id, 'bracketType', e.target.value)}
-    style={{ fontSize: '16px' }}
-  >
-    <option value="single">Single Elimination</option>
-    <option value="double">Double Elimination</option>
-    <option value="round_robin">Round Robin</option>
-    <option value="round_robin_knockout">Round Robin + Knockout</option>
-  </select>
-  
-  {bracket.bracketType === 'single' && (
-    <small style={{ color: '#94a3b8', fontSize: '14px', marginTop: '5px', display: 'block' }}>
-      One loss eliminates a team from the tournament
-    </small>
-  )}
-  {bracket.bracketType === 'double' && (
-    <small style={{ color: '#94a3b8', fontSize: '14px', marginTop: '5px', display: 'block' }}>
-      Teams must lose twice to be eliminated from the tournament
-    </small>
-  )}
-  {bracket.bracketType === 'round_robin' && (
-    <small style={{ color: '#94a3b8', fontSize: '14px', marginTop: '5px', display: 'block' }}>
-      All teams play each other once - winner determined by standings
-    </small>
-  )}
-  {bracket.bracketType === 'round_robin_knockout' && (
-    <small style={{ color: '#94a3b8', fontSize: '14px', marginTop: '5px', display: 'block' }}>
-      Round Robin phase followed by knockout playoffs (Top 4 advance)
-    </small>
-  )}
+  <div className="bracket-form-group" style={{ flex: 1 }}>
+    <label htmlFor={`bracketType-${bracket.id}`}>Bracket Type *</label>
+    <select 
+      id={`bracketType-${bracket.id}`}
+      name="bracketType"
+      value={bracket.bracketType}
+      onChange={(e) => handleBracketInputChange(bracket.id, 'bracketType', e.target.value)}
+      style={{ fontSize: '16px' }}
+    >
+      <option value="single">Single Elimination</option>
+      <option value="double">Double Elimination</option>
+      <option value="round_robin">Round Robin</option>
+      <option value="round_robin_knockout">Round Robin + Knockout</option>
+    </select>
+    
+    {bracket.bracketType === 'single' && (
+      <small style={{ color: '#94a3b8', fontSize: '14px', marginTop: '5px', display: 'block' }}>
+        One loss eliminates a team from the tournament
+      </small>
+    )}
+    {bracket.bracketType === 'double' && (
+      <small style={{ color: '#94a3b8', fontSize: '14px', marginTop: '5px', display: 'block' }}>
+        Teams must lose twice to be eliminated from the tournament
+      </small>
+    )}
+    {bracket.bracketType === 'round_robin' && (
+      <small style={{ color: '#94a3b8', fontSize: '14px', marginTop: '5px', display: 'block' }}>
+        All teams play each other once - winner determined by standings
+      </small>
+    )}
+    {bracket.bracketType === 'round_robin_knockout' && (
+      <small style={{ color: '#94a3b8', fontSize: '14px', marginTop: '5px', display: 'block' }}>
+        Round Robin phase followed by knockout playoffs (Top 4 advance)
+      </small>
+    )}
+  </div>
 </div>
                         <div className="bracket-form-group">
                           <label>Assigned Teams</label>
@@ -1972,9 +1994,9 @@ title={createdTeams.length >= maxTeams ? "Maximum team limit reached" : "Add Tea
                     </div>
                     
                     {createdBrackets.map((bracket, index) => (
-                      <div key={bracket.id} className="bracket-summary-item" style={{ fontSize: '16px' }}>
-                        <strong>Bracket ${index + 1}:</strong> {bracket.name} ({bracket.selectedTeams || bracket.selectedTeamIds?.length || 0} teams)
-                      </div>
+                     <div key={bracket.id} className="bracket-summary-item" style={{ fontSize: '16px' }}>
+  <strong>Bracket {index + 1}:</strong> {bracket.name} ({bracket.selectedTeams || bracket.selectedTeamIds?.length || 0} teams)
+</div>
                     ))}
                   </div>
 
@@ -2024,7 +2046,9 @@ title={createdTeams.length >= maxTeams ? "Maximum team limit reached" : "Add Tea
         </div>
       </div>
 
-     <style jsx>{`
+      <style jsx>{`
+     
+     
         .validation-message-animated {
           animation: slideInDown 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
         }
@@ -2519,14 +2543,13 @@ title={createdTeams.length >= maxTeams ? "Maximum team limit reached" : "Add Tea
           border-bottom: none;
         }
 
-        .tournament-progress {
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          margin: 30px 0 40px;
-          padding: 0 20px;
-        }
-
+     .tournament-progress {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 30px 0 40px;
+  padding: 30px 20px 0 20px !important;  /* Add top padding */
+}
         .progress-step {
           display: flex;
           flex-direction: column;
