@@ -2782,32 +2782,38 @@ const handleNextMatch = async () => {
     const totalTeam1Score = teamScores.team1.reduce((a, b) => a + b, 0) + overtimeScores.team1.reduce((a, b) => a + b, 0);
     const totalTeam2Score = teamScores.team2.reduce((a, b) => a + b, 0) + overtimeScores.team2.reduce((a, b) => a + b, 0);
 
+    // ADD THESE LINES - Determine which team is active
+  const isTeam1Active = !showBothTeams && activeTeamView === 'team1';
+  const isTeam2Active = !showBothTeams && activeTeamView === 'team2';
+
     return (
-      <div className="stats-scores">
-        <div className="stats-score-box team1">
-          <h3>{selectedGame.team1_name}</h3>
-          <div className="stats-score-value">
-            {currentTeam1Score}
-          </div>
-          <div className="stats-total-score">
-            Total: {totalTeam1Score}
-          </div>
+    <div className="stats-scores">
+      {/* ADD className with conditional styling */}
+      <div className={`stats-score-box team1 ${isTeam1Active ? 'active-team' : ''}`}>
+        <h3>{selectedGame.team1_name}</h3>
+        <div className="stats-score-value">
+          {currentTeam1Score}
         </div>
-        
-        <div className="stats-score-separator">-</div>
-        
-        <div className="stats-score-box team2">
-          <h3>{selectedGame.team2_name}</h3>
-          <div className="stats-score-value">
-            {currentTeam2Score}
-          </div>
-          <div className="stats-total-score">
-            Total: {totalTeam2Score}
-          </div>
+        <div className="stats-total-score">
+          Total: {totalTeam1Score}
         </div>
       </div>
-    );
-  };
+      
+      <div className="stats-score-separator">-</div>
+      
+      {/* ADD className with conditional styling */}
+      <div className={`stats-score-box team2 ${isTeam2Active ? 'active-team' : ''}`}>
+        <h3>{selectedGame.team2_name}</h3>
+        <div className="stats-score-value">
+          {currentTeam2Score}
+        </div>
+        <div className="stats-total-score">
+          Total: {totalTeam2Score}
+        </div>
+      </div>
+    </div>
+  );
+};
 
   // Overtime controls component
   const renderOvertimeControls = () => {

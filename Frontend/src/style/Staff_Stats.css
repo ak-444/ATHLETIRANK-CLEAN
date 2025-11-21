@@ -1571,7 +1571,62 @@
   gap: 4px;
   position: relative;
 }
+/* Active Team Highlighting */
+.stats-score-box.active-team {
+  border-width: 3px;
+  box-shadow: 0 0 20px rgba(59, 130, 246, 0.6);
+  animation: pulse-glow 2s ease-in-out infinite;
+}
 
+.stats-score-box.team1.active-team {
+  border-color: #4299e1;
+  background: rgba(66, 153, 225, 0.25);
+}
+
+.stats-score-box.team2.active-team {
+  border-color: #ed8936;
+  background: rgba(237, 137, 54, 0.25);
+}
+
+.stats-score-box.active-team .stats-score-value {
+  transform: scale(1.1);
+  transition: transform 0.3s ease;
+}
+
+@keyframes pulse-glow {
+  0%, 100% {
+    box-shadow: 0 0 20px rgba(59, 130, 246, 0.6);
+  }
+  50% {
+    box-shadow: 0 0 30px rgba(59, 130, 246, 0.9);
+  }
+}
+
+.stats-score-box.team1.active-team {
+  animation: pulse-glow-blue 2s ease-in-out infinite;
+}
+
+.stats-score-box.team2.active-team {
+  animation: pulse-glow-orange 2s ease-in-out infinite;
+}
+
+@keyframes pulse-glow-blue {
+  0%, 100% {
+    box-shadow: 0 0 20px rgba(66, 153, 225, 0.6);
+  }
+  50% {
+    box-shadow: 0 0 30px rgba(66, 153, 225, 0.9);
+  }
+}
+
+@keyframes pulse-glow-orange {
+  0%, 100% {
+    box-shadow: 0 0 20px rgba(237, 137, 54, 0.6);
+  }
+  50% {
+    box-shadow: 0 0 30px rgba(237, 137, 54, 0.9);
+  }
+}
 .overtime-remove-button {
   background: var(--error-color);
   border: 1px solid var(--error-color);

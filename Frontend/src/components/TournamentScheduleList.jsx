@@ -43,10 +43,29 @@ const TournamentScheduleList = ({ matches = [], eventId, bracketId, onRefresh, o
   const [standingsError, setStandingsError] = useState("");
 
   const getUniqueRoundsForScheduling = () => {
-    const rounds = [...new Set(unscheduledMatches.map(m => m.round_number))].sort((a, b) => a - b);
-    return rounds;
-  };
-
+  const rounds = [...new Set(unscheduledMatches.map(m => {
+    // For knockout phases in RR+Knockout, use bracket_type as identifier
+    if (m.bracket_type === 'knockout_semifinal') return 'knockout_semifinal';
+    if (m.bracket_type === 'knockout_final') return 'knockout_final';
+    if (m.bracket_type === 'knockout_third_place') return 'knockout_third_place';
+    // For regular rounds, use round_number
+    return m.round_number;
+  }))];
+  
+  // Sort: numeric rounds first, then knockout stages
+  return rounds.sort((a, b) => {
+    const knockoutOrder = {
+      'knockout_semifinal': 1000,
+      'knockout_third_place': 1001,
+      'knockout_final': 1002
+    };
+    
+    const aOrder = knockoutOrder[a] || Number(a);
+    const bOrder = knockoutOrder[b] || Number(b);
+    
+    return aOrder - bOrder;
+  });
+};
   useEffect(() => {
     const root = document.documentElement;
     root.style.setProperty('--primary-color', '#3b82f6');
@@ -263,7 +282,7 @@ const formatRoundDisplay = (match) => {
     !getScheduleForMatch(m.id)
   );
 
-  const canBulkSchedule = isRoundRobin && unscheduledMatches.length > 0;
+
 
   const calculateStandings = () => {
     if (!isRoundRobin) return [];
@@ -423,43 +442,50 @@ const sortedRounds = Object.keys(groupedMatches).sort((a, b) => {
       });
       
       return times;
-    } else {
-      const rounds = getUniqueRoundsForScheduling();
-      const allRoundsFilled = rounds.every(r => bulkScheduleForm.roundDates[r]);
+   } else {
+  const rounds = getUniqueRoundsForScheduling();
+  const allRoundsFilled = rounds.every(r => bulkScheduleForm.roundDates[r]);
+  
+  if (!allRoundsFilled || !bulkScheduleForm.startTime) return [];
+  
+  const times = [];
+  
+  rounds.forEach(roundKey => {
+    // Filter matches by round key (could be round_number or bracket_type string)
+    const roundMatches = unscheduledMatches.filter(m => {
+      if (roundKey === 'knockout_semifinal') return m.bracket_type === 'knockout_semifinal';
+      if (roundKey === 'knockout_final') return m.bracket_type === 'knockout_final';
+      if (roundKey === 'knockout_third_place') return m.bracket_type === 'knockout_third_place';
+      return m.round_number === roundKey;
+    });
+    
+    let currentTime = bulkScheduleForm.startTime;
+    
+    roundMatches.forEach(match => {
+      const [hours, minutes] = currentTime.split(':').map(Number);
+      const startMinutes = hours * 60 + minutes;
+      const endMinutes = startMinutes + parseInt(bulkScheduleForm.matchDuration);
+      const nextStartMinutes = endMinutes + parseInt(bulkScheduleForm.breakDuration);
       
-      if (!allRoundsFilled || !bulkScheduleForm.startTime) return [];
+      const formatTimeFromMinutes = (mins) => {
+        const h = Math.floor(mins / 60);
+        const m = mins % 60;
+        return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
+      };
       
-      const times = [];
-      
-      rounds.forEach(roundNum => {
-        const roundMatches = unscheduledMatches.filter(m => m.round_number === roundNum);
-        let currentTime = bulkScheduleForm.startTime;
-        
-        roundMatches.forEach(match => {
-          const [hours, minutes] = currentTime.split(':').map(Number);
-          const startMinutes = hours * 60 + minutes;
-          const endMinutes = startMinutes + parseInt(bulkScheduleForm.matchDuration);
-          const nextStartMinutes = endMinutes + parseInt(bulkScheduleForm.breakDuration);
-          
-          const formatTimeFromMinutes = (mins) => {
-            const h = Math.floor(mins / 60);
-            const m = mins % 60;
-            return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
-          };
-          
-          times.push({
-            match,
-            date: bulkScheduleForm.roundDates[roundNum],
-            startTime: currentTime,
-            endTime: formatTimeFromMinutes(endMinutes)
-          });
-          
-          currentTime = formatTimeFromMinutes(nextStartMinutes);
-        });
+      times.push({
+        match,
+        date: bulkScheduleForm.roundDates[roundKey],  // Changed from roundNum to roundKey
+        startTime: currentTime,
+        endTime: formatTimeFromMinutes(endMinutes)
       });
       
-      return times;
-    }
+      currentTime = formatTimeFromMinutes(nextStartMinutes);
+    });
+  });
+  
+  return times;
+}
   };
 
   const handleBulkSchedule = async () => {
@@ -1034,7 +1060,7 @@ const sortedRounds = Object.keys(groupedMatches).sort((a, b) => {
           </button>
         </div>
         <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
-          {canBulkSchedule && !isStaffView && (
+         {unscheduledMatches.length > 0 && !isStaffView && (
             <button 
               onClick={() => setShowBulkScheduleModal(true)} 
               style={{ 
@@ -1745,29 +1771,43 @@ const sortedRounds = Object.keys(groupedMatches).sort((a, b) => {
                   <div style={{ background: 'rgba(59, 130, 246, 0.05)', padding: '16px', borderRadius: '8px', border: '1px solid #2d3748' }}>
                     <label style={{ display: 'block', marginBottom: '12px', color: '#e2e8f0', fontWeight: '600', fontSize: '14px' }}>Round Dates *</label>
                     <div style={{ display: 'grid', gap: '12px' }}>
-                      {getUniqueRoundsForScheduling().map(roundNum => {
-                        const roundMatches = unscheduledMatches.filter(m => m.round_number === roundNum);
-                        return (
-                          <div key={roundNum} style={{ display: 'grid', gridTemplateColumns: '120px 1fr', gap: '12px', alignItems: 'center' }}>
-                            <div style={{ 
-                              background: 'rgba(99, 102, 241, 0.3)', 
-                              color: '#a5b4fc', 
-                              padding: '8px 12px', 
-                              borderRadius: '6px', 
-                              fontSize: '13px', 
-                              fontWeight: '600',
-                              textAlign: 'center'
-                            }}>
-                              Round {roundNum}
-                            </div>
+                      {getUniqueRoundsForScheduling().map(roundKey => {
+                          // Filter matches by round key (handles both numbers and bracket types)
+                          const roundMatches = unscheduledMatches.filter(m => {
+                            if (roundKey === 'knockout_semifinal') return m.bracket_type === 'knockout_semifinal';
+                            if (roundKey === 'knockout_final') return m.bracket_type === 'knockout_final';
+                            if (roundKey === 'knockout_third_place') return m.bracket_type === 'knockout_third_place';
+                            return m.round_number === roundKey;
+                          });
+                          
+                          // Display label
+                          const roundLabel = typeof roundKey === 'string' 
+                            ? (roundKey === 'knockout_semifinal' ? 'Semifinals' :
+                              roundKey === 'knockout_final' ? 'Finals' :
+                              roundKey === 'knockout_third_place' ? '3rd Place' : roundKey)
+                            : formatRoundDisplay({ round_number: roundKey, bracket_type: unscheduledMatches.find(m => m.round_number === roundKey)?.bracket_type });
+                          
+                          return (
+                            <div key={roundKey} style={{ display: 'grid', gridTemplateColumns: '120px 1fr', gap: '12px', alignItems: 'center' }}>
+                              <div style={{ 
+                                background: 'rgba(99, 102, 241, 0.3)', 
+                                color: '#a5b4fc', 
+                                padding: '8px 12px', 
+                                borderRadius: '6px', 
+                                fontSize: '13px', 
+                                fontWeight: '600',
+                                textAlign: 'center'
+                              }}>
+                                {roundLabel}
+                              </div>
                             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                               <input 
-                                type="date" 
-                                value={bulkScheduleForm.roundDates[roundNum] || ''} 
-                                onChange={(e) => setBulkScheduleForm({
-                                  ...bulkScheduleForm, 
-                                  roundDates: {...bulkScheduleForm.roundDates, [roundNum]: e.target.value}
-                                })} 
+  type="date" 
+  value={bulkScheduleForm.roundDates[roundKey] || ''}  // Changed from roundNum
+  onChange={(e) => setBulkScheduleForm({
+    ...bulkScheduleForm, 
+    roundDates: {...bulkScheduleForm.roundDates, [roundKey]: e.target.value}  // Changed from roundNum
+  })}
                                 disabled={loading} 
                                 style={{ 
                                   flex: 1,
