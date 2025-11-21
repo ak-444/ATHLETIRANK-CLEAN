@@ -1,10 +1,36 @@
 import React, { useEffect, useRef, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
 import "../style/CustomBrackets.css";
 
-const CustomBracket = ({ matches, eliminationType = 'single' }) => {
+const CustomBracket = ({ matches, eliminationType = 'single', selectedEvent, selectedBracket }) => {
   const bracketRef = useRef(null);
+  const navigate = useNavigate();
+  const { user } = useAuth();
   const [connectionPoints, setConnectionPoints] = useState([]);
   const [matchDisplayNumbers, setMatchDisplayNumbers] = useState({});
+  const [hoveredMatchId, setHoveredMatchId] = useState(null);
+  
+  const isStaff = user?.role === 'sports_committee';
+  
+  const handleMatchClick = (match) => {
+    if (!isStaff || !selectedEvent || !selectedBracket) return;
+    
+    sessionStorage.setItem('selectedMatchData', JSON.stringify({
+      matchId: match.id,
+      eventId: selectedEvent.id,
+      bracketId: selectedBracket.id,
+      match: match
+    }));
+    
+    sessionStorage.setItem('staffEventsContext', JSON.stringify({
+      selectedEvent: selectedEvent,
+      selectedBracket: selectedBracket,
+      bracketViewType: 'bracket'
+    }));
+    
+    navigate('/StaffDashboard/stats');
+  };
 
   useEffect(() => {
     if (!matches || matches.length === 0) return;
@@ -35,29 +61,55 @@ const CustomBracket = ({ matches, eliminationType = 'single' }) => {
   useEffect(() => {
     if (!bracketRef.current) return;
 
-    const matchEls = bracketRef.current.querySelectorAll(".match");
-    const points = [];
+    const measurePositions = () => {
+      const matchEls = bracketRef.current.querySelectorAll(".match");
+      if (matchEls.length === 0) return;
 
-    matchEls.forEach((matchEl) => {
-      const roundIndex = parseInt(matchEl.closest(".round")?.dataset.round, 10);
-      const matchIndex = parseInt(matchEl.dataset.match, 10);
-      const bracketType = matchEl.closest(".bracket-section")?.dataset.bracketType || 'winner';
+      const points = [];
 
-      const rect = matchEl.getBoundingClientRect();
-      const containerRect = bracketRef.current.getBoundingClientRect();
+      matchEls.forEach((matchEl) => {
+        const roundIndex = parseInt(matchEl.closest(".round")?.dataset.round, 10);
+        const matchIndex = parseInt(matchEl.dataset.match, 10);
+        const bracketType = matchEl.closest(".bracket-section")?.dataset.bracketType || 'winner';
 
-      // Right-center of current match
-      const x = rect.right - containerRect.left;
-      const y = rect.top - containerRect.top + rect.height / 2;
+        const rect = matchEl.getBoundingClientRect();
+        const containerRect = bracketRef.current.getBoundingClientRect();
 
-      // Left-center of current match (for connecting into)
-      const xLeft = rect.left - containerRect.left;
-      const yLeft = rect.top - containerRect.top + rect.height / 2;
+        // Right-center of current match
+        const x = rect.right - containerRect.left;
+        const y = rect.top - containerRect.top + rect.height / 2;
 
-      points.push({ roundIndex, matchIndex, x, y, xLeft, yLeft, bracketType });
+        // Left-center of current match (for connecting into)
+        const xLeft = rect.left - containerRect.left;
+        const yLeft = rect.top - containerRect.top + rect.height / 2;
+
+        points.push({ roundIndex, matchIndex, x, y, xLeft, yLeft, bracketType });
+      });
+
+      setConnectionPoints(points);
+    };
+
+    // Wait for DOM to be fully rendered and animations to complete
+    const timeoutId = setTimeout(() => {
+      // Use requestAnimationFrame to ensure layout is complete
+      requestAnimationFrame(() => {
+        requestAnimationFrame(measurePositions);
+      });
+    }, 100);
+
+    // Also set up ResizeObserver to recalculate on size changes
+    const resizeObserver = new ResizeObserver(() => {
+      requestAnimationFrame(measurePositions);
     });
+    
+    if (bracketRef.current) {
+      resizeObserver.observe(bracketRef.current);
+    }
 
-    setConnectionPoints(points);
+    return () => {
+      clearTimeout(timeoutId);
+      resizeObserver.disconnect();
+    };
   }, [matches, eliminationType]);
 
   if (!matches || matches.length === 0) {
@@ -94,11 +146,20 @@ const CustomBracket = ({ matches, eliminationType = 'single' }) => {
   const loserRounds = groupMatchesByRound(loserMatches);
 
   // Function to render a single match component (using your exact original styling)
-  const renderMatch = (match, matchIndex) => (
+  const renderMatch = (match, matchIndex) => {
+    const isCompleted = match.status === 'completed';
+    const isHovered = hoveredMatchId === match.id;
+    const showScoreButton = isStaff && isHovered && (match.status === 'scheduled' || match.status === 'ongoing');
+    const showViewButton = isStaff && isHovered && isCompleted;
+    
+    return (
     <div 
       key={match.id} 
       className={`match ${match.status}`}
       data-match={matchIndex}
+      onMouseEnter={() => setHoveredMatchId(match.id)}
+      onMouseLeave={() => setHoveredMatchId(null)}
+      style={{ position: 'relative' }}
     >
       <div className="match-header">
         <span className="match-id">Game #{matchDisplayNumbers[match.id]}</span>
@@ -167,8 +228,24 @@ const CustomBracket = ({ matches, eliminationType = 'single' }) => {
           LIVE MATCH
         </div>
       )}
+      
+      {/* Score/View Scores Button - Only visible on hover for staff */}
+      {isStaff && (showScoreButton || showViewButton) && (
+        <div className="match-score-button-container">
+          <button
+            className={`match-action-button ${isCompleted ? 'view-scores' : 'score-button'}`}
+            onClick={(e) => {
+              e.stopPropagation();
+              handleMatchClick(match);
+            }}
+          >
+            {isCompleted ? 'View Scores' : 'Score!'}
+          </button>
+        </div>
+      )}
     </div>
-  );
+    );
+  };
 
   // Function to render a round section (using your exact original styling)
   const renderRoundSection = (roundNumber, matches, bracketType) => {

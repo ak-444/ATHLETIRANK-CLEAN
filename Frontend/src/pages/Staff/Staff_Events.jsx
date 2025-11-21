@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { FaTrophy, FaCrown, FaChartBar, FaEye } from "react-icons/fa";
+import { FaTrophy, FaCrown, FaChartBar, FaEye, FaChevronLeft, FaChevronRight } from "react-icons/fa";
 import CustomBracket from "../../components/CustomBracket";
 import DoubleEliminationBracket from "../../components/DoubleEliminationBracket";
 import TournamentScheduleList from "../../components/TournamentScheduleList";
@@ -25,6 +25,21 @@ const [standings, setStandings] = useState([]);
   // Search and filter states
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
+
+  // Events pagination states
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(10);
+
+  // Add state for expanded events
+  const [expandedEvents, setExpandedEvents] = useState({});
+
+  // Toggle function for expanding events
+  const toggleEventExpansion = (eventId) => {
+    setExpandedEvents(prev => ({
+      ...prev,
+      [eventId]: !prev[eventId]
+    }));
+  };
 
   // Format round display based on bracket type and round number
   const formatRoundDisplay = (match) => {
@@ -83,6 +98,11 @@ const [standings, setStandings] = useState([]);
   useEffect(() => {
     fetchEvents();
   }, []);
+
+  // Reset to page 1 when search or filter changes
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, statusFilter]);
 
 // Restore context when returning from Stats page or Dashboard
     useEffect(() => {
@@ -150,6 +170,26 @@ const [standings, setStandings] = useState([]);
     
     return matchesSearch && matchesStatus;
   });
+
+  // Events pagination calculations
+  const totalRows = filteredEvents.length;
+  const totalPages = Math.ceil(totalRows / itemsPerPage);
+  const indexOfLastRow = currentPage * itemsPerPage;
+  const indexOfFirstRow = indexOfLastRow - itemsPerPage;
+  const currentEvents = filteredEvents.slice(indexOfFirstRow, indexOfLastRow);
+
+  // Pagination handlers
+  const goToPage = (page) => {
+    setCurrentPage(Math.max(1, Math.min(page, totalPages)));
+  };
+
+  const goToNextPage = () => {
+    if (currentPage < totalPages) setCurrentPage(currentPage + 1);
+  };
+
+  const goToPrevPage = () => {
+    if (currentPage > 1) setCurrentPage(currentPage - 1);
+  };
 
   // Handle bracket selection
  const handleBracketSelect = async (event, bracket) => {
@@ -253,7 +293,7 @@ const [standings, setStandings] = useState([]);
                 setSelectedEvent(null);
               }}
             >
-              Select Events & Brackets
+              Events & Brackets
             </button>
             {selectedBracket && (
               <>
@@ -267,63 +307,99 @@ const [standings, setStandings] = useState([]);
 
             {/* Events Selection Tab */}
             {activeTab === "events" && (
-              <div className="bracket-view-section">
-                {/* Search Container */}
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '30px', flexWrap: 'wrap', gap: '20px' }}>
-                  <div style={{ display: 'flex', gap: '15px', alignItems: 'center', flex: '1', minWidth: '300px' }}>
-                    <input
-                      type="text"
-                      placeholder="Search events..."
-                      value={searchTerm}
-                      onChange={(e) => setSearchTerm(e.target.value)}
-                      style={{
-                        flex: '1',
-                        padding: '12px 16px',
-                        border: '2px solid var(--border-color)',
-                        borderRadius: '8px',
-                        fontSize: '14px',
-                        backgroundColor: 'var(--background-secondary)',
-                        color: 'var(--text-primary)',
-                      }}
-                    />
-                    <select
-                      value={statusFilter}
-                      onChange={(e) => setStatusFilter(e.target.value)}
-                      style={{
-                        padding: '12px 16px',
-                        border: '2px solid var(--border-color)',
-                        borderRadius: '8px',
-                        fontSize: '14px',
-                        backgroundColor: 'var(--background-secondary)',
-                        color: 'var(--text-primary)',
-                        minWidth: '150px',
-                      }}
-                    >
-                      <option value="all">All Status</option>
-                      <option value="ongoing">Ongoing</option>
-                      <option value="completed">Completed</option>
-                    </select>
-                  </div>
-                </div>
+                <div className="bracket-view-section purple-background">
+                
+                    {/* Search Container - Matching Admin Events Design */}
+<div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '30px', flexWrap: 'wrap', gap: '20px' }}>
+  <div style={{ display: 'flex', gap: '15px', alignItems: 'center', flex: '1', minWidth: '300px' }}>
+    <input
+      type="text"
+      placeholder="Search events..."
+      value={searchTerm}
+      onChange={(e) => setSearchTerm(e.target.value)}
+      style={{
+        flex: '1',
+        padding: '12px 16px',
+        border: '2px solid var(--border-color)',
+        borderRadius: '8px',
+        fontSize: '14px',
+        backgroundColor: 'var(--background-secondary)',
+        color: 'var(--text-primary)',
+      }}
+    />
+    <select
+      value={statusFilter}
+      onChange={(e) => setStatusFilter(e.target.value)}
+      style={{
+        padding: '12px 16px',
+        border: '2px solid var(--border-color)',
+        borderRadius: '8px',
+        fontSize: '14px',
+        backgroundColor: 'var(--background-secondary)',
+        color: 'var(--text-primary)',
+        minWidth: '150px',
+      }}
+    >
+      <option value="all">All Status</option>
+      <option value="ongoing">Ongoing</option>
+      <option value="completed">Completed</option>
+    </select>
+  </div>
+</div>
 
-                {/* Results Info */}
-                {(searchTerm || statusFilter !== "all") && (
-                  <div style={{ marginBottom: '20px', color: 'var(--text-secondary)', fontSize: '14px' }}>
-                    Showing {filteredEvents.length} of {events.length} events
-                    {searchTerm && <span style={{ color: 'var(--primary-color)', marginLeft: '5px' }}> • Searching: "{searchTerm}"</span>}
-                    {statusFilter !== "all" && <span style={{ color: 'var(--primary-color)', marginLeft: '5px' }}> • Status: {statusFilter}</span>}
-                  </div>
-                )}
+{/* Results Info & Items Per Page */}
+<div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', flexWrap: 'wrap', gap: '15px' }}>
+  <div style={{ color: 'var(--text-secondary)', fontSize: '14px' }}>
+    {(searchTerm || statusFilter !== "all") && (
+      <>
+        Showing {currentEvents.length} of {totalRows} results
+        {searchTerm && <span style={{ color: 'var(--primary-color)', marginLeft: '5px' }}> • Searching: "{searchTerm}"</span>}
+        {statusFilter !== "all" && <span style={{ color: 'var(--primary-color)', marginLeft: '5px' }}> • Status: {statusFilter}</span>}
+      </>
+    )}
+    {!searchTerm && statusFilter === "all" && (
+      <>Showing {indexOfFirstRow + 1}-{Math.min(indexOfLastRow, totalRows)} of {totalRows} events</>
+    )}
+  </div>
+  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+    <label style={{ fontSize: '14px', color: 'var(--text-secondary)' }}>Show:</label>
+    <select
+      value={itemsPerPage}
+      onChange={(e) => {
+        setItemsPerPage(Number(e.target.value));
+        setCurrentPage(1);
+      }}
+      style={{
+        padding: '8px 12px',
+        border: '2px solid var(--border-color)',
+        borderRadius: '6px',
+        fontSize: '14px',
+        backgroundColor: 'var(--background-secondary)',
+        color: 'var(--text-primary)',
+        cursor: 'pointer'
+      }}
+    >
+      <option value={5}>5</option>
+      <option value={10}>10</option>
+      <option value={20}>20</option>
+      <option value={50}>50</option>
+    </select>
+    <span style={{ fontSize: '14px', color: 'var(--text-secondary)' }}>per page</span>
+  </div>
+</div>
+                
 
                 {loading ? (
                   <div className="awards_standings_loading">
                     <div className="awards_standings_spinner"></div>
                     <p>Loading events...</p>
                   </div>
-                ) : filteredEvents.length === 0 ? (
+                ) : totalRows === 0 ? (
                   <div className="bracket-no-brackets">
                     {events.length === 0 ? (
-                      <p>No events found.</p>
+                      <>
+                        <p>No events found.</p>
+                      </>
                     ) : (
                       <>
                         <p>No events match your search criteria.</p>
@@ -340,47 +416,90 @@ const [standings, setStandings] = useState([]);
                     )}
                   </div>
                 ) : (
-                  <div className="awards_standings_table_container">
-                    <table className="awards_standings_table">
-                      <thead>
-                        <tr>
-                          <th style={{ fontSize: '15px' }}>Event Name</th>
-                          <th style={{ fontSize: '15px' }}>Status</th>
-                          <th style={{ fontSize: '15px' }}>Dates</th>
-                          <th style={{ fontSize: '15px' }}>Bracket</th>
-                          <th style={{ fontSize: '15px' }}>Sport</th>
-                          <th style={{ fontSize: '15px' }}>Type</th>
-                          <th style={{ fontSize: '15px' }}>Teams</th>
-                          <th style={{ textAlign: 'center', width: '120px', fontSize: '15px' }}>Actions</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {filteredEvents.map(event => 
-                          event.brackets && event.brackets.length > 0 ? (
-                            event.brackets.map((bracket, idx) => (
-                              <tr key={`${event.id}-${bracket.id}`}>
-                                {idx === 0 && (
-                                  <>
-                                    <td rowSpan={event.brackets.length} style={{ fontWeight: '600', borderRight: '1px solid var(--border-color)', fontSize: '16px' }}>
-                                      {event.name}
-                                    </td>
-                                    <td rowSpan={event.brackets.length} style={{ borderRight: '1px solid var(--border-color)' }}>
-                                      <span className={`bracket-sport-badge ${event.status === "ongoing" ? "bracket-sport-basketball" : "bracket-sport-volleyball"}`} style={{ fontSize: '13px', padding: '8px 14px' }}>
-                                        {event.status}
-                                      </span>
-                                    </td>
-                                    <td rowSpan={event.brackets.length} style={{ fontSize: '15px', borderRight: '1px solid var(--border-color)' }}>
-                                      {new Date(event.start_date).toLocaleDateString()} - {new Date(event.end_date).toLocaleDateString()}
-                                    </td>
-                                  </>
-                                )}
-                                <td style={{ fontWeight: '600', fontSize: '15px' }}>{bracket.name}</td>
-                                <td>
-                                  <span className={`bracket-sport-badge ${bracket.sport_type === 'volleyball' ? 'bracket-sport-volleyball' : 'bracket-sport-basketball'}`} style={{ fontSize: '13px', padding: '8px 14px' }}>
-                                    {bracket.sport_type?.toUpperCase() || 'N/A'}
+                  <>
+                    {/* NEW GROUPED EVENTS STRUCTURE */}
+                    <div className="events-list-container">
+                     {currentEvents.map(event => (
+                        <div key={event.id} className="event-group-container" data-event-id={event.id}>
+                          {/* Event Header Row */}
+                          <div className="event-group-header">
+                            <div className="event-header-left">
+                              <button
+                                onClick={() => toggleEventExpansion(event.id)}
+                                className="event-expand-button"
+                                style={{
+                                  background: 'none',
+                                  border: 'none',
+                                  color: 'var(--text-primary)',
+                                  cursor: 'pointer',
+                                  padding: '8px',
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  fontSize: '18px'
+                                }}
+                              >
+                                {expandedEvents[event.id] ? '▼' : '▶'}
+                              </button>
+                              
+                              <div className="event-header-info">
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                                  <h3 style={{ margin: 0, fontSize: '18px', fontWeight: '700', color: 'var(--text-primary)' }}>
+                                    Event: {event.name}
+                                  </h3>
+                                  <span className={`bracket-sport-badge ${event.status === "ongoing" ? "bracket-sport-basketball" : "bracket-sport-volleyball"}`} 
+                                        style={{ fontSize: '11px', padding: '4px 10px' }}>
+                                    {event.status}
                                   </span>
-                                </td>
-                       <td style={{ fontSize: '15px' }}>
+                                </div>
+                                <div style={{ fontSize: '13px', color: 'var(--text-secondary)', marginTop: '4px' }}>
+                                  {new Date(event.start_date).toLocaleDateString()} - {new Date(event.end_date).toLocaleDateString()}
+                                </div>
+                              </div>
+                            </div>
+
+                            <div className="event-header-actions">
+  <span style={{ 
+    fontSize: '14px', 
+    color: 'var(--text-muted)',
+    marginRight: '16px',
+    fontWeight: '600'
+  }}>
+    [{event.brackets?.length || 0} Bracket{event.brackets?.length !== 1 ? 's' : ''}]
+  </span>
+</div>
+                          </div>
+
+                          {/* Brackets Table (Expandable) */}
+                          {expandedEvents[event.id] && (
+                            <div className="event-brackets-table-container" style={{
+                              animation: 'fadeInDown 0.3s ease-out'
+                            }}>
+                              {event.brackets && event.brackets.length > 0 ? (
+                                <table className="awards_standings_table" style={{ marginBottom: 0 }}>
+                                  <thead>
+                                    <tr style={{ background: '#1a2332' }}>
+                                      <th style={{ fontSize: '14px', padding: '12px 20px' }}>Bracket Name</th>
+                                      <th style={{ fontSize: '14px' }}>Sport</th>
+                                      <th style={{ fontSize: '14px' }}>Type</th>
+                                      <th style={{ fontSize: '14px' }}>Teams</th>
+                                      <th style={{ textAlign: 'center', width: '120px', fontSize: '14px' }}>Actions</th>
+                                    </tr>
+                                  </thead>
+                                  <tbody>
+                                    {event.brackets.map((bracket, index) => (
+                                      <tr key={bracket.id} style={{
+                                        animation: `fadeInRow 0.3s ease-out ${index * 0.05}s backwards`
+                                      }}>
+                                        <td style={{ fontWeight: '600', fontSize: '15px', padding: '12px 20px' }}>
+                                          {bracket.name}
+                                        </td>
+                                        <td>
+                                          <span className={`bracket-sport-badge ${bracket.sport_type === 'volleyball' ? 'bracket-sport-volleyball' : 'bracket-sport-basketball'}`} 
+                                                style={{ fontSize: '12px', padding: '6px 12px' }}>
+                                            {bracket.sport_type?.toUpperCase() || 'N/A'}
+                                          </span>
+                                        </td>
+                                       <td style={{ fontSize: '14px' }}>
   {bracket.elimination_type === 'double' 
     ? 'Double Elim.' 
     : bracket.elimination_type === 'round_robin'
@@ -389,41 +508,149 @@ const [standings, setStandings] = useState([]);
         ? 'RR + Knockout'
         : 'Single Elim.'}
 </td>
-                                <td style={{ fontSize: '15px' }}>{bracket.team_count || 0}</td>
-                                <td>
-                                  <div style={{ display: 'flex', gap: '8px', justifyContent: 'center', flexWrap: 'wrap' }}>
-                                    <button
-                                      onClick={() => handleBracketSelect(event, bracket)}
-                                      className="bracket-view-btn"
-                                      style={{ fontSize: '13px', padding: '8px 14px', flex: '1 1 auto', minWidth: '55px' }}
-                                      title="View Matches"
-                                    >
-                                      <FaEye />
-                                    </button>
-                                  </div>
-                                </td>
-                              </tr>
-                            ))
-                          ) : (
-                            <tr key={event.id}>
-                              <td style={{ fontWeight: '600', fontSize: '16px' }}>{event.name}</td>
-                              <td>
-                                <span className={`bracket-sport-badge ${event.status === "ongoing" ? "bracket-sport-basketball" : "bracket-sport-volleyball"}`} style={{ fontSize: '13px', padding: '8px 14px' }}>
-                                  {event.status}
-                                </span>
-                              </td>
-                              <td style={{ fontSize: '15px' }}>
-                                {new Date(event.start_date).toLocaleDateString()} - {new Date(event.end_date).toLocaleDateString()}
-                              </td>
-                              <td colSpan="5" style={{ textAlign: 'center', color: 'var(--text-muted)', fontSize: '15px' }}>
-                                No brackets available for this event
-                              </td>
-                            </tr>
-                          )
-                        )}
-                      </tbody>
-                    </table>
-                  </div>
+                                        <td style={{ fontSize: '14px', fontWeight: '600' }}>
+                                          {bracket.team_count || 0}
+                                        </td>
+                                        <td>
+  <div style={{ 
+    display: 'flex', 
+    gap: '6px', 
+    justifyContent: 'center', 
+    alignItems: 'center',
+    flexWrap: 'nowrap'
+  }}>
+                                            <button
+                                              onClick={() => handleBracketSelect(event, bracket)}
+                                              className="bracket-view-btn"
+                                              style={{ fontSize: '12px', padding: '6px 12px', minWidth: '45px' }}
+                                              title="View Matches"
+                                            >
+                                              <FaEye />
+                                            </button>
+                                          </div>
+                                        </td>
+                                      </tr>
+                                    ))}
+                                  </tbody>
+                                </table>
+                              ) : (
+                                <div style={{
+                                  padding: '40px',
+                                  textAlign: 'center',
+                                  color: 'var(--text-muted)',
+                                  fontSize: '14px',
+                                  background: 'rgba(0, 0, 0, 0.2)',
+                                  borderRadius: '0 0 8px 8px'
+                                }}>
+                                  <p style={{ margin: 0 }}>No brackets created for this event yet.</p>
+                                </div>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+
+                    {/* Events Pagination Controls */}
+                    {totalPages > 1 && (
+                      <div style={{
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'center',
+                        marginTop: '30px',
+                        padding: '20px',
+                        background: 'var(--background-secondary)',
+                        borderRadius: '8px',
+                        flexWrap: 'wrap',
+                        gap: '15px'
+                      }}>
+                        <div style={{ color: 'var(--text-secondary)', fontSize: '14px' }}>
+                          Page {currentPage} of {totalPages}
+                        </div>
+                        
+                        <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+                          <button
+                            onClick={goToPrevPage}
+                            disabled={currentPage === 1}
+                            style={{
+                              padding: '10px 16px',
+                              background: currentPage === 1 ? 'var(--text-muted)' : 'var(--primary-color)',
+                              color: 'white',
+                              border: 'none',
+                              borderRadius: '6px',
+                              cursor: currentPage === 1 ? 'not-allowed' : 'pointer',
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: '6px',
+                              fontSize: '14px',
+                              opacity: currentPage === 1 ? 0.5 : 1,
+                              transition: 'all 0.2s ease'
+                            }}
+                          >
+                            <FaChevronLeft /> Previous
+                          </button>
+
+                          {/* Page Numbers */}
+                          <div style={{ display: 'flex', gap: '5px' }}>
+                            {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                              let pageNum;
+                              if (totalPages <= 5) {
+                                pageNum = i + 1;
+                              } else if (currentPage <= 3) {
+                                pageNum = i + 1;
+                              } else if (currentPage >= totalPages - 2) {
+                                pageNum = totalPages - 4 + i;
+                              } else {
+                                pageNum = currentPage - 2 + i;
+                              }
+
+                              return (
+                                <button
+                                  key={pageNum}
+                                  onClick={() => goToPage(pageNum)}
+                                  style={{
+                                    padding: '10px 14px',
+                                    background: currentPage === pageNum ? 'var(--primary-color)' : 'var(--background-card)',
+                                    color: currentPage === pageNum ? 'white' : 'var(--text-primary)',
+                                    border: currentPage === pageNum ? 'none' : '2px solid var(--border-color)',
+                                    borderRadius: '6px',
+                                    cursor: 'pointer',
+                                    fontSize: '14px',
+                                    fontWeight: currentPage === pageNum ? '600' : '400',
+                                    minWidth: '40px',
+                                    transition: 'all 0.2s ease'
+                                  }}
+                                >
+                                  {pageNum}
+                                </button>
+                              );
+                            })}
+                          </div>
+
+                          <button
+                            onClick={goToNextPage}
+                            disabled={currentPage === totalPages}
+                            style={{
+                              padding: '10px 16px',
+                              background: currentPage === totalPages ? 'var(--text-muted)' : 'var(--primary-color)',
+                              color: 'white',
+                              border: 'none',
+                              borderRadius: '6px',
+                              cursor: currentPage === totalPages ? 'not-allowed' : 'pointer',
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: '6px',
+                              fontSize: '14px',
+                              opacity: currentPage === totalPages ? 0.5 : 1,
+                              transition: 'all 0.2s ease'
+                            }}
+                          >
+                            Next <FaChevronRight />
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                  </>
                 )}
               </div>
             )}
@@ -534,14 +761,18 @@ const [standings, setStandings] = useState([]);
     {selectedBracket.elimination_type === 'single' && (
       <CustomBracket 
         matches={bracketMatches} 
-        eliminationType={selectedBracket.elimination_type} 
+        eliminationType={selectedBracket.elimination_type}
+        selectedEvent={selectedEvent}
+        selectedBracket={selectedBracket}
       />
     )}
     
     {selectedBracket.elimination_type === 'double' && (
       <DoubleEliminationBracket 
         matches={bracketMatches} 
-        eliminationType={selectedBracket.elimination_type} 
+        eliminationType={selectedBracket.elimination_type}
+        selectedEvent={selectedEvent}
+        selectedBracket={selectedBracket}
       />
     )}
     

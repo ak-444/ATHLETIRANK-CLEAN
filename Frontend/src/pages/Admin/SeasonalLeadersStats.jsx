@@ -33,6 +33,19 @@ const SeasonalLeadersStats = ({ sidebarOpen }) => {
     return Number.isFinite(num) ? num : 0;
   };
 
+  // Calculate basketball MVP efficiency score
+  // Formula: MVP Score = PPG + RPG + APG + SPG + BPG - TOV
+  const calculateBasketballMVPScore = (player) => {
+    const ppg = safeNumber(player.ppg);
+    const rpg = safeNumber(player.rpg);
+    const apg = safeNumber(player.apg);
+    const spg = safeNumber(player.spg);
+    const bpg = safeNumber(player.bpg);
+    const tpg = safeNumber(player.tpg);
+    
+    return ppg + rpg + apg + spg + bpg - tpg;
+  };
+
   // Fetch all events on mount
   useEffect(() => {
     fetchEvents();
@@ -121,7 +134,7 @@ const SeasonalLeadersStats = ({ sidebarOpen }) => {
         efficiencyList = [...data]
           .map(player => ({
             ...player,
-            efficiencyScore: typeof player.overall_score === "number" ? player.overall_score : 0
+            efficiencyScore: calculateBasketballMVPScore(player)
           }))
           .sort((a, b) => b.efficiencyScore - a.efficiencyScore)
           .slice(0, 10);

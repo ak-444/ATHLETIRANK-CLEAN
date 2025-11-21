@@ -947,7 +947,7 @@ router.get("/events/:eventId/players-statistics", async (req, res) => {
           ROUND(
             (SUM(ps.points) + SUM(ps.rebounds) + SUM(ps.assists) + 
              SUM(ps.steals) + SUM(ps.blocks) - SUM(ps.turnovers)) / 
-            NULLIF(COUNT(DISTINCT ps.match_id), 1), 1
+            NULLIF(COUNT(DISTINCT ps.match_id), 0), 1
           ) as overall_score
         FROM player_stats ps
         JOIN players p ON ps.player_id = p.id
@@ -1105,7 +1105,7 @@ router.get("/events/:eventId/teams-statistics", async (req, res) => {
           ROUND(
             (SUM(ps.points) + SUM(ps.rebounds) + SUM(ps.assists) + 
              SUM(ps.steals) + SUM(ps.blocks) - SUM(ps.turnovers)) / 
-            NULLIF(COUNT(DISTINCT ps.match_id), 1), 1
+            NULLIF(COUNT(DISTINCT ps.match_id), 0), 1
           ) as overall_score,
           (SELECT COUNT(*) FROM matches m 
            WHERE (m.team1_id = t.id OR m.team2_id = t.id) 
@@ -1176,7 +1176,7 @@ router.get("/events/:eventId/teams-statistics", async (req, res) => {
             (SUM(ps.kills) + SUM(ps.volleyball_blocks) + SUM(ps.service_aces) + 
              SUM(ps.volleyball_assists) + SUM(ps.digs) - 
              (SUM(ps.serve_errors) + SUM(ps.attack_errors) + SUM(ps.reception_errors) + SUM(COALESCE(ps.assist_errors, 0)))) / 
-            NULLIF(COUNT(DISTINCT ps.match_id), 1), 1
+            NULLIF(COUNT(DISTINCT ps.match_id), 0), 1
           ) as overall_score,
           -- Win/Loss record
           (SELECT COUNT(*) FROM matches m 

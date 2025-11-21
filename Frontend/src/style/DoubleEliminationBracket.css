@@ -10,6 +10,9 @@
  overflow-x: hidden;  /* CHANGE to hidden */
   overflow-y: visible;  /* Changed from auto */
   width: 100%;
+  /* Isolate from parent animations to prevent connection line misalignment */
+  transform: translateZ(0);
+  will-change: auto;
 }
 
 .double-bracket {
@@ -21,6 +24,9 @@
   width: fit-content;
   padding: 20px;
   padding-bottom: 20px;
+  /* Isolate from parent animations to prevent connection line misalignment */
+  transform: translateZ(0);
+  will-change: auto;
 }
 
 /* Main Layout */
@@ -271,6 +277,69 @@
   box-shadow: 0 20px 40px rgba(0,0,0,0.35), 0 5px 15px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255, 255, 255, 0.2);
   z-index: 10;
   border-color: rgba(255, 255, 255, 0.3);
+}
+
+/* Match Score Button Container for Double Elimination */
+.double-bracket .match-score-button-container {
+  position: absolute;
+  bottom: 16px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 20;
+  pointer-events: none;
+  width: calc(100% - 40px);
+  display: flex;
+  justify-content: center;
+}
+
+.double-bracket .match-action-button {
+  pointer-events: all;
+  padding: 12px 24px;
+  border: none;
+  border-radius: 8px;
+  font-size: 1em;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  animation: double-buttonFadeIn 0.2s ease-out;
+}
+
+.double-bracket .match-action-button.score-button {
+  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+  color: white;
+  border: 2px solid rgba(59, 130, 246, 0.5);
+}
+
+.double-bracket .match-action-button.score-button:hover {
+  background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+  transform: translateY(-2px) scale(1.05);
+  box-shadow: 0 6px 20px rgba(59, 130, 246, 0.5);
+}
+
+.double-bracket .match-action-button.view-scores {
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  color: white;
+  border: 2px solid rgba(16, 185, 129, 0.5);
+}
+
+.double-bracket .match-action-button.view-scores:hover {
+  background: linear-gradient(135deg, #059669 0%, #047857 100%);
+  transform: translateY(-2px) scale(1.05);
+  box-shadow: 0 6px 20px rgba(16, 185, 129, 0.5);
+}
+
+@keyframes double-buttonFadeIn {
+  from {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
 }
 
 .double-bracket .match.completed {
@@ -567,6 +636,10 @@
   height: 100%;
   pointer-events: none;
   z-index: 0;
+  animation: none !important;
+  transform: none !important;
+  transition: none !important;
+  will-change: auto !important;
 }
 
 .double-bracket .bracket-reset-explanation {

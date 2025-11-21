@@ -1,10 +1,36 @@
 import React, { useEffect, useRef, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
 import '../style/DoubleEliminationBracket.css';
 
-const DoubleEliminationBracket = ({ matches, eliminationType = 'double' }) => {
+const DoubleEliminationBracket = ({ matches, eliminationType = 'double', selectedEvent, selectedBracket }) => {
   const bracketRef = useRef(null);
+  const navigate = useNavigate();
+  const { user } = useAuth();
   const [connectionPoints, setConnectionPoints] = useState([]);
   const [matchDisplayNumbers, setMatchDisplayNumbers] = useState({});
+  const [hoveredMatchId, setHoveredMatchId] = useState(null);
+  
+  const isStaff = user?.role === 'sports_committee';
+  
+  const handleMatchClick = (match) => {
+    if (!isStaff || !selectedEvent || !selectedBracket) return;
+    
+    sessionStorage.setItem('selectedMatchData', JSON.stringify({
+      matchId: match.id,
+      eventId: selectedEvent.id,
+      bracketId: selectedBracket.id,
+      match: match
+    }));
+    
+    sessionStorage.setItem('staffEventsContext', JSON.stringify({
+      selectedEvent: selectedEvent,
+      selectedBracket: selectedBracket,
+      bracketViewType: 'bracket'
+    }));
+    
+    navigate('/StaffDashboard/stats');
+  };
 
   useEffect(() => {
     if (!matches || matches.length === 0) return;
@@ -116,12 +142,19 @@ const DoubleEliminationBracket = ({ matches, eliminationType = 'double' }) => {
     const isResetFinal = match.round_number === 201;
     const isGrandFinal = match.round_number === 200 && match.bracket_type === 'championship';
     const matchClasses = `match ${match.status} ${isResetFinal ? 'reset-final' : ''} ${isGrandFinal ? 'grand-final' : ''}`;
+    const isCompleted = match.status === 'completed';
+    const isHovered = hoveredMatchId === match.id;
+    const showScoreButton = isStaff && isHovered && (match.status === 'scheduled' || match.status === 'ongoing');
+    const showViewButton = isStaff && isHovered && isCompleted;
     
     return (
       <div 
         key={match.id} 
         className={matchClasses}
         data-match={matchIndex}
+        onMouseEnter={() => setHoveredMatchId(match.id)}
+        onMouseLeave={() => setHoveredMatchId(null)}
+        style={{ position: 'relative' }}
       >
         <div className="match-header">
           <span className="match-id">
@@ -201,6 +234,21 @@ const DoubleEliminationBracket = ({ matches, eliminationType = 'double' }) => {
           <div className="live-indicator">
             <span className="live-dot"></span>
             LIVE MATCH
+          </div>
+        )}
+        
+        {/* Score/View Scores Button - Only visible on hover for staff */}
+        {isStaff && (showScoreButton || showViewButton) && (
+          <div className="match-score-button-container">
+            <button
+              className={`match-action-button ${isCompleted ? 'view-scores' : 'score-button'}`}
+              onClick={(e) => {
+                e.stopPropagation();
+                handleMatchClick(match);
+              }}
+            >
+              {isCompleted ? 'View Scores' : 'Score!'}
+            </button>
           </div>
         )}
       </div>
