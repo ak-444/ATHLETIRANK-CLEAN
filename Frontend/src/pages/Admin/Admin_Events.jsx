@@ -836,9 +836,14 @@ const handleSaveBracketDetails = async () => {
     // ✅ NEW: Clear matches if sport OR elimination type changed
     if (oldSport !== newSport || eliminationChanged) {
       try {
-        const clearEndpoint = editTeamModal.bracket.elimination_type === 'round_robin'
-          ? `http://localhost:5000/api/round-robin/${editTeamModal.bracket.id}/reset`
-          : `http://localhost:5000/api/brackets/${editTeamModal.bracket.id}/reset`;
+        let clearEndpoint;
+        if (oldElimination === 'round_robin') {
+          clearEndpoint = `http://localhost:5000/api/round-robin/${editTeamModal.bracket.id}/reset`;
+        } else if (oldElimination === 'round_robin_knockout') {
+          clearEndpoint = `http://localhost:5000/api/round-robin-knockout/${editTeamModal.bracket.id}/reset`;
+        } else {
+          clearEndpoint = `http://localhost:5000/api/brackets/${editTeamModal.bracket.id}/reset`;
+        }
         
         const clearRes = await fetch(clearEndpoint, { method: 'POST' });
         
@@ -863,6 +868,8 @@ const handleSaveBracketDetails = async () => {
         let generateEndpoint;
         if (newElimination === 'round_robin') {
           generateEndpoint = `http://localhost:5000/api/round-robin/${editTeamModal.bracket.id}/generate`;
+        } else if (newElimination === 'round_robin_knockout') {
+          generateEndpoint = `http://localhost:5000/api/round-robin-knockout/${editTeamModal.bracket.id}/generate`;
         } else {
           generateEndpoint = `http://localhost:5000/api/brackets/${editTeamModal.bracket.id}/generate`;
         }
@@ -916,23 +923,24 @@ const handleSaveBracketDetails = async () => {
         let matchesEndpoint;
         if (newElimination === 'round_robin') {
           matchesEndpoint = `http://localhost:5000/api/round-robin/${selectedBracket.id}/matches`;
-        } else if (newElimination === 'round_robin_knockout') {
-          matchesEndpoint = `http://localhost:5000/api/round-robin-knockout/${selectedBracket.id}/matches`;
-        } else {
-          matchesEndpoint = `http://localhost:5000/api/brackets/${selectedBracket.id}/matches`;
-        }
+         } else if (newElimination === 'round_robin_knockout') {
+      // ADD THIS CASE
+      matchesEndpoint = `http://localhost:5000/api/round-robin-knockout/${selectedBracket.id}/matches`;
+    } else {
+      matchesEndpoint = `http://localhost:5000/api/brackets/${selectedBracket.id}/matches`;
+    }
         
         const matchesRes = await fetch(matchesEndpoint);
-        if (matchesRes.ok) {
-          const updatedMatches = await matchesRes.json();
-          const visibleMatches = updatedMatches.filter(match => match.status !== 'hidden');
-          setMatches(visibleMatches);
-          setBracketMatches(visibleMatches);
-          console.log('✅ Matches refreshed:', visibleMatches.length);
-        }
-      } catch (err) {
-        console.error('Error refreshing matches:', err);
-      }
+    if (matchesRes.ok) {
+      const updatedMatches = await matchesRes.json();
+      const visibleMatches = updatedMatches.filter(match => match.status !== 'hidden');
+      setMatches(visibleMatches);
+      setBracketMatches(visibleMatches);
+      console.log('✅ Matches refreshed:', visibleMatches.length);
+    }
+  } catch (err) {
+    console.error('Error refreshing matches:', err);
+  }
       
       setSelectedBracket(prev => ({
         ...prev,
@@ -970,7 +978,9 @@ const handleSaveBracketDetails = async () => {
     try {
       let endpoint;
       if (eliminationType === 'round_robin') {
-        endpoint = `http://localhost:5000/api/roundRobin/${bracketId}/generate`;
+        endpoint = `http://localhost:5000/api/round-robin/${bracketId}/generate`;
+      } else if (eliminationType === 'round_robin_knockout') {
+        endpoint = `http://localhost:5000/api/round-robin-knockout/${bracketId}/generate`;
       } else {
         endpoint = `http://localhost:5000/api/brackets/${bracketId}/generate`;
       }
@@ -1049,6 +1059,8 @@ const toggleAwardsDisclosure = async (bracketId, currentStatus) => {
           let generateEndpoint;
           if (editTeamModal.bracket.elimination_type === 'round_robin') {
            generateEndpoint = `http://localhost:5000/api/round-robin/${editTeamModal.bracket.id}/generate`;
+          } else if (editTeamModal.bracket.elimination_type === 'round_robin_knockout') {
+            generateEndpoint = `http://localhost:5000/api/round-robin-knockout/${editTeamModal.bracket.id}/generate`;
           } else {
             generateEndpoint = `http://localhost:5000/api/brackets/${editTeamModal.bracket.id}/generate`;
           }
@@ -1081,9 +1093,14 @@ const toggleAwardsDisclosure = async (bracketId, currentStatus) => {
         }
       } else if (teams.length === 1 || teams.length === 0) {
         try {
-          const clearEndpoint = editTeamModal.bracket.elimination_type === 'round_robin'
-           ? `http://localhost:5000/api/round-robin/${editTeamModal.bracket.id}/reset`
-    : `http://localhost:5000/api/brackets/${editTeamModal.bracket.id}/reset`;
+          let clearEndpoint;
+          if (editTeamModal.bracket.elimination_type === 'round_robin') {
+            clearEndpoint = `http://localhost:5000/api/round-robin/${editTeamModal.bracket.id}/reset`;
+          } else if (editTeamModal.bracket.elimination_type === 'round_robin_knockout') {
+            clearEndpoint = `http://localhost:5000/api/round-robin-knockout/${editTeamModal.bracket.id}/reset`;
+          } else {
+            clearEndpoint = `http://localhost:5000/api/brackets/${editTeamModal.bracket.id}/reset`;
+          }
           
           await fetch(clearEndpoint, { method: 'POST' });
         } catch (err) {
@@ -1118,24 +1135,28 @@ const toggleAwardsDisclosure = async (bracketId, currentStatus) => {
           setMatches([]);
           setBracketMatches([]);
           console.log('Matches cleared - not enough teams');
-        } else {
-          // Otherwise fetch updated matches
-          let matchesEndpoint;
-          if (editTeamModal.bracket.elimination_type === 'round_robin') {
-            matchesEndpoint = `http://localhost:5000/api/round-robin/${selectedBracket.id}/matches`;
           } else {
-            matchesEndpoint = `http://localhost:5000/api/brackets/${selectedBracket.id}/matches`;
-          }
+    // Otherwise fetch updated matches
+    let matchesEndpoint;
+    if (editTeamModal.bracket.elimination_type === 'round_robin') {
+      matchesEndpoint = `http://localhost:5000/api/round-robin/${selectedBracket.id}/matches`;
+    } else if (editTeamModal.bracket.elimination_type === 'round_robin_knockout') {
+      // ADD THIS CASE
+      matchesEndpoint = `http://localhost:5000/api/round-robin-knockout/${selectedBracket.id}/matches`;
+    } else {
+      matchesEndpoint = `http://localhost:5000/api/brackets/${selectedBracket.id}/matches`;
+    }
           
-          const matchesRes = await fetch(matchesEndpoint);
-          if (matchesRes.ok) {
-            const updatedMatches = await matchesRes.json();
-            const visibleMatches = updatedMatches.filter(match => match.status !== 'hidden');
-            setMatches(visibleMatches);
-            setBracketMatches(visibleMatches);
-            console.log('Matches updated:', visibleMatches.length);
-          }
-        }
+            const matchesRes = await fetch(matchesEndpoint);
+    if (matchesRes.ok) {
+      const updatedMatches = await matchesRes.json();
+      const visibleMatches = updatedMatches.filter(match => match.status !== 'hidden');
+      setMatches(visibleMatches);
+      setBracketMatches(visibleMatches);
+      console.log('Matches updated:', visibleMatches.length);
+    }
+  }
+  
         
         setSelectedBracket(prev => ({
           ...prev,
