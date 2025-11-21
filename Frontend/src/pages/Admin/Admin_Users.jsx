@@ -98,7 +98,7 @@ const AdminUsers = ({ sidebarOpen }) => {
     });
   };
 
-  // Create new user
+  // Create new user with email notification
   const handleCreateUser = async (e) => {
     e.preventDefault();
     setError('');
@@ -138,10 +138,13 @@ const AdminUsers = ({ sidebarOpen }) => {
     try {
       const { confirmPassword, ...userData } = createUserData;
       
-      // Call admin create user endpoint
-      await API.post('/admin/users/create', userData);
+      // Call admin create user endpoint with email notification
+      await API.post('/admin/users/create', {
+        ...userData,
+        sendEmail: true // Flag to send email notification
+      });
       
-      setSuccess('User created successfully! The account is automatically approved.');
+      setSuccess('User created successfully! Account details have been sent to their email.');
       
       // Reset form
       setCreateUserData({
@@ -162,7 +165,7 @@ const AdminUsers = ({ sidebarOpen }) => {
       setShowCreateUser(false);
       fetchUsers(); // Refresh users list
       
-      setTimeout(() => setSuccess(''), 3000);
+      setTimeout(() => setSuccess(''), 5000);
     } catch (error) {
       setError(error.response?.data?.message || 'Failed to create user');
     } finally {
@@ -252,7 +255,6 @@ const AdminUsers = ({ sidebarOpen }) => {
                         </button>
                         {showSearch && (
                           <div className="search-container">
-                     
                             <input
                               type="text"
                               placeholder="Search users..."
@@ -265,7 +267,6 @@ const AdminUsers = ({ sidebarOpen }) => {
                       </div>
                     ) : (
                       <div className="search-container">
-                    
                         <input
                           type="text"
                           placeholder="Search users..."
@@ -435,7 +436,7 @@ const AdminUsers = ({ sidebarOpen }) => {
                 border: '1px solid rgba(59, 130, 246, 0.2)' 
               }}>
                 <div style={{ color: 'var(--text-primary)', fontSize: '14px', fontWeight: '600' }}>
-                  Add a new Sports Committee or admin account to the system
+                  Add a new Sports Committee or admin account to the system. Account details will be sent to their email.
                 </div>
               </div>
 
