@@ -761,7 +761,6 @@ const checkCompletedMatches = async (bracketId) => {
   }
 };
   
-  // Save bracket details
 const handleSaveBracketDetails = async () => {
   if (!editTeamModal.editingBracket.name.trim()) {
     alert('Bracket name cannot be empty');
@@ -773,6 +772,8 @@ const handleSaveBracketDetails = async () => {
     
     const oldSport = editTeamModal.bracket.sport_type;
     const newSport = editTeamModal.editingBracket.sport_type;
+    const oldElimination = editTeamModal.bracket.elimination_type;
+    const newElimination = editTeamModal.editingBracket.elimination_type;
     
     // Check for completed matches before allowing sport change
     if (oldSport !== newSport) {
@@ -800,6 +801,23 @@ const handleSaveBracketDetails = async () => {
       }
     }
     
+    // ✅ NEW: Check if elimination type changed
+    const eliminationChanged = oldElimination !== newElimination;
+    
+    if (eliminationChanged) {
+      const hasCompleted = await checkCompletedMatches(editTeamModal.bracket.id);
+      if (hasCompleted) {
+        alert('Cannot change elimination type after matches have been completed!');
+        setEditTeamModal(prev => ({ ...prev, loading: false }));
+        return;
+      }
+      
+      if (!confirm(`Changing the elimination type will reset all matches. Continue?`)) {
+        setEditTeamModal(prev => ({ ...prev, loading: false }));
+        return;
+      }
+    }
+    
     // Update bracket details
     const res = await fetch(`http://localhost:5000/api/brackets/${editTeamModal.bracket.id}`, {
       method: 'PUT',
@@ -815,8 +833,8 @@ const handleSaveBracketDetails = async () => {
       throw new Error('Failed to update bracket');
     }
 
-    // Clear all matches after sport change
-    if (oldSport !== newSport) {
+    // ✅ NEW: Clear matches if sport OR elimination type changed
+    if (oldSport !== newSport || eliminationChanged) {
       try {
         const clearEndpoint = editTeamModal.bracket.elimination_type === 'round_robin'
           ? `http://localhost:5000/api/round-robin/${editTeamModal.bracket.id}/reset`
@@ -828,14 +846,41 @@ const handleSaveBracketDetails = async () => {
           console.error('Failed to clear matches');
         }
         
-        // IMPORTANT: Clear matches in the main view immediately
+        // Clear matches in the main view immediately
         if (selectedBracket?.id === editTeamModal.bracket.id) {
           setMatches([]);
           setBracketMatches([]);
-          console.log('✅ Matches cleared after sport change');
+          console.log('✅ Matches cleared after elimination type change');
         }
       } catch (err) {
         console.error('Error clearing matches:', err);
+      }
+    }
+
+    // ✅ NEW: Regenerate bracket if elimination changed and teams exist
+    if (eliminationChanged && editTeamModal.teams.length >= 2) {
+      try {
+        let generateEndpoint;
+        if (newElimination === 'round_robin') {
+          generateEndpoint = `http://localhost:5000/api/round-robin/${editTeamModal.bracket.id}/generate`;
+        } else {
+          generateEndpoint = `http://localhost:5000/api/brackets/${editTeamModal.bracket.id}/generate`;
+        }
+        
+        const generateRes = await fetch(generateEndpoint, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' }
+        });
+
+        if (!generateRes.ok) {
+          const error = await generateRes.json();
+          throw new Error(error.error || 'Failed to regenerate bracket');
+        }
+        
+        console.log('✅ Bracket regenerated with new elimination type');
+      } catch (err) {
+        console.error('Error regenerating bracket:', err);
+        alert('Bracket details updated, but failed to regenerate matches: ' + err.message);
       }
     }
 
@@ -865,8 +910,30 @@ const handleSaveBracketDetails = async () => {
       })
     );
     
-    // Update selected bracket if this is the current one
+    // ✅ NEW: Refresh matches in the main view
     if (selectedBracket && selectedBracket.id === editTeamModal.bracket.id) {
+      try {
+        let matchesEndpoint;
+        if (newElimination === 'round_robin') {
+          matchesEndpoint = `http://localhost:5000/api/round-robin/${selectedBracket.id}/matches`;
+        } else if (newElimination === 'round_robin_knockout') {
+          matchesEndpoint = `http://localhost:5000/api/round-robin-knockout/${selectedBracket.id}/matches`;
+        } else {
+          matchesEndpoint = `http://localhost:5000/api/brackets/${selectedBracket.id}/matches`;
+        }
+        
+        const matchesRes = await fetch(matchesEndpoint);
+        if (matchesRes.ok) {
+          const updatedMatches = await matchesRes.json();
+          const visibleMatches = updatedMatches.filter(match => match.status !== 'hidden');
+          setMatches(visibleMatches);
+          setBracketMatches(visibleMatches);
+          console.log('✅ Matches refreshed:', visibleMatches.length);
+        }
+      } catch (err) {
+        console.error('Error refreshing matches:', err);
+      }
+      
       setSelectedBracket(prev => ({
         ...prev,
         name: editTeamModal.editingBracket.name,
@@ -887,7 +954,7 @@ const handleSaveBracketDetails = async () => {
       teams: teamsWithPlayers,
       availableTeams: availableTeams,
       loading: false,
-      activeModalTab: 'teams' // Switch to teams tab after saving
+      activeModalTab: 'teams'
     }));
     
     alert('Bracket updated successfully!');
