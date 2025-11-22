@@ -1,8 +1,108 @@
 /* UserStatsPage.css */
+/* Remove padding for container-3 (Player Statistics) to match Team Statistics */
+.container-3 .container-content {
+  padding: 0;
+}
 
+.container-3 .stats-table-container {
+  padding: 0;
+}
+
+/* Make Player Statistics table columns consistent */
+.container-3 .stats-table th:nth-child(1),
+.container-3 .stats-table td:nth-child(1) {
+  width: 100px; /* RANK column width */
+}
+
+.container-3 .stats-table th:nth-child(2),
+.container-3 .stats-table td:nth-child(2) {
+  width: 200px; /* PLAYER column width */
+  min-width: 200px;
+}
+
+.container-3 .stats-table th:nth-child(3),
+.container-3 .stats-table td:nth-child(3) {
+  width: 250px; /* TEAM column width */
+  min-width: 250px;
+}
+
+/* Adjust rank badge size */
+.container-3 .stats-rank-badge {
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
 /* Team Standings Section Styling */
+/* Make Team Standings columns match Team Statistics width */
+.stats-standings-container .stats-table th:nth-child(1),
+.stats-standings-container .stats-table td:nth-child(1) {
+  width: 100px; /* RANK column */
+}
 
+.stats-standings-container .stats-table th:nth-child(2),
+.stats-standings-container .stats-table td:nth-child(2) {
+  width: 250px; /* TEAM column */
+  min-width: 250px;
+}
 
+.stats-standings-container .stats-table th:nth-child(3),
+.stats-standings-container .stats-table td:nth-child(3),
+.stats-standings-container .stats-table th:nth-child(4),
+.stats-standings-container .stats-table td:nth-child(4) {
+  width: 80px; /* W and L columns */
+  text-align: center;
+}
+
+.stats-standings-container .stats-table th:nth-child(5),
+.stats-standings-container .stats-table td:nth-child(5),
+.stats-standings-container .stats-table th:nth-child(6),
+.stats-standings-container .stats-table td:nth-child(6),
+.stats-standings-container .stats-table th:nth-child(7),
+.stats-standings-container .stats-table td:nth-child(7),
+.stats-standings-container .stats-table th:nth-child(8),
+.stats-standings-container .stats-table td:nth-child(8) {
+  width: 100px; /* PF, PA, DIFF, WIN% columns */
+  text-align: center;
+}
+
+/* Adjust rank badge size to match */
+.stats-standings-container .stats-rank-badge {
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.container-2 .container-content {
+  padding: 0;
+}
+
+.container-2 .stats-table-container {
+  padding: 0;
+}
+
+/* Make Team Statistics table columns match Team Standings */
+.container-2 .stats-table th:nth-child(1),
+.container-2 .stats-table td:nth-child(1) {
+  width: 100px; /* RANK column width */
+}
+
+.container-2 .stats-table th:nth-child(2),
+.container-2 .stats-table td:nth-child(2) {
+  width: 250px; /* TEAM column width */
+  min-width: 250px;
+}
+
+/* Adjust rank badge size if needed */
+.container-2 .stats-rank-badge {
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
 .stats-section-divider {
   margin: 3rem 0 2rem 0;
   border-top: 1px solid rgba(255, 255, 255, 0.1);
@@ -39,105 +139,29 @@
 
 /* Container Content */
 .stats-standings-container .container-content {
-  padding: 1.5rem;
+  padding: 0;
 }
 
 .stats-standings-container .stats-table-container {
   max-height: 400px;
   overflow-y: auto;
-}
-
-.stats-standings-container .stats-table {
-  font-size: 0.85rem;
-}
-
-.stats-standings-container .stats-table th {
-  padding: 0.6rem 0.8rem;
-  font-size: 0.8rem;
-  background: var(--background-secondary);
-  color: var(--text-secondary);
-  font-weight: 500;
-  position: sticky;
-  top: 0;
-}
-
-.stats-standings-container .stats-table td {
-  padding: 0.5rem 0.8rem;
-  font-size: 0.85rem;
-}
-
-/* Keep medal and podium styles as they are unique to standings */
-.awards_standings_medal {
-  font-size: 18px;
-  margin-right: 4px;
-}
-
-.awards_standings_podium_1 {
-  background: rgba(255, 215, 0, 0.08) !important;
-  border-left: 3px solid #ffd700;
-}
-
-.awards_standings_podium_2 {
-  background: rgba(192, 192, 192, 0.08) !important;
-  border-left: 3px solid #c0c0c0;
-}
-
-.awards_standings_podium_3 {
-  background: rgba(205, 127, 50, 0.08) !important;
-  border-left: 3px solid #cd7f32;
-}
-/* Team Standings Section - Consistent with Player/Team Stats */
-.stats-standings-container {
-  background: var(--background-card);
-  border: 1px solid var(--border-color);
-  border-radius: var(--border-radius-lg);
-  box-shadow: var(--shadow-light);
-  transition: var(--transition);
-  width: 100%;
-  margin-bottom: 1.5rem;
-}
-
-.stats-standings-container .stats-section-header {
-  background: var(--background-secondary);
-  padding: 1rem 1.5rem;
-  border-bottom: 1px solid var(--border-color);
-}
-
-.stats-standings-container .stats-section-title {
-  font-size: 1.2rem;
-  font-weight: 600;
-  color: var(--text-primary);
-  margin: 0 0 0.5rem 0;
-}
-
-.stats-standings-container .stats-section-subtitle {
-  font-size: 0.85rem;
-  color: var(--text-secondary);
-  margin: 0;
-  line-height: 1.4;
-}
-
-.stats-standings-container .stats-table-container {
   padding: 0;
 }
 
 .stats-standings-container .stats-table {
-  margin: 0;
+  table-layout: auto; /* Allow natural column sizing */
+  width: 100%;
 }
-
-.stats-standings-container .stats-table thead th {
-  background: var(--background-secondary);
-  color: var(--text-secondary);
-  font-weight: 500;
-  font-size: 0.8rem;
-  padding: 0.6rem 0.8rem;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
+.stats-standings-container .stats-table th {
+  padding: 0.75rem 1rem !important; /* Match Team Statistics */
+  font-size: 0.9rem !important;
+  font-weight: 600 !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.5px !important;
 }
-
-.stats-standings-container .stats-table tbody td {
-  padding: 0.75rem 1rem;
-  font-size: 0.85rem;
+.stats-standings-container .stats-table td {
+  padding: 0.75rem 1rem !important; /* Match Team Statistics */
+  font-size: 0.95rem !important;
 }
 
 /* Keep medal and podium styles as they are unique to standings */
@@ -161,27 +185,6 @@
   border-left: 3px solid #cd7f32;
 }
 
-/* Medal badges for top 3 */
-.awards_standings_medal {
-  font-size: 18px;
-  margin-right: 4px;
-}
-
-/* Podium row highlighting */
-.awards_standings_podium_1 {
-  background: rgba(255, 215, 0, 0.08) !important;
-  border-left: 3px solid #ffd700;
-}
-
-.awards_standings_podium_2 {
-  background: rgba(192, 192, 192, 0.08) !important;
-  border-left: 3px solid #c0c0c0;
-}
-
-.awards_standings_podium_3 {
-  background: rgba(205, 127, 50, 0.08) !important;
-  border-left: 3px solid #cd7f32;
-}
 .stats-section-divider {
   margin: 3rem 0 2rem 0;
   border-top: 2px solid var(--border-color);
@@ -1055,14 +1058,6 @@
   font-weight: 600 !important;
 }
 
-/* Team Standings - Keep current styling */
-.stats-standings-container .stats-table th {
-  padding: 0.75rem 1rem;
-  font-size: 0.9rem;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-}
 
 .stats-standings-container .stats-table td {
   padding: 0.75rem 1rem;
@@ -1070,10 +1065,9 @@
 }
 
 .stats-standings-container .stats-table td.stats-team-name strong {
-  font-size: 0.95rem;
-  font-weight: 600;
+  font-size: 0.95rem !important;
+  font-weight: 600 !important;
 }
-
 /* Ensure all table cells maintain consistent font size */
 .container-3 .stats-table-container .stats-table td {
   font-size: 0.85rem !important;

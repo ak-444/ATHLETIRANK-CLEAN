@@ -1030,10 +1030,10 @@ const loadRecentBracketData = async (event, bracket) => {
       <table className="stats-table">
         <thead>
           <tr>
-            <th style={{ width: '80px' }}>Rank</th>
-            <th>Team</th>
-            <th style={{ width: '80px', textAlign: 'center' }}>W</th>
-            <th style={{ width: '80px', textAlign: 'center' }}>L</th>
+            <th>Rank</th>
+<th>Team</th>
+<th style={{ textAlign: 'center' }}>W</th>
+<th style={{ textAlign: 'center' }}>L</th>
             {selectedRecentBracket?.sport_type === "basketball" ? (
               <>
                 <th style={{ width: '80px', textAlign: 'center' }}>PF</th>
