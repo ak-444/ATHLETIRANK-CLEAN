@@ -43,27 +43,34 @@ const [customDateRange, setCustomDateRange] = useState({ start: '', end: '' });
   };
 
   const formatRoundDisplay = (schedule) => {
-    if (!schedule || !schedule.round_number) return "Unknown Round";
-    
-    const roundNum = schedule.round_number;
-    const bracketType = schedule.bracket_type;
-    
-    if (roundNum === 200) return 'Grand Final';
-    if (roundNum === 201) return 'Bracket Reset';
-    if (roundNum >= 200 && bracketType === 'championship') {
-      return `Championship Round ${roundNum - 199}`;
-    }
-    
-    if (bracketType === 'loser' || (roundNum >= 101 && roundNum < 200)) {
-      return `LB Round ${roundNum - 100}`;
-    }
-    
-    if (bracketType === 'winner' || roundNum < 100) {
-      return `Round ${roundNum}`;
-    }
-    
+  if (!schedule || !schedule.round_number) return "Unknown Round";
+  
+  const roundNum = schedule.round_number;
+  const bracketType = schedule.bracket_type;
+  
+  // Handle Round Robin + Knockout specific bracket types
+  if (bracketType === 'knockout_semifinal') return 'Semi-Finals';
+  if (bracketType === 'knockout_final') return 'Championship';
+  if (bracketType === 'knockout_third_place') return '3rd Place Match';
+  if (bracketType === 'round_robin') return `Round ${roundNum}`;
+  
+  // Handle Double Elimination specific rounds
+  if (roundNum === 200) return 'Grand Final';
+  if (roundNum === 201) return 'Bracket Reset';
+  if (roundNum >= 200 && bracketType === 'championship') {
+    return `Championship Round ${roundNum - 199}`;
+  }
+  
+  if (bracketType === 'loser' || (roundNum >= 101 && roundNum < 200)) {
+    return `LB Round ${roundNum - 100}`;
+  }
+  
+  if (bracketType === 'winner' || roundNum < 100) {
     return `Round ${roundNum}`;
-  };
+  }
+  
+  return `Round ${roundNum}`;
+};
 
   const formatScheduleDateTime = (date, time) => {
     if (!date || !time || date === 'Date TBD' || time === 'Time TBD') return {
@@ -289,15 +296,35 @@ const [customDateRange, setCustomDateRange] = useState({ start: '', end: '' });
 };
       });
       
-      const sortedMatches = enhancedMatches.sort((a, b) => {
-        try {
-          const dateA = a.date && a.time ? new Date(`${a.date} ${a.time}`) : new Date(0);
-          const dateB = b.date && b.time ? new Date(`${b.date} ${b.time}`) : new Date(0);
-          return dateB - dateA;
-        } catch (error) {
-          return 0;
-        }
-      });
+   const sortedMatches = enhancedMatches.sort((a, b) => {
+  // Define bracket type order for Round Robin + Knockout (HIGHER = SHOWN FIRST)
+  const bracketTypeOrder = {
+    'knockout_final': 4,           // Championship shown first
+    'knockout_third_place': 3,     // 3rd place second
+    'knockout_semifinal': 2,       // Semi-finals third
+    'round_robin': 1,              // Round robin last
+    'championship': 4,             // Double elim championship
+    'loser': 2,                    // Loser bracket
+    'winner': 1                    // Winner bracket
+  };
+  
+  // Get bracket type priority
+  const aTypeOrder = bracketTypeOrder[a.bracket_type] || 0;
+  const bTypeOrder = bracketTypeOrder[b.bracket_type] || 0;
+  
+  // First sort by bracket type (DESCENDING - higher priority first)
+  if (aTypeOrder !== bTypeOrder) {
+    return bTypeOrder - aTypeOrder;  // REVERSED
+  }
+  
+  // Then sort by round number (DESCENDING - higher rounds first)
+  if (a.round_number !== b.round_number) {
+    return b.round_number - a.round_number;  // REVERSED
+  }
+  
+  // Finally sort by match id for consistent ordering
+  return b.id - a.id;  // REVERSED
+});
       
       setRecentMatches(sortedMatches || []);
       setCurrentPage(1);

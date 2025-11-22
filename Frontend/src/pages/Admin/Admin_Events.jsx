@@ -202,8 +202,11 @@ const fetchEvents = async () => {
       })
     );
     
+    // ✅ ADD THIS: Sort events by ID descending (newest first)
+    const sortedEvents = eventsWithBrackets.sort((a, b) => b.id - a.id);
+    
     // Use a Set to remove duplicates based on event ID
-    const uniqueEvents = eventsWithBrackets.reduce((acc, event) => {
+    const uniqueEvents = sortedEvents.reduce((acc, event) => {
       const existingIndex = acc.findIndex(e => e.id === event.id);
       if (existingIndex === -1) {
         acc.push(event);

@@ -218,37 +218,39 @@ Jane Smith,12,${formData.sport === 'Basketball' ? 'Shooting Guard' : 'Outside Hi
   };
 
   // Fetch teams with brackets
-  useEffect(() => {
-    const fetchTeams = async () => {
-      setLoading(true);
-      try {
-        const res = await fetch("http://localhost:5000/api/teams");
-        const data = await res.json();
-        
-        // Fetch bracket information for each team
-        const teamsWithBrackets = await Promise.all(
-          data.map(async (team) => {
-            try {
-              const bracketRes = await fetch(`http://localhost:5000/api/teams/${team.id}/brackets`);
-              const brackets = await bracketRes.json();
-              return { ...team, brackets: brackets || [] };
-            } catch (err) {
-              console.error(`Error fetching brackets for team ${team.id}:`, err);
-              return { ...team, brackets: [] };
-            }
-          })
-        );
-        
-        setTeams(teamsWithBrackets);
-      } catch (err) {
-        console.error("Error fetching teams:", err);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchTeams();
-  }, []);
-
+useEffect(() => {
+  const fetchTeams = async () => {
+    setLoading(true);
+    try {
+      const res = await fetch("http://localhost:5000/api/teams");
+      const data = await res.json();
+      
+      // Fetch bracket information for each team
+      const teamsWithBrackets = await Promise.all(
+        data.map(async (team) => {
+          try {
+            const bracketRes = await fetch(`http://localhost:5000/api/teams/${team.id}/brackets`);
+            const brackets = await bracketRes.json();
+            return { ...team, brackets: brackets || [] };
+          } catch (err) {
+            console.error(`Error fetching brackets for team ${team.id}:`, err);
+            return { ...team, brackets: [] };
+          }
+        })
+      );
+      
+      // ✅ ADD THIS: Sort teams by ID descending (newest first)
+      const sortedTeams = teamsWithBrackets.sort((a, b) => b.id - a.id);
+      
+      setTeams(sortedTeams);
+    } catch (err) {
+      console.error("Error fetching teams:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
+  fetchTeams();
+}, []);
   // Filter teams based on search term and sport filter
   const filteredTeams = teams.filter(team => {
     const matchesSearch = team.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -482,18 +484,19 @@ Jane Smith,12,${formData.sport === 'Basketball' ? 'Shooting Guard' : 'Outside Hi
       });
       
       if (res.ok) {
-        const newTeam = await res.json();
-        setTeams(prev => [...prev, newTeam]);
-        setFormData({ teamName: "", sport: "", players: [] });
-        setActiveTab("view");
-        setValidationError("Team created successfully!");
-        setShowValidationMessage(true);
-        
-        setTimeout(() => {
-          setValidationError("");
-          setShowValidationMessage(false);
-        }, 3000);
-      } else {
+  const newTeam = await res.json();
+  // ✅ CHANGE THIS: Add new team at the beginning
+  setTeams(prev => [newTeam, ...prev]); // Changed from [...prev, newTeam]
+  setFormData({ teamName: "", sport: "", players: [] });
+  setActiveTab("view");
+  setValidationError("Team created successfully!");
+  setShowValidationMessage(true);
+  
+  setTimeout(() => {
+    setValidationError("");
+    setShowValidationMessage(false);
+  }, 3000);
+} else {
         setValidationError("Error creating team. Please try again.");
         setShowValidationMessage(true);
       }

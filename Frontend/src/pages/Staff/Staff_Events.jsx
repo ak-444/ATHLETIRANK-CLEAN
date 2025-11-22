@@ -778,14 +778,18 @@ const [standings, setStandings] = useState([]);
     
     {selectedBracket.elimination_type === 'round_robin' && (
       <RoundRobinBracketDisplay 
-        matches={bracketMatches} 
+        matches={bracketMatches}
+        selectedEvent={selectedEvent}
+        selectedBracket={selectedBracket}
       />
     )}
-    
+
     {selectedBracket.elimination_type === 'round_robin_knockout' && (
       <RoundRobinKnockoutBracket 
         matches={bracketMatches}
         standings={standings}
+        selectedEvent={selectedEvent}
+        selectedBracket={selectedBracket}
       />
     )}
   </>

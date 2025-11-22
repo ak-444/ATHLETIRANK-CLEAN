@@ -832,8 +832,7 @@ const loadRecentBracketData = async (event, bracket) => {
         ))}
       </select>
     </div>
-
-    {tournamentPeriod && (
+{tournamentPeriod && selectedRecentBracket && (  // ADD selectedRecentBracket check
   <div className="stats-filter-matches-group" style={{ flex: '1', minWidth: '250px' }}>
     <div className="stats-filter-matches-label" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--text-secondary)', fontSize: '0.85rem', fontWeight: '500', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
       <FaCalendarAlt className="stats-filter-matches-label-icon" style={{ fontSize: '0.9rem', color: 'var(--primary-color)' }} />
@@ -1021,6 +1020,92 @@ const loadRecentBracketData = async (event, bracket) => {
   </div>
 </div>
 
+{/* Team Standings Section - Remove the divider, use container pattern */}
+<div className="recent-container stats-standings-container">
+  <div className="container-header">
+    <h3>Team Standings</h3>
+  </div>
+  <div className="container-content">
+    <div className="stats-table-container">
+      <table className="stats-table">
+        <thead>
+          <tr>
+            <th style={{ width: '80px' }}>Rank</th>
+            <th>Team</th>
+            <th style={{ width: '80px', textAlign: 'center' }}>W</th>
+            <th style={{ width: '80px', textAlign: 'center' }}>L</th>
+            {selectedRecentBracket?.sport_type === "basketball" ? (
+              <>
+                <th style={{ width: '80px', textAlign: 'center' }}>PF</th>
+                <th style={{ width: '80px', textAlign: 'center' }}>PA</th>
+                <th style={{ width: '100px', textAlign: 'center' }}>Diff</th>
+              </>
+            ) : (
+              <>
+                <th style={{ width: '80px', textAlign: 'center' }}>SF</th>
+                <th style={{ width: '80px', textAlign: 'center' }}>SA</th>
+                <th style={{ width: '100px', textAlign: 'center' }}>Ratio</th>
+              </>
+            )}
+            <th style={{ width: '100px', textAlign: 'center' }}>Win%</th>
+          </tr>
+        </thead>
+        <tbody>
+          {filteredStandings.map((team, index) => (
+            <tr key={index} className={team.position <= 3 ? `awards_standings_podium_${team.position}` : ""}>
+              <td className="stats-rank-cell">
+                <div className={`stats-rank-badge ${
+                  team.position === 1 ? 'stats-rank-1' : 
+                  team.position === 2 ? 'stats-rank-2' :
+                  team.position === 3 ? 'stats-rank-3' : 'stats-rank-other'
+                }`}>
+                  {team.position === 1 && <span className="awards_standings_medal">🥇</span>}
+                  {team.position === 2 && <span className="awards_standings_medal">🥈</span>}
+                  {team.position === 3 && <span className="awards_standings_medal">🥉</span>}
+                  {team.position > 3 && team.position}
+                </div>
+              </td>
+              <td className="stats-team-name">
+                <strong>{team.team || 'Unknown Team'}</strong>
+              </td>
+              <td style={{ textAlign: 'center', fontWeight: '600' }}>{team.wins || 0}</td>
+              <td style={{ textAlign: 'center' }}>{team.losses || 0}</td>
+              {selectedRecentBracket?.sport_type === "basketball" ? (
+                <>
+                  <td style={{ textAlign: 'center' }}>{team.points_for || 0}</td>
+                  <td style={{ textAlign: 'center' }}>{team.points_against || 0}</td>
+                  <td style={{ 
+                    textAlign: 'center', 
+                    fontWeight: '600',
+                    color: String(team.point_diff || 0).startsWith('+') ? '#10b981' : 
+                           String(team.point_diff || 0).startsWith('-') ? '#ef4444' : '#94a3b8'
+                  }}>
+                    {team.point_diff || 0}
+                  </td>
+                </>
+              ) : (
+                <>
+                  <td style={{ textAlign: 'center' }}>{team.sets_for || 0}</td>
+                  <td style={{ textAlign: 'center' }}>{team.sets_against || 0}</td>
+                  <td style={{ textAlign: 'center' }}>{team.set_ratio || 0}</td>
+                </>
+              )}
+              <td style={{ textAlign: 'center', fontWeight: '700', color: '#3b82f6' }}>
+                {team.win_percentage || '0.0%'}
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+
+    {filteredStandings.length === 0 && (
+      <div className="empty-state">
+        <p>No standings data available for this tournament.</p>
+      </div>
+    )}
+  </div>
+</div>
           {/* Container 3: Player Stats */}
          <div className="recent-container container-3">
   <div className="container-header">

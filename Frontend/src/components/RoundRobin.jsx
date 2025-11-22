@@ -1,6 +1,33 @@
-import React from 'react';
+import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
 
-export default function RoundRobinBracketDisplay({ matches = [] }) {
+export default function RoundRobinBracketDisplay({ matches = [], selectedEvent, selectedBracket }) {
+  const navigate = useNavigate();
+  const { user } = useAuth();
+  const [hoveredMatchId, setHoveredMatchId] = useState(null);
+  
+  const isStaff = user?.role === 'sports_committee';
+
+  const handleMatchClick = (match) => {
+    if (!isStaff || !selectedEvent || !selectedBracket) return;
+    
+    sessionStorage.setItem('selectedMatchData', JSON.stringify({
+      matchId: match.id,
+      eventId: selectedEvent.id,
+      bracketId: selectedBracket.id,
+      match: match
+    }));
+    
+    sessionStorage.setItem('staffEventsContext', JSON.stringify({
+      selectedEvent: selectedEvent,
+      selectedBracket: selectedBracket,
+      bracketViewType: 'bracket'
+    }));
+    
+    navigate('/StaffDashboard/stats');
+  };
+
   // If no matches provided, show empty state
   if (!matches || matches.length === 0) {
     return (
@@ -178,11 +205,16 @@ export default function RoundRobinBracketDisplay({ matches = [] }) {
                       const team2Won = match.winner_id === match.team2_id;
                       const isDraw = isCompleted && !match.winner_id && match.score_team1 === match.score_team2;
                       // Calculate cumulative match number across all rounds
-let matchesBeforeThisRound = 0;
-for (let i = 0; i < roundIndex; i++) {
-  matchesBeforeThisRound += matchesByRound[rounds[i]].length;
-}
-const displayMatchNumber = matchesBeforeThisRound + matchIndex + 1;
+                      let matchesBeforeThisRound = 0;
+                      for (let i = 0; i < roundIndex; i++) {
+                        matchesBeforeThisRound += matchesByRound[rounds[i]].length;
+                      }
+                      const displayMatchNumber = matchesBeforeThisRound + matchIndex + 1;
+
+                      // Hover state variables
+                      const isHovered = hoveredMatchId === match.id;
+                      const showScoreButton = isStaff && isHovered && (match.status === 'scheduled' || match.status === 'ongoing');
+                      const showViewButton = isStaff && isHovered && isCompleted;
 
                       return (
                         <div key={match.id} style={{
@@ -194,13 +226,16 @@ const displayMatchNumber = matchesBeforeThisRound + matchIndex + 1;
                           flexShrink: 0,
                           boxShadow: '0 10px 25px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.1)',
                           transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-                          backdropFilter: 'blur(8px)'
+                          backdropFilter: 'blur(8px)',
+                          position: 'relative'
                         }}
                         onMouseEnter={(e) => {
+                          setHoveredMatchId(match.id);
                           e.currentTarget.style.transform = 'translateY(-4px) scale(1.02)';
                           e.currentTarget.style.boxShadow = '0 20px 40px rgba(0,0,0,0.35), 0 5px 15px rgba(0,0,0,0.2)';
                         }}
                         onMouseLeave={(e) => {
+                          setHoveredMatchId(null);
                           e.currentTarget.style.transform = 'translateY(0) scale(1)';
                           e.currentTarget.style.boxShadow = '0 10px 25px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.1)';
                         }}>
@@ -405,6 +440,61 @@ const displayMatchNumber = matchesBeforeThisRound + matchIndex + 1;
                               </span>
                             </div>
                           )}
+
+                          {/* Score/View Scores Button - Only visible on hover for staff */}
+                          {isStaff && (showScoreButton || showViewButton) && (
+                            <div style={{
+                              position: 'absolute',
+                              bottom: '16px',
+                              left: '50%',
+                              transform: 'translateX(-50%)',
+                              zIndex: 20,
+                              pointerEvents: 'none',
+                              width: 'calc(100% - 40px)',
+                              display: 'flex',
+                              justifyContent: 'center'
+                            }}>
+                              <button
+                                style={{
+                                  pointerEvents: 'all',
+                                  padding: '12px 24px',
+                                  border: 'none',
+                                  borderRadius: '8px',
+                                  fontSize: '1em',
+                                  fontWeight: '700',
+                                  cursor: 'pointer',
+                                  transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                                  boxShadow: '0 4px 12px rgba(0, 0, 0, 0.4)',
+                                  textTransform: 'uppercase',
+                                  letterSpacing: '0.5px',
+                                  animation: 'buttonFadeIn 0.2s ease-out',
+                                  background: isCompleted 
+                                    ? 'linear-gradient(135deg, #10b981 0%, #059669 100%)'
+                                    : 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)',
+                                  color: 'white',
+                                  border: isCompleted 
+                                    ? '2px solid rgba(16, 185, 129, 0.5)'
+                                    : '2px solid rgba(59, 130, 246, 0.5)'
+                                }}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleMatchClick(match);
+                                }}
+                                onMouseEnter={(e) => {
+                                  e.currentTarget.style.transform = 'translateY(-2px) scale(1.05)';
+                                  e.currentTarget.style.boxShadow = isCompleted
+                                    ? '0 6px 20px rgba(16, 185, 129, 0.5)'
+                                    : '0 6px 20px rgba(59, 130, 246, 0.5)';
+                                }}
+                                onMouseLeave={(e) => {
+                                  e.currentTarget.style.transform = 'translateY(0) scale(1)';
+                                  e.currentTarget.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.4)';
+                                }}
+                              >
+                                {isCompleted ? 'View Scores' : 'Score!'}
+                              </button>
+                            </div>
+                          )}
                         </div>
                       );
                     })}
@@ -423,6 +513,16 @@ const displayMatchNumber = matchesBeforeThisRound + matchIndex + 1;
           }
           50% {
             opacity: 0.5;
+          }
+        }
+        @keyframes buttonFadeIn {
+          from {
+            opacity: 0;
+            transform: scale(0.9);
+          }
+          to {
+            opacity: 1;
+            transform: scale(1);
           }
         }
       `}</style>
