@@ -1276,7 +1276,7 @@ const loadRecentBracketData = async (event, bracket) => {
             </button>
           </div>
           <div className="header-center">
-            <h1><FaChartLine className="header-icon" /> Team Statistics</h1>
+            <h1><FaChartLine className="header-icon" /> Statistics</h1>
             <p>Explore team performance and player statistics</p>
           </div>
         </div>
