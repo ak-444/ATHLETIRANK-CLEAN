@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { FaPlus, FaEdit, FaTrash, FaSave, FaTimes, FaEye, FaChevronLeft, FaChevronRight, FaSearch } from "react-icons/fa";
+import Papa from "papaparse";
 import "../../style/Admin_TeamPage.css";
 
 const TeamsPage = ({ sidebarOpen }) => {
@@ -15,6 +16,10 @@ const TeamsPage = ({ sidebarOpen }) => {
   const [editingTeamName, setEditingTeamName] = useState(null);
   const [editingPlayer, setEditingPlayer] = useState(null);
   
+  // CSV Import states
+  const [importingCSV, setImportingCSV] = useState(false);
+  const fileInputRef = React.useRef(null);
+
   // Search and filter states
   const [searchTerm, setSearchTerm] = useState("");
   const [sportFilter, setSportFilter] = useState("all");
@@ -27,6 +32,105 @@ const TeamsPage = ({ sidebarOpen }) => {
   // Pagination states
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
+
+  // CSV Import Handler
+  const handleCSVImport = async (event) => {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    if (!formData.sport) {
+      setValidationError("Please select a sport first before importing players.");
+      event.target.value = '';
+      return;
+    }
+
+    setImportingCSV(true);
+    setValidationError("");
+
+    try {
+      const text = await file.text();
+      
+      Papa.parse(text, {
+        header: true,
+        skipEmptyLines: true,
+        transformHeader: (header) => {
+          const normalized = header.trim().toLowerCase();
+          if (normalized.includes('player') && normalized.includes('name')) return 'Player Name';
+          if (normalized.includes('jersey') && normalized.includes('number')) return 'Jersey Number';
+          if (normalized.includes('position')) return 'Position';
+          return header;
+        },
+        complete: (results) => {
+          const data = results.data;
+          
+          if (data.length === 0) {
+            setValidationError("CSV file is empty or invalid.");
+            setImportingCSV(false);
+            return;
+          }
+
+          const importedPlayers = data.slice(0, 15).map(row => {
+            const playerName = (row['Player Name'] || row['player name'] || row['name'] || '').trim();
+            const jerseyNumber = (row['Jersey Number'] || row['jersey number'] || row['number'] || '').toString().trim();
+            const position = (row['Position'] || row['position'] || '').trim();
+
+            return {
+              name: playerName,
+              jerseyNumber: jerseyNumber,
+              position: position
+            };
+          });
+
+          const validImports = importedPlayers.filter(p => p.name || p.jerseyNumber || p.position);
+          
+          if (validImports.length === 0) {
+            setValidationError("No valid player data found in CSV. Please check the file format.");
+            setImportingCSV(false);
+            return;
+          }
+
+          while (importedPlayers.length < 12) {
+            importedPlayers.push({ name: "", position: "", jerseyNumber: "" });
+          }
+
+          setFormData(prev => ({
+            ...prev,
+            players: importedPlayers
+          }));
+
+          setValidationError(`Successfully imported ${validImports.length} player(s) from CSV.`);
+          setImportingCSV(false);
+          event.target.value = '';
+        },
+        error: (error) => {
+          setValidationError(`Error parsing CSV: ${error.message}`);
+          setImportingCSV(false);
+          event.target.value = '';
+        }
+      });
+    } catch (err) {
+      setValidationError(`Error reading file: ${err.message}`);
+      setImportingCSV(false);
+      event.target.value = '';
+    }
+  };
+
+  // Download CSV Template
+  const handleDownloadTemplate = () => {
+    const template = `Player Name,Jersey Number,Position
+John Doe,23,${formData.sport === 'Basketball' ? 'Point Guard' : 'Setter'}
+Jane Smith,12,${formData.sport === 'Basketball' ? 'Shooting Guard' : 'Outside Hitter'}`;
+    
+    const blob = new Blob([template], { type: 'text/csv' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `players_template_${formData.sport.toLowerCase()}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    window.URL.revokeObjectURL(url);
+  };
 
   // Check for stored sport filter on component mount
   useEffect(() => {
@@ -241,6 +345,7 @@ const TeamsPage = ({ sidebarOpen }) => {
     // For player names: remove any non-letter, non-space, non-hyphen characters
     if (field === "name") {
       finalValue = value.replace(/[^a-zA-Z\s-]/g, '');
+      // Don't trim here - allow spaces between names
     }
     
     // For jersey numbers: remove any non-digit characters
@@ -248,8 +353,8 @@ const TeamsPage = ({ sidebarOpen }) => {
       finalValue = value.replace(/[^0-9]/g, '');
     }
     
-    // Trim whitespace from name and jersey number
-    if (field === "name" || field === "jerseyNumber") {
+    // Only trim whitespace from jersey number, not name (to allow spaces between names)
+    if (field === "jerseyNumber") {
       finalValue = finalValue.trim();
     }
     
@@ -1024,35 +1129,38 @@ const TeamsPage = ({ sidebarOpen }) => {
                 <div className="admin-teams-form-container">
                   <h2>Create New Team</h2>
                   <form className="admin-teams-form" onSubmit={handleSubmit}>
-                    {/* Team Name */}
-                    <div className="admin-teams-form-group">
-                      <label htmlFor="teamName">Team Name *</label>
-                      <input
-                        type="text"
-                        id="teamName"
-                        name="teamName"
-                        value={formData.teamName}
-                        onChange={handleInputChange}
-                        placeholder="Enter team name"
-                        required
-                      />
-                    </div>
+                    {/* Team Name & Sport Row Layout */}
+                    <div style={{ display: 'flex', gap: '20px', alignItems: 'flex-start' }}>
+                      <div className="admin-teams-form-group" style={{ flex: 1 }}>
+                        <label htmlFor="teamName">Team Name *</label>
+                        <input
+                          type="text"
+                          id="teamName"
+                          name="teamName"
+                          value={formData.teamName}
+                          onChange={handleInputChange}
+                          placeholder="Enter team name"
+                          style={{ fontSize: '16px' }}
+                          required
+                        />
+                      </div>
 
-                    {/* Sport Selection */}
-                    <div className="admin-teams-form-group">
-                      <label htmlFor="sport">Sport *</label>
-                      <select
-                        id="sport"
-                        name="sport"
-                        value={formData.sport}
-                        onChange={handleInputChange}
-                        required
-                      >
-                        <option value="">Select a sport</option>
-                        {Object.keys(positions).map((sport) => (
-                          <option key={sport} value={sport}>{sport}</option>
-                        ))}
-                      </select>
+                      <div className="admin-teams-form-group" style={{ flex: 1 }}>
+                        <label htmlFor="sport">Sport *</label>
+                        <select
+                          id="sport"
+                          name="sport"
+                          value={formData.sport}
+                          onChange={handleInputChange}
+                          style={{ fontSize: '16px' }}
+                          required
+                        >
+                          <option value="">Select a sport</option>
+                          {Object.keys(positions).map((sport) => (
+                            <option key={sport} value={sport}>{sport}</option>
+                          ))}
+                        </select>
+                      </div>
                     </div>
 
                     {/* Players Section */}
@@ -1071,9 +1179,85 @@ const TeamsPage = ({ sidebarOpen }) => {
                           </div>
                         </div>
 
+                        {/* CSV Import Section */}
+                        <div style={{
+                          background: 'rgba(33, 150, 243, 0.1)',
+                          border: '1px solid rgba(33, 150, 243, 0.3)',
+                          borderRadius: '8px',
+                          padding: '15px',
+                          marginBottom: '20px'
+                        }}>
+                          <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+                            <input
+                              ref={fileInputRef}
+                              type="file"
+                              accept=".csv"
+                              onChange={handleCSVImport}
+                              style={{ display: 'none' }}
+                            />
+                            <button
+                              type="button"
+                              onClick={() => fileInputRef.current?.click()}
+                              disabled={importingCSV}
+                              style={{
+                                padding: '12px 20px',
+                                border: 'none',
+                                borderRadius: '6px',
+                                cursor: importingCSV ? 'not-allowed' : 'pointer',
+                                fontWeight: '500',
+                                transition: 'all 0.2s ease',
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: '8px',
+                                fontSize: '16px',
+                                background: importingCSV ? '#64748b' : '#2196f3',
+                                color: 'white',
+                                flex: '1',
+                                minWidth: '200px',
+                                opacity: importingCSV ? 0.7 : 1
+                              }}
+                            >
+                              {importingCSV ? "Importing..." : "📁 Import Players from CSV"}
+                            </button>
+                            <button
+                              type="button"
+                              onClick={handleDownloadTemplate}
+                              style={{
+                                padding: '12px 20px',
+                                border: '1px solid rgba(255, 255, 255, 0.2)',
+                                borderRadius: '6px',
+                                cursor: 'pointer',
+                                fontWeight: '500',
+                                transition: 'all 0.2s ease',
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: '8px',
+                                fontSize: '16px',
+                                background: 'rgba(255, 255, 255, 0.1)',
+                                color: '#e2e8f0',
+                                flex: '1',
+                                minWidth: '200px'
+                              }}
+                            >
+                              ⬇ Download CSV Template
+                            </button>
+                          </div>
+                          <small style={{ color: '#94a3b8', fontSize: '12px', marginTop: '8px', display: 'block' }}>
+                            CSV format: Player Name, Jersey Number, Position
+                          </small>
+                        </div>
+
                         {/* Position Limits Display */}
-                        <div className="position-limits-display">
-                          <h4>Position Limits (Maximum 3 per position)</h4>
+                        <div style={{
+                          background: 'transparent',
+                          border: 'none',
+                          borderRadius: 0,
+                          padding: '0 0 15px 0',
+                          marginBottom: '20px'
+                        }}>
+                          <h4 style={{ margin: '0 0 10px 0', color: '#e2e8f0', fontSize: '16px' }}>
+                            Position Limits (Maximum 3 per position)
+                          </h4>
                           <div className="position-limits-grid">
                             {Object.entries(getPositionCounts()).map(([position, counts]) => (
                               <div key={position} className="position-limit-item">
@@ -1099,6 +1283,7 @@ const TeamsPage = ({ sidebarOpen }) => {
                                 onChange={(e) => handlePlayerChange(index, "name", e.target.value)}
                                 required
                                 className="admin-teams-player-name-input"
+                                style={{ fontSize: '16px' }}
                               />
                               <input
                                 type="text"
@@ -1108,6 +1293,7 @@ const TeamsPage = ({ sidebarOpen }) => {
                                 required
                                 className="admin-teams-jersey-input"
                                 maxLength="10"
+                                style={{ fontSize: '16px' }}
                               />
                               <select
                                 value={player.position}
@@ -1116,6 +1302,7 @@ const TeamsPage = ({ sidebarOpen }) => {
                                 className={`admin-teams-position-select ${
                                   !isPositionAvailable(player.position, index) ? 'position-unavailable' : ''
                                 }`}
+                                style={{ fontSize: '16px' }}
                               >
                                 <option value="">Select position</option>
                                 {getAvailablePositions(index).map(pos => (
@@ -1128,6 +1315,7 @@ const TeamsPage = ({ sidebarOpen }) => {
                                   className="remove-player-btn"
                                   onClick={() => removePlayer(index)}
                                   title="Remove player"
+                                  style={{ fontSize: '16px' }}
                                 >
                                   ×
                                 </button>
@@ -1149,6 +1337,7 @@ const TeamsPage = ({ sidebarOpen }) => {
                               type="button"
                               className="add-player-btn"
                               onClick={addPlayer}
+                              style={{ fontSize: '16px' }}
                             >
                               <FaPlus style={{ marginRight: '8px' }} />
                               Add More Players ({15 - formData.players.length} slots available)
@@ -1179,6 +1368,7 @@ const TeamsPage = ({ sidebarOpen }) => {
                         type="submit" 
                         className="admin-teams-submit-btn"
                         disabled={validPlayerCount < 12 || formData.players.length > 15}
+                        style={{ fontSize: '16px' }}
                       >
                         Create Team
                       </button>
@@ -1190,6 +1380,7 @@ const TeamsPage = ({ sidebarOpen }) => {
                           setValidationError("");
                           setShowValidationMessage(false);
                         }}
+                        style={{ fontSize: '16px' }}
                       >
                         Clear Form
                       </button>
@@ -1457,7 +1648,7 @@ const TeamsPage = ({ sidebarOpen }) => {
               borderRadius: '8px',
               background: '#0f172a',
               color: '#e2e8f0',
-              fontSize: '14px',
+              fontSize: '16px',
               outline: 'none',
               transition: 'border-color 0.2s ease'
             }}
@@ -1490,7 +1681,7 @@ const TeamsPage = ({ sidebarOpen }) => {
               borderRadius: '8px',
               background: '#0f172a',
               color: '#e2e8f0',
-              fontSize: '14px',
+              fontSize: '16px',
               outline: 'none',
               transition: 'border-color 0.2s ease'
             }}
@@ -1520,7 +1711,7 @@ const TeamsPage = ({ sidebarOpen }) => {
               borderRadius: '8px',
               background: '#0f172a',
               color: '#e2e8f0',
-              fontSize: '14px',
+              fontSize: '16px',
               cursor: 'pointer',
               outline: 'none',
               transition: 'border-color 0.2s ease'
@@ -1545,7 +1736,7 @@ const TeamsPage = ({ sidebarOpen }) => {
             border: 'none',
             borderRadius: '8px',
             cursor: 'pointer',
-            fontSize: '14px',
+            fontSize: '16px',
             fontWeight: '600',
             height: '48px',
             marginTop: '30px',
@@ -1570,7 +1761,7 @@ const TeamsPage = ({ sidebarOpen }) => {
             border: 'none',
             borderRadius: '8px',
             cursor: 'pointer',
-            fontSize: '14px',
+            fontSize: '16px',
             fontWeight: '600',
             height: '48px',
             marginTop: '30px',
