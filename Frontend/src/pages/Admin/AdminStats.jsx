@@ -26,6 +26,9 @@ const AdminStats = ({ sidebarOpen, preselectedEvent, preselectedBracket, embedde
   const [selectedMatchForModal, setSelectedMatchForModal] = useState(null);
   
   const [sortConfig, setSortConfig] = useState({ key: 'overall_score', direction: 'desc' });
+  
+  // Stats display mode state (totals vs averages)
+  const [statsDisplayMode, setStatsDisplayMode] = useState('averages'); // 'averages' | 'totals'
 
   // Animation state
   const [contentAnimation, setContentAnimation] = useState('fadeIn');
@@ -501,7 +504,10 @@ const AdminStats = ({ sidebarOpen, preselectedEvent, preselectedBracket, embedde
         ppg: { high: 20, low: 10 },
         rpg: { high: 10, low: 5 },
         apg: { high: 8, low: 4 },
-        overall_score: { high: 30, low: 15 }
+        overall_score: { high: 30, low: 15 },
+        total_points: { high: 200, low: 50 },
+        total_rebounds: { high: 100, low: 25 },
+        total_assists: { high: 80, low: 20 }
       };
       
       const threshold = thresholds[stat];
@@ -551,22 +557,39 @@ const AdminStats = ({ sidebarOpen, preselectedEvent, preselectedBracket, embedde
     let headers, rows;
     
     if (sportType === 'basketball') {
-      headers = ['Rank', 'Player', 'Team', 'Jersey', 'Games Played', 'Overall Score', 'PPG', 'RPG', 'APG', 'BPG', 'Total Points', 'Total Assists', 'Total Rebounds'];
-      rows = filteredPlayers.map((player, index) => [
-        index + 1,
-        player.name,
-        player.team_name,
-        player.jersey_number,
-        player.games_played,
-        player.overall_score || 0,
-        player.ppg,
-        player.rpg,
-        player.apg,
-        player.bpg,
-        player.total_points,
-        player.total_assists,
-        player.total_rebounds
-      ]);
+      if (statsDisplayMode === 'totals') {
+        headers = ['Rank', 'Player', 'Team', 'Jersey', 'Games Played', 'Overall Score', 'Total Points', 'Total Rebounds', 'Total Assists', 'Total Steals', 'Total Blocks', 'Total 3PM', 'Total Turnovers', 'Total Fouls'];
+        rows = filteredPlayers.map((player, index) => [
+          index + 1,
+          player.name,
+          player.team_name,
+          player.jersey_number,
+          player.games_played,
+          player.overall_score || 0,
+          player.total_points || 0,
+          player.total_rebounds || 0,
+          player.total_assists || 0,
+          player.total_steals || 0,
+          player.total_blocks || 0,
+          player.total_three_points || 0,
+          player.total_turnovers || 0,
+          player.total_fouls || 0
+        ]);
+      } else {
+        headers = ['Rank', 'Player', 'Team', 'Jersey', 'Games Played', 'Overall Score', 'PPG', 'RPG', 'APG', 'BPG'];
+        rows = filteredPlayers.map((player, index) => [
+          index + 1,
+          player.name,
+          player.team_name,
+          player.jersey_number,
+          player.games_played,
+          player.overall_score || 0,
+          player.ppg,
+          player.rpg,
+          player.apg,
+          player.bpg
+        ]);
+      }
     } else {
       // UPDATED: Add new error columns
       headers = ['Rank', 'Player', 'Team', 'Jersey', 'Games Played', 'Overall Score', 
@@ -614,20 +637,35 @@ const AdminStats = ({ sidebarOpen, preselectedEvent, preselectedBracket, embedde
     let headers, rows;
     
     if (sportType === 'basketball') {
-      headers = ['Rank', 'Team', 'Games Played', 'Overall Score', 'PPG', 'RPG', 'APG', 'BPG', 'Total Points', 'Total Assists', 'Total Rebounds'];
-      rows = filteredTeams.map((team, index) => [
-        index + 1,
-        team.team_name,
-        team.games_played,
-        team.overall_score || 0,
-        team.ppg,
-        team.rpg,
-        team.apg,
-        team.bpg,
-        team.total_points,
-        team.total_assists,
-        team.total_rebounds
-      ]);
+      if (statsDisplayMode === 'totals') {
+        headers = ['Rank', 'Team', 'Games Played', 'Overall Score', 'Total Points', 'Total Rebounds', 'Total Assists', 'Total Steals', 'Total Blocks', 'Total 3PM', 'Total Turnovers', 'Total Fouls'];
+        rows = filteredTeams.map((team, index) => [
+          index + 1,
+          team.team_name,
+          team.games_played,
+          team.overall_score || 0,
+          team.total_points || 0,
+          team.total_rebounds || 0,
+          team.total_assists || 0,
+          team.total_steals || 0,
+          team.total_blocks || 0,
+          team.total_three_points || 0,
+          team.total_turnovers || 0,
+          team.total_fouls || 0
+        ]);
+      } else {
+        headers = ['Rank', 'Team', 'Games Played', 'Overall Score', 'PPG', 'RPG', 'APG', 'BPG'];
+        rows = filteredTeams.map((team, index) => [
+          index + 1,
+          team.team_name,
+          team.games_played,
+          team.overall_score || 0,
+          team.ppg,
+          team.rpg,
+          team.apg,
+          team.bpg
+        ]);
+      }
    } else {
       // UPDATED: Add new error columns
       headers = ['Rank', 'Team', 'Games Played', 'Overall Score', 'Total Kills', 'Total Assists', 
@@ -738,34 +776,89 @@ const AdminStats = ({ sidebarOpen, preselectedEvent, preselectedBracket, embedde
 
   // Render Basketball Players Table Headers
   const renderBasketballPlayerHeaders = () => {
-    return (
-      <>
-        <th 
-          className="stats-sortable-header"
-          onClick={() => handleSort('ppg')}
-        >
-          PPG {sortConfig.key === 'ppg' && (sortConfig.direction === 'desc' ? '↓' : '↑')}
-        </th>
-        <th 
-          className="stats-sortable-header"
-          onClick={() => handleSort('rpg')}
-        >
-          RPG {sortConfig.key === 'rpg' && (sortConfig.direction === 'desc' ? '↓' : '↑')}
-        </th>
-        <th 
-          className="stats-sortable-header"
-          onClick={() => handleSort('apg')}
-        >
-          APG {sortConfig.key === 'apg' && (sortConfig.direction === 'desc' ? '↓' : '↑')}
-        </th>
-        <th 
-          className="stats-sortable-header"
-          onClick={() => handleSort('bpg')}
-        >
-          BPG {sortConfig.key === 'bpg' && (sortConfig.direction === 'desc' ? '↓' : '↑')}
-        </th>
-      </>
-    );
+    if (statsDisplayMode === 'totals') {
+      return (
+        <>
+          <th 
+            className="stats-sortable-header"
+            onClick={() => handleSort('total_points')}
+          >
+            Total PTS {sortConfig.key === 'total_points' && (sortConfig.direction === 'desc' ? '↓' : '↑')}
+          </th>
+          <th 
+            className="stats-sortable-header"
+            onClick={() => handleSort('total_rebounds')}
+          >
+            Total REB {sortConfig.key === 'total_rebounds' && (sortConfig.direction === 'desc' ? '↓' : '↑')}
+          </th>
+          <th 
+            className="stats-sortable-header"
+            onClick={() => handleSort('total_assists')}
+          >
+            Total AST {sortConfig.key === 'total_assists' && (sortConfig.direction === 'desc' ? '↓' : '↑')}
+          </th>
+          <th 
+            className="stats-sortable-header"
+            onClick={() => handleSort('total_steals')}
+          >
+            Total STL {sortConfig.key === 'total_steals' && (sortConfig.direction === 'desc' ? '↓' : '↑')}
+          </th>
+          <th 
+            className="stats-sortable-header"
+            onClick={() => handleSort('total_blocks')}
+          >
+            Total BLK {sortConfig.key === 'total_blocks' && (sortConfig.direction === 'desc' ? '↓' : '↑')}
+          </th>
+          <th 
+            className="stats-sortable-header"
+            onClick={() => handleSort('total_three_points')}
+          >
+            Total 3PM {sortConfig.key === 'total_three_points' && (sortConfig.direction === 'desc' ? '↓' : '↑')}
+          </th>
+          <th 
+            className="stats-sortable-header"
+            onClick={() => handleSort('total_turnovers')}
+          >
+            Total TO {sortConfig.key === 'total_turnovers' && (sortConfig.direction === 'desc' ? '↓' : '↑')}
+          </th>
+          <th 
+            className="stats-sortable-header"
+            onClick={() => handleSort('total_fouls')}
+          >
+            Total FOULS {sortConfig.key === 'total_fouls' && (sortConfig.direction === 'desc' ? '↓' : '↑')}
+          </th>
+        </>
+      );
+    } else {
+      return (
+        <>
+          <th 
+            className="stats-sortable-header"
+            onClick={() => handleSort('ppg')}
+          >
+            PPG {sortConfig.key === 'ppg' && (sortConfig.direction === 'desc' ? '↓' : '↑')}
+          </th>
+          <th 
+            className="stats-sortable-header"
+            onClick={() => handleSort('rpg')}
+          >
+            RPG {sortConfig.key === 'rpg' && (sortConfig.direction === 'desc' ? '↓' : '↑')}
+          </th>
+          <th 
+            className="stats-sortable-header"
+            onClick={() => handleSort('apg')}
+          >
+            APG {sortConfig.key === 'apg' && (sortConfig.direction === 'desc' ? '↓' : '↑')}
+          </th>
+          <th 
+            className="stats-sortable-header"
+            onClick={() => handleSort('bpg')}
+          >
+            BPG {sortConfig.key === 'bpg' && (sortConfig.direction === 'desc' ? '↓' : '↑')}
+          </th>
+        </>
+      );
+    }
   };
 
   // Render Volleyball Players Table Headers
@@ -818,30 +911,61 @@ const renderVolleyballPlayerHeaders = () => {
 
   // Render Basketball Players Table Rows
   const renderBasketballPlayerRows = () => {
-    return currentPlayers.map((player, index) => (
-      <tr key={player.id} className="stats-player-row">
-        <td className="stats-rank-cell">
-          <div className={`stats-rank-badge ${
-            indexOfFirstItem + index === 0 ? 'stats-rank-1' : 
-            indexOfFirstItem + index === 1 ? 'stats-rank-2' :
-            indexOfFirstItem + index === 2 ? 'stats-rank-3' : 'stats-rank-other'
-          }`}>
-            {indexOfFirstItem + index + 1}
-          </div>
-        </td>
-        <td className="stats-player-name" style={{ fontSize: '0.95rem' }}>{player.name}</td>
-        <td className="stats-team-name" style={{ fontSize: '0.9rem' }}>{player.team_name}</td>
-        <td className="stats-jersey-number">{player.jersey_number}</td>
-        <td className="stats-games-played">{player.games_played}</td>
-        <td className={getPerformanceColor(player.overall_score, 'overall_score')}>
-          {player.overall_score || 0}
-        </td>
-        <td className={getPerformanceColor(player.ppg, 'ppg')}>{player.ppg}</td>
-        <td className={getPerformanceColor(player.rpg, 'rpg')}>{player.rpg}</td>
-        <td className={getPerformanceColor(player.apg, 'apg')}>{player.apg}</td>
-        <td className="stats-bpg">{player.bpg}</td>
-      </tr>
-    ));
+    if (statsDisplayMode === 'totals') {
+      return currentPlayers.map((player, index) => (
+        <tr key={player.id} className="stats-player-row">
+          <td className="stats-rank-cell">
+            <div className={`stats-rank-badge ${
+              indexOfFirstItem + index === 0 ? 'stats-rank-1' : 
+              indexOfFirstItem + index === 1 ? 'stats-rank-2' :
+              indexOfFirstItem + index === 2 ? 'stats-rank-3' : 'stats-rank-other'
+            }`}>
+              {indexOfFirstItem + index + 1}
+            </div>
+          </td>
+          <td className="stats-player-name" style={{ fontSize: '0.95rem' }}>{player.name}</td>
+          <td className="stats-team-name" style={{ fontSize: '0.9rem' }}>{player.team_name}</td>
+          <td className="stats-jersey-number">{player.jersey_number}</td>
+          <td className="stats-games-played">{player.games_played}</td>
+          <td className={getPerformanceColor(player.overall_score, 'overall_score')}>
+            {player.overall_score || 0}
+          </td>
+          <td className={getPerformanceColor(player.total_points, 'total_points')}>{player.total_points || 0}</td>
+          <td className={getPerformanceColor(player.total_rebounds, 'total_rebounds')}>{player.total_rebounds || 0}</td>
+          <td className={getPerformanceColor(player.total_assists, 'total_assists')}>{player.total_assists || 0}</td>
+          <td className="stats-steals">{player.total_steals || 0}</td>
+          <td className="stats-blocks">{player.total_blocks || 0}</td>
+          <td className="stats-three-points">{player.total_three_points || 0}</td>
+          <td className="stats-turnovers">{player.total_turnovers || 0}</td>
+          <td className="stats-fouls">{player.total_fouls || 0}</td>
+        </tr>
+      ));
+    } else {
+      return currentPlayers.map((player, index) => (
+        <tr key={player.id} className="stats-player-row">
+          <td className="stats-rank-cell">
+            <div className={`stats-rank-badge ${
+              indexOfFirstItem + index === 0 ? 'stats-rank-1' : 
+              indexOfFirstItem + index === 1 ? 'stats-rank-2' :
+              indexOfFirstItem + index === 2 ? 'stats-rank-3' : 'stats-rank-other'
+            }`}>
+              {indexOfFirstItem + index + 1}
+            </div>
+          </td>
+          <td className="stats-player-name" style={{ fontSize: '0.95rem' }}>{player.name}</td>
+          <td className="stats-team-name" style={{ fontSize: '0.9rem' }}>{player.team_name}</td>
+          <td className="stats-jersey-number">{player.jersey_number}</td>
+          <td className="stats-games-played">{player.games_played}</td>
+          <td className={getPerformanceColor(player.overall_score, 'overall_score')}>
+            {player.overall_score || 0}
+          </td>
+          <td className={getPerformanceColor(player.ppg, 'ppg')}>{player.ppg}</td>
+          <td className={getPerformanceColor(player.rpg, 'rpg')}>{player.rpg}</td>
+          <td className={getPerformanceColor(player.apg, 'apg')}>{player.apg}</td>
+          <td className="stats-bpg">{player.bpg}</td>
+        </tr>
+      ));
+    }
   };
 
   // Render Volleyball Players Table Rows
@@ -884,34 +1008,89 @@ const renderVolleyballPlayerRows = () => {
 
   // Render Basketball Teams Table Headers
   const renderBasketballTeamHeaders = () => {
-    return (
-      <>
-        <th 
-          className="stats-sortable-header"
-          onClick={() => handleSort('ppg')}
-        >
-          PPG {sortConfig.key === 'ppg' && (sortConfig.direction === 'desc' ? '↓' : '↑')}
-        </th>
-        <th 
-          className="stats-sortable-header"
-          onClick={() => handleSort('rpg')}
-        >
-          RPG {sortConfig.key === 'rpg' && (sortConfig.direction === 'desc' ? '↓' : '↑')}
-        </th>
-        <th 
-          className="stats-sortable-header"
-          onClick={() => handleSort('apg')}
-        >
-          APG {sortConfig.key === 'apg' && (sortConfig.direction === 'desc' ? '↓' : '↑')}
-        </th>
-        <th 
-          className="stats-sortable-header"
-          onClick={() => handleSort('bpg')}
-        >
-          BPG {sortConfig.key === 'bpg' && (sortConfig.direction === 'desc' ? '↓' : '↑')}
-        </th>
-      </>
-    );
+    if (statsDisplayMode === 'totals') {
+      return (
+        <>
+          <th 
+            className="stats-sortable-header"
+            onClick={() => handleSort('total_points')}
+          >
+            Total PTS {sortConfig.key === 'total_points' && (sortConfig.direction === 'desc' ? '↓' : '↑')}
+          </th>
+          <th 
+            className="stats-sortable-header"
+            onClick={() => handleSort('total_rebounds')}
+          >
+            Total REB {sortConfig.key === 'total_rebounds' && (sortConfig.direction === 'desc' ? '↓' : '↑')}
+          </th>
+          <th 
+            className="stats-sortable-header"
+            onClick={() => handleSort('total_assists')}
+          >
+            Total AST {sortConfig.key === 'total_assists' && (sortConfig.direction === 'desc' ? '↓' : '↑')}
+          </th>
+          <th 
+            className="stats-sortable-header"
+            onClick={() => handleSort('total_steals')}
+          >
+            Total STL {sortConfig.key === 'total_steals' && (sortConfig.direction === 'desc' ? '↓' : '↑')}
+          </th>
+          <th 
+            className="stats-sortable-header"
+            onClick={() => handleSort('total_blocks')}
+          >
+            Total BLK {sortConfig.key === 'total_blocks' && (sortConfig.direction === 'desc' ? '↓' : '↑')}
+          </th>
+          <th 
+            className="stats-sortable-header"
+            onClick={() => handleSort('total_three_points')}
+          >
+            Total 3PM {sortConfig.key === 'total_three_points' && (sortConfig.direction === 'desc' ? '↓' : '↑')}
+          </th>
+          <th 
+            className="stats-sortable-header"
+            onClick={() => handleSort('total_turnovers')}
+          >
+            Total TO {sortConfig.key === 'total_turnovers' && (sortConfig.direction === 'desc' ? '↓' : '↑')}
+          </th>
+          <th 
+            className="stats-sortable-header"
+            onClick={() => handleSort('total_fouls')}
+          >
+            Total FOULS {sortConfig.key === 'total_fouls' && (sortConfig.direction === 'desc' ? '↓' : '↑')}
+          </th>
+        </>
+      );
+    } else {
+      return (
+        <>
+          <th 
+            className="stats-sortable-header"
+            onClick={() => handleSort('ppg')}
+          >
+            PPG {sortConfig.key === 'ppg' && (sortConfig.direction === 'desc' ? '↓' : '↑')}
+          </th>
+          <th 
+            className="stats-sortable-header"
+            onClick={() => handleSort('rpg')}
+          >
+            RPG {sortConfig.key === 'rpg' && (sortConfig.direction === 'desc' ? '↓' : '↑')}
+          </th>
+          <th 
+            className="stats-sortable-header"
+            onClick={() => handleSort('apg')}
+          >
+            APG {sortConfig.key === 'apg' && (sortConfig.direction === 'desc' ? '↓' : '↑')}
+          </th>
+          <th 
+            className="stats-sortable-header"
+            onClick={() => handleSort('bpg')}
+          >
+            BPG {sortConfig.key === 'bpg' && (sortConfig.direction === 'desc' ? '↓' : '↑')}
+          </th>
+        </>
+      );
+    }
   };
 
 // Render Volleyball Teams Table Headers
@@ -965,28 +1144,57 @@ const renderVolleyballTeamHeaders = () => {
   
   // Render Basketball Teams Table Rows
   const renderBasketballTeamRows = () => {
-    return currentTeams.map((team, index) => (
-      <tr key={team.team_id} className="stats-player-row">
-        <td className="stats-rank-cell">
-          <div className={`stats-rank-badge ${
-            indexOfFirstItem + index === 0 ? 'stats-rank-1' : 
-            indexOfFirstItem + index === 1 ? 'stats-rank-2' :
-            indexOfFirstItem + index === 2 ? 'stats-rank-3' : 'stats-rank-other'
-          }`}>
-            {indexOfFirstItem + index + 1}
-          </div>
-        </td>
-        <td className="stats-team-name" style={{ fontSize: '0.95rem' }}>{team.team_name}</td>
-        <td className="stats-games-played">{team.games_played}</td>
-        <td className={getPerformanceColor(team.overall_score, 'overall_score')}>
-          {team.overall_score || 0}
-        </td>
-        <td className={getPerformanceColor(team.ppg, 'ppg')}>{team.ppg}</td>
-        <td className={getPerformanceColor(team.rpg, 'rpg')}>{team.rpg}</td>
-        <td className={getPerformanceColor(team.apg, 'apg')}>{team.apg}</td>
-        <td className="stats-bpg">{team.bpg}</td>
-      </tr>
-    ));
+    if (statsDisplayMode === 'totals') {
+      return currentTeams.map((team, index) => (
+        <tr key={team.team_id} className="stats-player-row">
+          <td className="stats-rank-cell">
+            <div className={`stats-rank-badge ${
+              indexOfFirstItem + index === 0 ? 'stats-rank-1' : 
+              indexOfFirstItem + index === 1 ? 'stats-rank-2' :
+              indexOfFirstItem + index === 2 ? 'stats-rank-3' : 'stats-rank-other'
+            }`}>
+              {indexOfFirstItem + index + 1}
+            </div>
+          </td>
+          <td className="stats-team-name" style={{ fontSize: '0.95rem' }}>{team.team_name}</td>
+          <td className="stats-games-played">{team.games_played}</td>
+          <td className={getPerformanceColor(team.overall_score, 'overall_score')}>
+            {team.overall_score || 0}
+          </td>
+          <td className={getPerformanceColor(team.total_points, 'total_points')}>{team.total_points || 0}</td>
+          <td className={getPerformanceColor(team.total_rebounds, 'total_rebounds')}>{team.total_rebounds || 0}</td>
+          <td className={getPerformanceColor(team.total_assists, 'total_assists')}>{team.total_assists || 0}</td>
+          <td className="stats-steals">{team.total_steals || 0}</td>
+          <td className="stats-blocks">{team.total_blocks || 0}</td>
+          <td className="stats-three-points">{team.total_three_points || 0}</td>
+          <td className="stats-turnovers">{team.total_turnovers || 0}</td>
+          <td className="stats-fouls">{team.total_fouls || 0}</td>
+        </tr>
+      ));
+    } else {
+      return currentTeams.map((team, index) => (
+        <tr key={team.team_id} className="stats-player-row">
+          <td className="stats-rank-cell">
+            <div className={`stats-rank-badge ${
+              indexOfFirstItem + index === 0 ? 'stats-rank-1' : 
+              indexOfFirstItem + index === 1 ? 'stats-rank-2' :
+              indexOfFirstItem + index === 2 ? 'stats-rank-3' : 'stats-rank-other'
+            }`}>
+              {indexOfFirstItem + index + 1}
+            </div>
+          </td>
+          <td className="stats-team-name" style={{ fontSize: '0.95rem' }}>{team.team_name}</td>
+          <td className="stats-games-played">{team.games_played}</td>
+          <td className={getPerformanceColor(team.overall_score, 'overall_score')}>
+            {team.overall_score || 0}
+          </td>
+          <td className={getPerformanceColor(team.ppg, 'ppg')}>{team.ppg}</td>
+          <td className={getPerformanceColor(team.rpg, 'rpg')}>{team.rpg}</td>
+          <td className={getPerformanceColor(team.apg, 'apg')}>{team.apg}</td>
+          <td className="stats-bpg">{team.bpg}</td>
+        </tr>
+      ));
+    }
   };
 
 
@@ -1037,6 +1245,32 @@ const renderVolleyballTeamRows = () => {
         padding: '0 20px'
       }}>
         <div className="stats-table-controls">
+          {/* Toggle Button for Averages/Totals - Only for Basketball */}
+          {getCurrentSportType() === 'basketball' && (
+            <button
+              onClick={() => setStatsDisplayMode(prev => prev === 'averages' ? 'totals' : 'averages')}
+              style={{
+                padding: '10px 20px',
+                background: 'linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%)',
+                color: 'white',
+                border: 'none',
+                borderRadius: '8px',
+                cursor: 'pointer',
+                fontSize: '14px',
+                fontWeight: '600',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                transition: 'all 0.2s ease',
+                boxShadow: '0 4px 12px rgba(139, 92, 246, 0.3)'
+              }}
+              title={`Switch to ${statsDisplayMode === 'averages' ? 'Totals' : 'Per Game Averages'}`}
+            >
+              <FaChartBar />
+              {statsDisplayMode === 'averages' ? 'Show Totals' : 'Show Averages'}
+            </button>
+          )}
+          
           <div className="stats-search-container">
             <FaSearch className="stats-search-icon" />
             <input
@@ -1184,6 +1418,32 @@ const renderVolleyballTeamRows = () => {
         padding: '0 20px'
       }}>
         <div className="stats-table-controls">
+          {/* Toggle Button for Averages/Totals - Only for Basketball */}
+          {getCurrentSportType() === 'basketball' && (
+            <button
+              onClick={() => setStatsDisplayMode(prev => prev === 'averages' ? 'totals' : 'averages')}
+              style={{
+                padding: '10px 20px',
+                background: 'linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%)',
+                color: 'white',
+                border: 'none',
+                borderRadius: '8px',
+                cursor: 'pointer',
+                fontSize: '14px',
+                fontWeight: '600',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                transition: 'all 0.2s ease',
+                boxShadow: '0 4px 12px rgba(139, 92, 246, 0.3)'
+              }}
+              title={`Switch to ${statsDisplayMode === 'averages' ? 'Totals' : 'Per Game Averages'}`}
+            >
+              <FaChartBar />
+              {statsDisplayMode === 'averages' ? 'Show Totals' : 'Show Averages'}
+            </button>
+          )}
+          
           <div className="stats-search-container">
             <FaSearch className="stats-search-icon" />
             <input
