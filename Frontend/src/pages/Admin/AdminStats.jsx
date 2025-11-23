@@ -1639,7 +1639,7 @@ const renderVolleyballTeamRows = () => {
                         <div 
                           className="stats-bracket-header"
                           style={{
-                            background: '#1a2332',
+                            background: '#11162cff',
                             padding: '24px',
                             borderRadius: '12px',
                             marginBottom: '24px',
@@ -1706,11 +1706,7 @@ const renderVolleyballTeamRows = () => {
     gap: '20px',
     padding: '0 20px'
   }}>
-    {matches.filter(m => {
-      const isValidMatch = m.team1_name && m.team2_name && m.team1_name !== 'TBD' && m.team2_name !== 'TBD';
-      const matchesRound = selectedRoundFilter === 'all' || m.round_number === selectedRoundFilter;
-      return isValidMatch && matchesRound;
-    }).map((match) => (
+   {currentMatches.map((match) => (
                               <div 
                                 key={match.id}
                                 onClick={() => handleMatchSelect(match)}
@@ -1868,7 +1864,60 @@ const renderVolleyballTeamRows = () => {
                           </div>
                         ) : (
                           <p className="stats-no-matches">No matches available for the selected round.</p>
-                        )}
+                            )}
+                            {/* ADD PAGINATION CONTROLS HERE - After the matches grid */}
+{totalPagesMatches > 1 && (
+  <div className="stats-pagination-container">
+    <div className="stats-pagination-info">
+      Page {currentPage} of {totalPagesMatches}
+    </div>
+    
+    <div className="stats-pagination-controls">
+      <button 
+        className="stats-pagination-btn"
+        onClick={() => paginate(currentPage - 1)}
+        disabled={currentPage === 1}
+      >
+        Previous
+      </button>
+      
+      <div className="stats-pagination-numbers">
+        {[...Array(totalPagesMatches)].map((_, index) => {
+          const pageNumber = index + 1;
+          if (
+            pageNumber === 1 ||
+            pageNumber === totalPagesMatches ||
+            (pageNumber >= currentPage - 1 && pageNumber <= currentPage + 1)
+          ) {
+            return (
+              <button
+                key={pageNumber}
+                className={`stats-pagination-number ${currentPage === pageNumber ? 'active' : ''}`}
+                onClick={() => paginate(pageNumber)}
+              >
+                {pageNumber}
+              </button>
+            );
+          } else if (
+            pageNumber === currentPage - 2 ||
+            pageNumber === currentPage + 2
+          ) {
+            return <span key={pageNumber} className="stats-pagination-ellipsis">...</span>;
+          }
+          return null;
+        })}
+      </div>
+      
+      <button 
+        className="stats-pagination-btn"
+        onClick={() => paginate(currentPage + 1)}
+        disabled={currentPage === totalPagesMatches}
+      >
+        Next
+      </button>
+    </div>
+  </div>
+)}
                       </div>
                     </div>
                   )}
