@@ -352,12 +352,7 @@ const CustomBracket = ({ matches, eliminationType = 'single', selectedEvent, sel
       {/* Bracket Container */}
        <div style={{ 
         padding: '32px',
-        background: 'rgba(15, 23, 42, 0.6)',
-        borderRadius: '16px',
-        border: '2px solid rgba(255, 255, 255, 0.15)',
-        backdropFilter: 'blur(8px)',
-        overflowX: 'auto',
-        overflowY: 'hidden'
+
       }}>
         
         <div className="enhanced-bracket" ref={bracketRef} style={{ minWidth: 'fit-content' }}>

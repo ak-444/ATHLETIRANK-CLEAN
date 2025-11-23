@@ -371,10 +371,6 @@ const DoubleEliminationBracket = ({ matches, eliminationType = 'double', selecte
       {/* Bracket Container */}
       <div style={{ 
         padding: '32px',
-        background: 'rgba(15, 23, 42, 0.6)',
-        borderRadius: '16px',
-        border: '2px solid rgba(255, 255, 255, 0.15)',
-        backdropFilter: 'blur(8px)'
         }}>
         <div className="double-bracket" ref={bracketRef} style={{ minWidth: 'fit-content', display: 'inline-block', paddingRight: '50px', paddingBottom: '50px' }}>
           <svg className="double-connection-lines" xmlns="http://www.w3.org/2000/svg">

@@ -4,11 +4,12 @@
   padding: 32px;
   background: linear-gradient(135deg, #0c1445 0%, #1a237e 50%, #283593 100%);
   border-radius: 16px;
-  min-height: auto;  /* Increased from 500px */
-   padding-bottom: 32px;
+  min-height: auto;
+  padding-bottom: 32px;
   position: relative;
- overflow-x: hidden;  /* CHANGE to hidden */
-  overflow-y: visible;  /* Changed from auto */
+  overflow-x: auto;  /* Enable horizontal scrolling */
+  overflow-y: auto;  /* Enable vertical scrolling */
+  max-height: 90vh;  /* Limit height to viewport */
   width: 100%;
   /* Isolate from parent animations to prevent connection line misalignment */
   transform: translateZ(0);
@@ -152,10 +153,10 @@
   display: flex;
   flex-direction: column;
   align-items: stretch;
-  width: 320px;
-  min-width: 320px;
-  max-width: 320px;
-  flex: 0 0 320px;
+  width: 360px;
+  min-width: 360px;
+  max-width: 360px;
+  flex: 0 0 360px;
 }
 
 .double-bracket .championship-match-container .matches {
@@ -166,7 +167,7 @@
 
 .double-bracket .championship-match-container .match {
   height: 100%;
-  min-height: 200px;
+  min-height: 240px;
   display: flex;
   flex-direction: column;
 }
@@ -215,9 +216,9 @@
 }
 
 .double-bracket .round {
-  min-width: 280px;
-  max-width: 320px;
-  width: 300px;
+  min-width: 320px;
+  max-width: 380px;
+  width: 350px;
   flex-shrink: 0;
   display: flex;
   flex-direction: column;
@@ -263,7 +264,8 @@
   border-radius: 16px;
   padding: 20px;
   width: 100%;
-  min-height: 200px;
+  min-height: 220px;
+  min-width: 300px;
   box-shadow: 0 10px 25px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.1);
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   backdrop-filter: blur(8px);
@@ -718,16 +720,16 @@
   }
   
   .double-bracket .round {
-    min-width: 260px;
-    max-width: 300px;
-    width: 280px;
+    min-width: 300px;
+    max-width: 340px;
+    width: 320px;
   }
   
   .double-bracket .championship-match-container {
-    width: 300px;
-    min-width: 300px;
-    max-width: 300px;
-    flex: 0 0 300px;
+    width: 340px;
+    min-width: 340px;
+    max-width: 340px;
+    flex: 0 0 340px;
   }
 }
 
@@ -746,21 +748,21 @@
   }
   
   .double-bracket .round {
-    min-width: 240px;
-    max-width: 280px;
-    width: 260px;
+    min-width: 280px;
+    max-width: 320px;
+    width: 300px;
   }
   
   .double-bracket .match {
     padding: 16px;
-    min-height: 260px;
+    min-height: 200px;
   }
   
   .double-bracket .championship-match-container {
-    width: 280px;
-    min-width: 280px;
-    max-width: 280px;
-    flex: 0 0 280px;
+    width: 320px;
+    min-width: 320px;
+    max-width: 320px;
+    flex: 0 0 320px;
   }
 }
 
