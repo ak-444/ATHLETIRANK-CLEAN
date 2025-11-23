@@ -202,11 +202,8 @@ const fetchEvents = async () => {
       })
     );
     
-    // ✅ ADD THIS: Sort events by ID descending (newest first)
-    const sortedEvents = eventsWithBrackets.sort((a, b) => b.id - a.id);
-    
     // Use a Set to remove duplicates based on event ID
-    const uniqueEvents = sortedEvents.reduce((acc, event) => {
+    const uniqueEvents = eventsWithBrackets.reduce((acc, event) => {
       const existingIndex = acc.findIndex(e => e.id === event.id);
       if (existingIndex === -1) {
         acc.push(event);
@@ -543,31 +540,28 @@ useEffect(() => {
         setLoadingAwards(true);
         setErrorAwards(null);
 
-          try {
-        // NEW: Load standings for both round_robin and round_robin_knockout
-        if (selectedBracket.elimination_type === 'round_robin' || 
-            selectedBracket.elimination_type === 'round_robin_knockout') {
+        try {
+          // Load standings for ALL bracket types (single, double, round_robin, round_robin_knockout)
           const standingsRes = await fetch(`http://localhost:5000/api/awards/brackets/${selectedBracket.id}/standings`);
           const standingsData = await standingsRes.json();
           setStandings(standingsData.standings || []);
+
+          const awardsRes = await fetch(`http://localhost:5000/api/awards/brackets/${selectedBracket.id}/mvp-awards`);
+          const awardsData = await awardsRes.json();
+          
+          setMvpData(awardsData.awards?.mvp || null);
+          setAwards(awardsData.awards || null);
+        } catch (err) {
+          setErrorAwards("Failed to load awards data: " + err.message);
+          console.error("Error loading awards:", err);
+        } finally {
+          setLoadingAwards(false);
         }
-
-        const awardsRes = await fetch(`http://localhost:5000/api/awards/brackets/${selectedBracket.id}/mvp-awards`);
-        const awardsData = await awardsRes.json();
-        
-        setMvpData(awardsData.awards?.mvp || null);
-        setAwards(awardsData.awards || null);
-      } catch (err) {
-        setErrorAwards("Failed to load awards data: " + err.message);
-        console.error("Error loading awards:", err);
-      } finally {
-        setLoadingAwards(false);
       }
-    }
-  };
+    };
 
-  loadAwardsData();
-}, [contentTab, selectedBracket]);
+    loadAwardsData();
+  }, [contentTab, selectedBracket]);
 
   // Export standings to CSV
   const exportStandings = () => {
