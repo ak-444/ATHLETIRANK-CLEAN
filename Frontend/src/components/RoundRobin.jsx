@@ -18,6 +18,10 @@ export default function RoundRobinBracketDisplay({ matches = [], selectedEvent, 
       bracketId: selectedBracket.id,
       match: match
     }));
+    // Add viewOnly flag if viewing completed match
+  if (isViewOnly || match.status === 'completed') {
+    matchData.viewOnly = true;
+  }
     
     sessionStorage.setItem('staffEventsContext', JSON.stringify({
       selectedEvent: selectedEvent,
@@ -478,7 +482,7 @@ export default function RoundRobinBracketDisplay({ matches = [], selectedEvent, 
                                 }}
                                 onClick={(e) => {
                                   e.stopPropagation();
-                                  handleMatchClick(match);
+                                  handleMatchClick(match, isCompleted);
                                 }}
                                 onMouseEnter={(e) => {
                                   e.currentTarget.style.transform = 'translateY(-2px) scale(1.05)';

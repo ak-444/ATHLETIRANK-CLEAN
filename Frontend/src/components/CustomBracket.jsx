@@ -13,24 +13,31 @@ const CustomBracket = ({ matches, eliminationType = 'single', selectedEvent, sel
   
   const isStaff = user?.role === 'sports_committee';
   
-  const handleMatchClick = (match) => {
-    if (!isStaff || !selectedEvent || !selectedBracket) return;
-    
-    sessionStorage.setItem('selectedMatchData', JSON.stringify({
-      matchId: match.id,
-      eventId: selectedEvent.id,
-      bracketId: selectedBracket.id,
-      match: match
-    }));
-    
-    sessionStorage.setItem('staffEventsContext', JSON.stringify({
-      selectedEvent: selectedEvent,
-      selectedBracket: selectedBracket,
-      bracketViewType: 'bracket'
-    }));
-    
-    navigate('/StaffDashboard/stats');
+const handleMatchClick = (match, isViewOnly = false) => {
+  if (!isStaff || !selectedEvent || !selectedBracket) return;
+  
+  const matchData = {
+    matchId: match.id,
+    eventId: selectedEvent.id,
+    bracketId: selectedBracket.id,
+    match: match
   };
+  
+  // Add viewOnly flag if viewing completed match
+  if (isViewOnly || match.status === 'completed') {
+    matchData.viewOnly = true;
+  }
+  
+  sessionStorage.setItem('selectedMatchData', JSON.stringify(matchData));
+  
+  sessionStorage.setItem('staffEventsContext', JSON.stringify({
+    selectedEvent: selectedEvent,
+    selectedBracket: selectedBracket,
+    bracketViewType: 'bracket'
+  }));
+  
+  navigate('/StaffDashboard/stats');
+};
 
   useEffect(() => {
     if (!matches || matches.length === 0) return;
@@ -229,20 +236,19 @@ const CustomBracket = ({ matches, eliminationType = 'single', selectedEvent, sel
         </div>
       )}
       
-      {/* Score/View Scores Button - Only visible on hover for staff */}
-      {isStaff && (showScoreButton || showViewButton) && (
-        <div className="match-score-button-container">
-          <button
-            className={`match-action-button ${isCompleted ? 'view-scores' : 'score-button'}`}
-            onClick={(e) => {
-              e.stopPropagation();
-              handleMatchClick(match);
-            }}
-          >
-            {isCompleted ? 'View Scores' : 'Score!'}
-          </button>
-        </div>
-      )}
+     {isStaff && (showScoreButton || showViewButton) && (
+  <div className="match-score-button-container">
+    <button
+      className={`match-action-button ${isCompleted ? 'view-scores' : 'score-button'}`}
+      onClick={(e) => {
+        e.stopPropagation();
+        handleMatchClick(match, isCompleted);  // FIXED - passes true for completed matches
+      }}
+    >
+      {isCompleted ? 'View Scores' : 'Score!'}
+    </button>
+  </div>
+)}
     </div>
     );
   };

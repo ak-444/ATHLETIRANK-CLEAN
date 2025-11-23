@@ -309,9 +309,9 @@ const SeasonalLeadersStats = ({ sidebarOpen }) => {
                 {selectedBracket.sport_type === "basketball" && topEfficiency.length > 0 && (
                   <div className="seasonal-position-stats seasonal-efficiency-section">
                     <div className="seasonal-position-header">
-                      <h2 className="seasonal-position-title">Top 10 Efficiency Leaders</h2>
+                      <h2 className="seasonal-position-title">Top 10 Leaders</h2>
                       <p className="seasonal-position-subtitle">
-                        Players with the highest all-around impact based on official efficiency formulas.
+                        Players with the highest all-around impact based on efficiency.
                       </p>
                     </div>
 

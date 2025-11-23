@@ -22,6 +22,10 @@ const DoubleEliminationBracket = ({ matches, eliminationType = 'double', selecte
       bracketId: selectedBracket.id,
       match: match
     }));
+    // Add viewOnly flag if viewing completed match
+  if (isViewOnly || match.status === 'completed') {
+    matchData.viewOnly = true;
+  }
     
     sessionStorage.setItem('staffEventsContext', JSON.stringify({
       selectedEvent: selectedEvent,
@@ -244,7 +248,7 @@ const DoubleEliminationBracket = ({ matches, eliminationType = 'double', selecte
               className={`match-action-button ${isCompleted ? 'view-scores' : 'score-button'}`}
               onClick={(e) => {
                 e.stopPropagation();
-                handleMatchClick(match);
+                 handleMatchClick(match, isCompleted);
               }}
             >
               {isCompleted ? 'View Scores' : 'Score!'}

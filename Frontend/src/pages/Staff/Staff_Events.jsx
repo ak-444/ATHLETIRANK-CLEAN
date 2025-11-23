@@ -764,6 +764,7 @@ const [standings, setStandings] = useState([]);
         eliminationType={selectedBracket.elimination_type}
         selectedEvent={selectedEvent}
         selectedBracket={selectedBracket}
+        
       />
     )}
     
