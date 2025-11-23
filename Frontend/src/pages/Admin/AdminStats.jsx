@@ -713,16 +713,28 @@ const AdminStats = ({ sidebarOpen, preselectedEvent, preselectedBracket, embedde
   const currentTeams = filteredTeams.slice(indexOfFirstItem, indexOfLastItem);
   const totalPagesTeams = Math.ceil(filteredTeams.length / itemsPerPage);
 
+  // Pagination logic for matches
+  const itemsPerPageMatches = 6;
+  const indexOfLastMatch = currentPage * itemsPerPageMatches;
+  const indexOfFirstMatch = indexOfLastMatch - itemsPerPageMatches;
+  const filteredMatchesForRound = matches.filter(m => {
+    const isValidMatch = m.team1_name && m.team2_name && m.team1_name !== 'TBD' && m.team2_name !== 'TBD';
+    const matchesRound = selectedRoundFilter === 'all' || m.round_number === selectedRoundFilter;
+    return isValidMatch && matchesRound;
+  });
+  const currentMatches = filteredMatchesForRound.slice(indexOfFirstMatch, indexOfLastMatch);
+  const totalPagesMatches = Math.ceil(filteredMatchesForRound.length / itemsPerPageMatches);
+
   const paginate = (pageNumber) => {
     setCurrentPage(pageNumber);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  // Reset to page 1 when filters or items per page changes
+  // Reset to page 1 when filters, items per page, or view mode changes
  useEffect(() => {
   setCurrentPage(1);
   setSelectedRoundFilter('all');
-}, [searchTerm, itemsPerPage]);
+}, [searchTerm, itemsPerPage, statsViewMode]);
 
   // Render Basketball Players Table Headers
   const renderBasketballPlayerHeaders = () => {
