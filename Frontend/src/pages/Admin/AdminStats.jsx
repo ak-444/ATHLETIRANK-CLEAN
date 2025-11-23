@@ -727,7 +727,7 @@ const AdminStats = ({ sidebarOpen, preselectedEvent, preselectedBracket, embedde
 
   const paginate = (pageNumber) => {
     setCurrentPage(pageNumber);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+ 
   };
 
   // Reset to page 1 when filters, items per page, or view mode changes
