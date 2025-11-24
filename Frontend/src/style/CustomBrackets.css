@@ -13,6 +13,53 @@
   will-change: auto;
 }
 
+/* Hide vertical scrollbar but keep horizontal scrollbar visible */
+.enhanced-bracket-wrapper {
+  scrollbar-width: thin; /* Firefox - shows thin scrollbar */
+  scrollbar-color: rgba(255, 255, 255, 0.3) transparent; /* Firefox - thumb color, track color */
+}
+
+.enhanced-bracket-wrapper::-webkit-scrollbar {
+  width: 8px; /* Vertical scrollbar width */
+  height: 8px; /* Horizontal scrollbar height */
+}
+
+.enhanced-bracket-wrapper::-webkit-scrollbar-track {
+  background: transparent; /* Hide vertical track */
+}
+
+.enhanced-bracket-wrapper::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.3); /* Vertical thumb color */
+  border-radius: 4px;
+}
+
+.enhanced-bracket-wrapper::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.5);
+}
+
+/* Hide vertical scrollbar specifically */
+.enhanced-bracket-wrapper::-webkit-scrollbar:vertical {
+  width: 0px; /* Hide vertical scrollbar */
+}
+
+.enhanced-bracket-wrapper::-webkit-scrollbar-thumb:vertical {
+  background: transparent; /* Hide vertical thumb */
+}
+
+/* Keep horizontal scrollbar visible */
+.enhanced-bracket-wrapper::-webkit-scrollbar:horizontal {
+  height: 8px; /* Keep horizontal scrollbar visible */
+}
+
+.enhanced-bracket-wrapper::-webkit-scrollbar-thumb:horizontal {
+  background: rgba(255, 255, 255, 0.3); /* Keep horizontal thumb visible */
+  border-radius: 4px;
+}
+
+.enhanced-bracket-wrapper::-webkit-scrollbar-thumb:horizontal:hover {
+  background: rgba(255, 255, 255, 0.5);
+}
+
 .enhanced-bracket {
   position: relative;
   z-index: 1;

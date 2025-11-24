@@ -23,6 +23,107 @@
   --border-radius-lg: 12px;
   --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
+
+/* Hide vertical scrollbar but keep horizontal scrollbar visible */
+.admin-dashboard {
+  scrollbar-width: thin; /* Firefox - shows thin scrollbar */
+  scrollbar-color: rgba(255, 255, 255, 0.3) transparent; /* Firefox - thumb color, track color */
+}
+
+.admin-dashboard::-webkit-scrollbar {
+  width: 0px; /* Hide vertical scrollbar */
+  height: 8px; /* Keep horizontal scrollbar */
+}
+
+.admin-dashboard::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.admin-dashboard::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.3);
+  border-radius: 4px;
+}
+
+.admin-dashboard::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.5);
+}
+
+/* Specifically target horizontal scrollbar */
+.admin-dashboard::-webkit-scrollbar:horizontal {
+  height: 8px; /* Ensure horizontal scrollbar is visible */
+}
+
+.admin-dashboard::-webkit-scrollbar-thumb:horizontal {
+  background: rgba(255, 255, 255, 0.3); /* Horizontal thumb color */
+}
+
+.admin-dashboard::-webkit-scrollbar-thumb:horizontal:hover {
+  background: rgba(255, 255, 255, 0.5);
+}
+
+/* Hide vertical scrollbar completely in Webkit */
+.admin-dashboard::-webkit-scrollbar:vertical {
+  width: 0px;
+  display: none;
+}
+
+.admin-dashboard::-webkit-scrollbar-thumb:vertical {
+  display: none;
+}
+
+/* Also apply to modal overlays */
+.admin-teams-modal-overlay,
+.modal-overlay {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.3) transparent;
+}
+
+.admin-teams-modal-overlay::-webkit-scrollbar,
+.modal-overlay::-webkit-scrollbar {
+  width: 0px;
+  height: 8px;
+}
+
+.admin-teams-modal-overlay::-webkit-scrollbar-track,
+.modal-overlay::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.admin-teams-modal-overlay::-webkit-scrollbar-thumb,
+.modal-overlay::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.3);
+  border-radius: 4px;
+}
+
+.admin-teams-modal-overlay::-webkit-scrollbar-thumb:hover,
+.modal-overlay::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.5);
+}
+
+/* For tables with horizontal scrolling */
+.awards_standings_table_container {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.3) transparent;
+}
+
+.awards_standings_table_container::-webkit-scrollbar {
+  height: 6px;
+}
+
+.awards_standings_table_container::-webkit-scrollbar-track {
+  background: transparent;
+  margin: 4px;
+}
+
+.awards_standings_table_container::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.3);
+  border-radius: 3px;
+}
+
+.awards_standings_table_container::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.5);
+}
+
 .bracket-view-btn {
   min-height: 32px;
   display: inline-flex;

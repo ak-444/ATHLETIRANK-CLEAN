@@ -16,6 +16,53 @@
   will-change: auto;
 }
 
+/* Hide vertical scrollbar but keep horizontal scrollbar visible */
+.double-bracket-wrapper {
+  scrollbar-width: thin; /* Firefox - shows thin scrollbar */
+  scrollbar-color: rgba(255, 255, 255, 0.3) transparent; /* Firefox - thumb color, track color */
+}
+
+.double-bracket-wrapper::-webkit-scrollbar {
+  width: 0px; /* Hide vertical scrollbar */
+  height: 8px; /* Keep horizontal scrollbar */
+}
+
+.double-bracket-wrapper::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.double-bracket-wrapper::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.3);
+  border-radius: 4px;
+}
+
+.double-bracket-wrapper::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.5);
+}
+
+/* Specifically target horizontal scrollbar */
+.double-bracket-wrapper::-webkit-scrollbar:horizontal {
+  height: 8px; /* Ensure horizontal scrollbar is visible */
+}
+
+.double-bracket-wrapper::-webkit-scrollbar-thumb:horizontal {
+  background: rgba(255, 255, 255, 0.3); /* Horizontal thumb color */
+}
+
+.double-bracket-wrapper::-webkit-scrollbar-thumb:horizontal:hover {
+  background: rgba(255, 255, 255, 0.5);
+}
+
+/* Hide vertical scrollbar completely in Webkit */
+.double-bracket-wrapper::-webkit-scrollbar:vertical {
+  width: 0px;
+  display: none;
+}
+
+.double-bracket-wrapper::-webkit-scrollbar-thumb:vertical {
+  display: none;
+}
+
 .double-bracket {
   position: relative;
   z-index: 1;

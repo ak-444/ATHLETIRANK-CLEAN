@@ -22,6 +22,16 @@
   --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
+/* Hide scrollbar but keep scrolling functionality */
+.create-user-modal {
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE and Edge */
+}
+
+.create-user-modal::-webkit-scrollbar {
+  display: none; /* Chrome, Safari and Opera */
+}
+
 /* Main content wrapper */
 .dashboard-main {
   padding: 20px;
