@@ -1,500 +1,1029 @@
-﻿import React, { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
+
 import { FaSearch, FaUsers, FaChartLine, FaTrophy, FaArrowLeft, FaChartBar, FaEye, FaFilter, FaMedal, FaCalendarAlt } from "react-icons/fa";
+
 import { useNavigate } from "react-router-dom";
+
 import '../../style/User_StatsPage.css'
 
+
+
 const UserStatsPage = () => {
+
   const navigate = useNavigate();
+
   const [events, setEvents] = useState([]);
+
   const [selectedEvent, setSelectedEvent] = useState(null);
+
   const [selectedBracket, setSelectedBracket] = useState(null);
+
   const [brackets, setBrackets] = useState([]);
+
   const [standings, setStandings] = useState([]);
+
   const [allPlayersData, setAllPlayersData] = useState([]);
+
   const [tournamentPeriod, setTournamentPeriod] = useState(null);
+
 const [dateRangeFilter, setDateRangeFilter] = useState({ start: '', end: '' });
+
 const [filteredByDateStandings, setFilteredByDateStandings] = useState([]);
+
   const [allTeamsData, setAllTeamsData] = useState([]);
+
   const [eventStatistics, setEventStatistics] = useState({
+
     total_players: 0,
+
     total_games: 0,
+
     sport_type: 'basketball',
+
     avg_ppg: 0,
+
     avg_rpg: 0,
+
     avg_apg: 0,
+
     avg_bpg: 0,
+
     avg_kills: 0,
+
     avg_digs: 0,
+
     avg_total_errors: 0
+
   });
+
   const [loading, setLoading] = useState(false);
+
   const [error, setError] = useState(null);
+
   const [searchTerm, setSearchTerm] = useState("");
+
   const [activeTab, setActiveTab] = useState("events");
+
   const [viewMode, setViewMode] = useState("standings");
   const [sortConfig, setSortConfig] = useState({ key: 'overall_score', direction: 'desc' });
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
+  const [statsDisplayMode, setStatsDisplayMode] = useState('averages');
+  const [volleyballDisplayMode, setVolleyballDisplayMode] = useState('averages');
+
 
   // Add these after line 33
 
+
+
   // Event filters
+
   const [eventSearchTerm, setEventSearchTerm] = useState("");
+
   const [sportFilter, setSportFilter] = useState("all");
 
+
+
   // Recent matches state
+
   const [recentMatches, setRecentMatches] = useState([]);
+
   const [recentTournament, setRecentTournament] = useState(null);
+
   const [recentBrackets, setRecentBrackets] = useState([]);
+
   const [selectedRecentBracket, setSelectedRecentBracket] = useState(null);
 
+
+
   // Fix for the flash error - initialize state properly
+
   const [isInitialized, setIsInitialized] = useState(false);
+
   const [hasVolleyballData, setHasVolleyballData] = useState(true);
 
+
+
   const getCurrentSportType = () => {
+
     return selectedBracket?.sport_type || eventStatistics.sport_type || 'basketball';
+
   };
+
+  const getToggleStyle = (sport) => {
+    if (sport === 'basketball') {
+      return {
+        padding: '10px 16px',
+        background: 'linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%)',
+        color: '#fff',
+        border: 'none',
+        borderRadius: '8px',
+        cursor: 'pointer',
+        fontSize: '14px',
+        fontWeight: 600,
+        display: 'flex',
+        alignItems: 'center',
+        gap: '8px',
+        boxShadow: '0 4px 12px rgba(139, 92, 246, 0.25)'
+      };
+    }
+    return {
+      padding: '10px 16px',
+      background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+      color: '#fff',
+      border: 'none',
+      borderRadius: '8px',
+      cursor: 'pointer',
+      fontSize: '14px',
+      fontWeight: 600,
+      display: 'flex',
+      alignItems: 'center',
+      gap: '8px',
+      boxShadow: '0 4px 12px rgba(16, 185, 129, 0.25)'
+    };
+  };
+
+
 
   useEffect(() => {
+
     fetchEvents();
+
     fetchRecentMatches();
+
     setIsInitialized(true);
+
   }, []);
 
+
+
   const fetchEvents = async () => {
+
     setLoading(true);
+
     try {
+
       // Fetch ongoing events
+
       const ongoingRes = await fetch("http://localhost:5000/api/events");
+
       const ongoingData = await ongoingRes.json();
+
       
+
       // Fetch completed events
+
       const completedRes = await fetch("http://localhost:5000/api/awards/events/completed");
+
       const completedData = await completedRes.json();
+
       
+
       // Combine both ongoing and completed events
+
       const allEvents = [...ongoingData, ...completedData];
+
       
+
       // Remove duplicates based on event ID
+
       const uniqueEvents = allEvents.filter((event, index, self) => 
+
         index === self.findIndex(e => e.id === event.id)
+
       );
+
       
+
       // Sort by creation date (most recent first)
+
       const sortedEvents = uniqueEvents.sort((a, b) => {
+
         const dateA = new Date(a.created_at || a.id);
+
         const dateB = new Date(b.created_at || b.id);
+
         return dateB - dateA;
+
       });
+
+
 
       // Fetch brackets for each event
+
       const eventsWithBrackets = await Promise.all(
+
         sortedEvents.map(async (event) => {
+
           try {
+
             // Try to fetch brackets from events endpoint first
+
             let bracketsRes;
+
             try {
+
               bracketsRes = await fetch(`http://localhost:5000/api/events/${event.id}/brackets`);
+
             } catch (err) {
+
               // Fallback to completed brackets endpoint
+
               bracketsRes = await fetch(`http://localhost:5000/api/awards/events/${event.id}/completed-brackets`);
+
             }
+
             
+
             const brackets = await bracketsRes.json();
+
             return { ...event, brackets: brackets || [] };
+
           } catch (err) {
+
             console.error(`Error fetching brackets for event ${event.id}:`, err);
+
             return { ...event, brackets: [] };
+
           }
+
         })
+
       );
+
       
+
       setEvents(eventsWithBrackets);
+
     } catch (err) {
+
       setError("Failed to load events");
+
       console.error("Error fetching events:", err);
+
     } finally {
+
       setLoading(false);
+
     }
+
   };
+
+
 
   // Add this function after the fetchEvents function (around line 150)
+
 const fetchTournamentPeriod = async (eventId) => {
+
   try {
+
     const res = await fetch(`http://localhost:5000/api/events/${eventId}`);
+
     const data = await res.json();
+
     setTournamentPeriod({
+
       start: data.start_date,
+
       end: data.end_date
+
     });
+
   } catch (err) {
+
     console.error("Error fetching tournament period:", err);
+
   }
+
 };
+
+
 
 const filterStandingsByDate = async (bracketId, startDate, endDate) => {
+
   try {
+
     let url = `http://localhost:5000/api/awards/brackets/${bracketId}/standings`;
+
     if (startDate && endDate) {
+
       url += `?startDate=${startDate}&endDate=${endDate}`;
+
     }
+
     
+
     const standingsRes = await fetch(url);
+
     if (!standingsRes.ok) {
+
       console.warn(`Server error loading standings for date range`);
+
       setFilteredByDateStandings([]);
+
       return;
+
     }
+
     
+
     const standingsData = await standingsRes.json();
+
     if (standingsData.standings && Array.isArray(standingsData.standings)) {
+
       setFilteredByDateStandings(standingsData.standings);
+
     } else {
+
       setFilteredByDateStandings([]);
+
     }
+
   } catch (err) {
+
     console.error("Error filtering standings by date:", err);
+
     setFilteredByDateStandings([]);
+
   }
+
 };
+
+
 
   // Fetch recent matches for the top containers
+
   const fetchRecentMatches = async () => {
+
     try {
+
       // Get the most recently created event (ongoing or completed)
+
       const ongoingRes = await fetch("http://localhost:5000/api/events");
+
       const ongoingData = await ongoingRes.json();
+
       
+
       const completedRes = await fetch("http://localhost:5000/api/awards/events/completed");
+
       const completedData = await completedRes.json();
+
       
+
       const allEvents = [...ongoingData, ...completedData];
+
       
+
       if (allEvents.length > 0) {
+
         // Sort by creation date to get the most recent
+
         const sortedEvents = allEvents.sort((a, b) => {
+
           const dateA = new Date(a.created_at || a.id);
+
           const dateB = new Date(b.created_at || b.id);
+
           return dateB - dateA;
+
         });
+
         
+
         const recentEvent = sortedEvents[0];
+
         setRecentTournament(recentEvent);
+
         
+
         // Fetch brackets for this event
+
         let brackets;
+
         try {
+
           const bracketsRes = await fetch(`http://localhost:5000/api/events/${recentEvent.id}/brackets`);
+
           brackets = await bracketsRes.json();
+
         } catch (err) {
+
           const bracketsRes = await fetch(`http://localhost:5000/api/awards/events/${recentEvent.id}/completed-brackets`);
+
           brackets = await bracketsRes.json();
+
         }
+
         
+
         setRecentBrackets(brackets || []);
+
         
+
         if (brackets && brackets.length > 0) {
+
           setSelectedRecentBracket(brackets[0]);
+
           await loadRecentBracketData(recentEvent, brackets[0]);
+
         }
+
       } else {
+
         console.log("No events found for recent tournament");
+
       }
+
     } catch (err) {
+
       console.error("Error fetching recent matches:", err);
+
     }
+
   };
+
+
 
   // Find the loadRecentBracketData function and update it (around line 180)
+
 const loadRecentBracketData = async (event, bracket) => {
+
   try {
+
     // Clear previous data
+
     setStandings([]);
+
     setAllPlayersData([]);
+
     setAllTeamsData([]);
+
     setDateRangeFilter({ start: '', end: '' }); // Reset date filter
+
     setFilteredByDateStandings([]); // Reset filtered standings
 
+
+
     // Fetch tournament period
+
     await fetchTournamentPeriod(event.id);
 
+
+
     // Load standings
+
     await loadStandingsData(bracket.id);
+
     
+
     // Load players data
+
     await loadRecentPlayersData(event.id, bracket.id);
+
     
+
     // Load teams data
+
     await loadRecentTeamsData(event.id, bracket.id);
+
   } catch (err) {
+
     console.error("Error loading recent bracket data:", err);
+
   }
+
 };
 
+
+
   const loadStandingsData = async (bracketId) => {
+
     try {
+
       console.log(`Loading standings for bracket ${bracketId}`);
+
       const standingsRes = await fetch(`http://localhost:5000/api/awards/brackets/${bracketId}/standings`);
+
       
+
       if (!standingsRes.ok) {
+
         if (standingsRes.status === 500) {
+
           console.warn(`Server error (500) loading standings for bracket ${bracketId}. This might be a volleyball standings issue.`);
+
           setStandings([]);
+
           setHasVolleyballData(false);
+
           return;
+
         }
+
         throw new Error(`HTTP ${standingsRes.status}: ${standingsRes.statusText}`);
+
       }
+
       
+
       const standingsData = await standingsRes.json();
+
       console.log(`Standings data received for bracket ${bracketId}:`, standingsData);
+
       
+
       if (standingsData.standings && Array.isArray(standingsData.standings)) {
+
         // Validate and clean up the standings data
+
         const validatedStandings = standingsData.standings.map((team, index) => ({
+
           position: team.position || index + 1,
+
           team: team.team || 'Unknown Team',
+
           wins: team.wins || 0,
+
           losses: team.losses || 0,
+
           points_for: team.points_for || 0,
+
           points_against: team.points_against || 0,
+
           point_diff: team.point_diff || 0,
+
           sets_for: team.sets_for || 0,
+
           sets_against: team.sets_against || 0,
+
           set_ratio: team.set_ratio || 0,
+
           win_percentage: team.win_percentage || '0.0%'
+
         }));
+
         
+
         setStandings(validatedStandings);
+
         setHasVolleyballData(true);
+
       } else {
+
         console.warn(`No standings array in response for bracket ${bracketId}`);
+
         setStandings([]);
+
         setHasVolleyballData(false);
+
       }
+
     } catch (err) {
+
       console.error(`Error loading standings for bracket ${bracketId}:`, err);
+
       setStandings([]);
+
       setHasVolleyballData(false);
+
     }
+
   };
+
+
 
   const loadRecentPlayersData = async (eventId, bracketId = null) => {
+
     try {
+
       let url = `http://localhost:5000/api/stats/events/${eventId}/players-statistics`;
+
       if (bracketId) {
+
         url += `?bracketId=${bracketId}`;
+
       }
+
       
+
       const res = await fetch(url);
+
       const data = await res.json();
+
       
+
       const sortedData = data.sort((a, b) => {
+
         const scoreA = a.overall_score || 0;
+
         const scoreB = b.overall_score || 0;
+
         return scoreB - scoreA;
+
       });
+
       
+
       setAllPlayersData(sortedData);
+
     } catch (err) {
+
       console.error("Error fetching recent players data:", err);
+
     }
+
   };
+
+
 
   const loadRecentTeamsData = async (eventId, bracketId = null) => {
+
     try {
+
       let url = `http://localhost:5000/api/stats/events/${eventId}/teams-statistics`;
+
       if (bracketId) {
+
         url += `?bracketId=${bracketId}`;
+
       }
+
       
+
       const res = await fetch(url);
+
       const data = await res.json();
+
       
+
       const sortedData = data.sort((a, b) => {
+
         const scoreA = a.overall_score || 0;
+
         const scoreB = b.overall_score || 0;
+
         return scoreB - scoreA;
+
       });
+
       
+
       setAllTeamsData(sortedData);
+
     } catch (err) {
+
       console.error("Error fetching recent teams data:", err);
+
     }
+
   };
+
+
 
   const handleEventSelect = async (event, bracket = null) => {
+
     setSelectedEvent(event);
+
     setBrackets(event.brackets || []);
+
     
+
     // Clear recent data when a specific event is selected
+
     setStandings([]);
+
     setAllPlayersData([]);
+
     setAllTeamsData([]);
+
     
+
     // Use the provided bracket if available, otherwise use the first bracket
+
     const targetBracket = bracket || (event.brackets && event.brackets.length > 0 ? event.brackets[0] : null);
+
     
+
     if (targetBracket) {
+
       setSelectedBracket(targetBracket);
+
       await loadBracketData(event, targetBracket);
+
     } else {
+
       setSelectedBracket(null);
+
       setEventStatistics({
+
         total_players: 0,
+
         total_games: 0,
+
         sport_type: 'basketball',
+
         avg_ppg: 0,
+
         avg_rpg: 0,
+
         avg_apg: 0,
+
         avg_bpg: 0,
+
         avg_kills: 0,
+
         avg_digs: 0,
+
         avg_total_errors: 0
+
       });
+
     }
+
     
+
     setActiveTab("results");
+
     setViewMode("standings");
+
   };
+
+
 
   const handleBracketChange = async (bracketId) => {
+
     const bracket = brackets.find(b => b.id === bracketId);
+
     if (bracket) {
+
       setSelectedBracket(bracket);
+
       await loadBracketData(selectedEvent, bracket);
+
     }
+
   };
+
+
 
   const loadBracketData = async (event, bracket) => {
+
     setLoading(true);
+
     setError(null);
 
+
+
     try {
+
       // Clear any existing data
+
       setStandings([]);
+
       setAllPlayersData([]);
+
       setAllTeamsData([]);
+
+
 
       // Load standings
+
       await loadStandingsData(bracket.id);
 
+
+
       // Load event statistics
+
       await loadEventStatistics(event.id, bracket.id);
+
       
+
       // Load players data
+
       await loadAllPlayersData(event.id, bracket.id);
+
       
+
       // Load teams data
+
       await loadAllTeamsData(event.id, bracket.id);
+
     } catch (err) {
+
       setError("Failed to load data: " + err.message);
+
       console.error("Error loading data:", err);
+
     } finally {
+
       setLoading(false);
+
     }
+
   };
+
+
 
   const loadEventStatistics = async (eventId, bracketId = null) => {
+
     try {
+
       let url = `http://localhost:5000/api/stats/events/${eventId}/statistics`;
+
       if (bracketId) {
+
         url += `?bracketId=${bracketId}`;
+
       }
+
       
+
       const res = await fetch(url);
+
       const data = await res.json();
+
       setEventStatistics(data);
+
     } catch (err) {
+
       console.error("Error fetching event statistics:", err);
+
       setEventStatistics({
+
         total_players: 0,
+
         total_games: 0,
+
         sport_type: 'basketball',
+
         avg_ppg: 0,
+
         avg_rpg: 0,
+
         avg_apg: 0,
+
         avg_bpg: 0,
+
         avg_kills: 0,
+
         avg_digs: 0,
+
         avg_total_errors: 0
+
       });
+
     }
+
   };
+
+
 
   const loadAllPlayersData = async (eventId, bracketId = null) => {
+
     try {
+
       let url = `http://localhost:5000/api/stats/events/${eventId}/players-statistics`;
+
       if (bracketId) {
+
         url += `?bracketId=${bracketId}`;
+
       }
+
       
+
       const res = await fetch(url);
+
       const data = await res.json();
+
       
+
       const sortedData = data.sort((a, b) => {
+
         const scoreA = a.overall_score || 0;
+
         const scoreB = b.overall_score || 0;
+
         return scoreB - scoreA;
+
       });
+
       
+
       setAllPlayersData(sortedData);
+
     } catch (err) {
+
       console.error("Error fetching players data:", err);
+
       setAllPlayersData([]);
+
     }
+
   };
+
+
 
   const loadAllTeamsData = async (eventId, bracketId = null) => {
+
     try {
+
       let url = `http://localhost:5000/api/stats/events/${eventId}/teams-statistics`;
+
       if (bracketId) {
+
         url += `?bracketId=${bracketId}`;
+
       }
+
       
+
       const res = await fetch(url);
+
       const data = await res.json();
+
       
+
       const sortedData = data.sort((a, b) => {
+
         const scoreA = a.overall_score || 0;
+
         const scoreB = b.overall_score || 0;
+
         return scoreB - scoreA;
+
       });
+
       
+
       setAllTeamsData(sortedData);
+
     } catch (err) {
+
       console.error("Error fetching teams data:", err);
+
       setAllTeamsData([]);
+
     }
+
   };
+
+
 
   const handleBackToHome = () => {
+
     navigate("/");
+
   };
+
+
 
   const handleBackToEvents = () => {
+
     setSelectedEvent(null);
+
     setSelectedBracket(null);
+
     setBrackets([]);
+
     setActiveTab("events");
+
     setViewMode("standings");
+
     setSearchTerm("");
+
     setCurrentPage(1);
+
     
+
     // Reload recent matches when going back to events
+
     fetchRecentMatches();
+
   };
 
+
+
   const handleSort = (key) => {
+
     let direction = 'desc';
+
     
+
     if (sortConfig.key === key) {
+
       direction = sortConfig.direction === 'desc' ? 'asc' : 'desc';
+
     }
+
     
+
     setSortConfig({ key, direction });
+
   };
+
+
 
   const getPerformanceColor = (value, stat) => {
     const sportType = getCurrentSportType();
@@ -504,11 +1033,14 @@ const loadRecentBracketData = async (event, bracket) => {
         ppg: { high: 20, low: 10 },
         rpg: { high: 10, low: 5 },
         apg: { high: 8, low: 4 },
-        overall_score: { high: 30, low: 15 }
+        overall_score: { high: 30, low: 15 },
+        total_points: { high: 200, low: 50 },
+        total_rebounds: { high: 100, low: 25 },
+        total_assists: { high: 80, low: 20 }
       };
       
       const threshold = thresholds[stat];
-      if (!threshold) return '';
+      if (!threshold) return 'text-gray-300';
       
       if (value >= threshold.high) return 'stats-high-value';
       if (value <= threshold.low) return 'stats-low-value';
@@ -520,440 +1052,1087 @@ const loadRecentBracketData = async (event, bracket) => {
         digs: { high: 60, low: 25 },
         blocks: { high: 15, low: 5 },
         service_aces: { high: 10, low: 3 },
-        total_errors: { high: 20, low: 8 },
+        receptions: { high: 80, low: 30 },
+        serve_errors: { high: 10, low: 3 },
+        attack_errors: { high: 8, low: 2 },
+        reception_errors: { high: 6, low: 1 },
+        assist_errors: { high: 6, low: 1 },
+        blocking_errors: { high: 5, low: 1 },
+        ball_handling_errors: { high: 5, low: 1 },
         eff: { high: 80, low: 30 },
         overall_score: { high: 25, low: 12 },
-        total_receptions: { high: 80, low: 30 },
-        service_errors: { high: 8, low: 2 },
-        attack_errors: { high: 15, low: 5 },
-        reception_errors: { high: 12, low: 3 },
-        assist_errors: { high: 8, low: 2 }  // ADDED: assist_errors threshold
+        kps: { high: 3.5, low: 1.0 },
+        aps: { high: 0.8, low: 0.2 },
+        asps: { high: 5.0, low: 1.5 },
+        dps: { high: 4.0, low: 1.0 },
+        bps: { high: 0.8, low: 0.2 }
       };
       
       const threshold = thresholds[stat];
-      if (!threshold) return '';
+      if (!threshold) return 'text-gray-300';
       
-      if (stat === 'total_errors' || stat === 'service_errors' || stat === 'attack_errors' || stat === 'reception_errors' || stat === 'assist_errors') {
+      if (stat.includes('errors')) {
         if (value <= threshold.low) return 'stats-high-value';
         if (value >= threshold.high) return 'stats-low-value';
         return 'stats-medium-value';
       }
       
       if (value >= threshold.high) return 'stats-high-value';
+
       if (value <= threshold.low) return 'stats-low-value';
+
       return 'stats-medium-value';
+
     }
+
   };
+
+
 
   // Filter and sort players
+
   const sortedPlayers = [...allPlayersData].sort((a, b) => {
+
     const aValue = a[sortConfig.key] || 0;
+
     const bValue = b[sortConfig.key] || 0;
+
     
+
     if (sortConfig.direction === 'desc') {
+
       return bValue - aValue;
+
     } else {
+
       return aValue - bValue;
+
     }
+
   });
+
+
 
   const filteredPlayers = sortedPlayers.filter(player =>
+
     (player.name && player.name.toLowerCase().includes(searchTerm.toLowerCase())) ||
+
     (player.team_name && player.team_name.toLowerCase().includes(searchTerm.toLowerCase())) ||
+
     (player.jersey_number && player.jersey_number.toString().includes(searchTerm))
+
   );
+
+
 
   // Filter and sort teams
+
   const sortedTeams = [...allTeamsData].sort((a, b) => {
+
     const aValue = a[sortConfig.key] || 0;
+
     const bValue = b[sortConfig.key] || 0;
+
     
+
     if (sortConfig.direction === 'desc') {
+
       return bValue - aValue;
+
     } else {
+
       return aValue - bValue;
+
     }
+
   });
 
+
+
   const filteredTeams = sortedTeams.filter(team =>
+
     team.team_name && team.team_name.toLowerCase().includes(searchTerm.toLowerCase())
+
   );
+
+
 
   const filteredStandings = standings.filter(team =>
+
     team.team && team.team.toLowerCase().includes(searchTerm.toLowerCase())
+
   );
 
+
+
   // Filter events
+
   const getFilteredEvents = () => {
+
     return events.filter(event => {
+
       const matchesSearch = event.name && event.name.toLowerCase().includes(eventSearchTerm.toLowerCase());
+
       let matchesSport = sportFilter === "all";
+
       if (!matchesSport && event.brackets) {
+
         matchesSport = event.brackets.some(bracket => 
+
           bracket.sport_type === sportFilter
+
         );
+
       }
+
       return matchesSearch && matchesSport;
+
     });
+
   };
+
+
 
   const filteredEvents = getFilteredEvents();
 
+
+
   // Pagination
+
   const indexOfLastItem = currentPage * itemsPerPage;
+
   const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+
   const currentPlayers = filteredPlayers.slice(indexOfFirstItem, indexOfLastItem);
+
   const totalPagesPlayers = Math.ceil(filteredPlayers.length / itemsPerPage);
+
   const currentTeams = filteredTeams.slice(indexOfFirstItem, indexOfLastItem);
+
   const totalPagesTeams = Math.ceil(filteredTeams.length / itemsPerPage);
 
+
+
   const paginate = (pageNumber) => {
+
     setCurrentPage(pageNumber);
+
     window.scrollTo({ top: 0, behavior: 'smooth' });
+
   };
 
+
+
   useEffect(() => {
+
     setCurrentPage(1);
+
   }, [searchTerm, itemsPerPage, viewMode]);
 
-  // Render Volleyball Player Headers with additional stats
-  const renderVolleyballPlayerHeaders = () => (
-    <>
-      <th className="stats-sortable-header" onClick={() => handleSort('kills')}>
-        Total Kills {sortConfig.key === 'kills' && (sortConfig.direction === 'desc' ? '↓' : '↑')}
-      </th>
-      <th className="stats-sortable-header" onClick={() => handleSort('assists')}>
-        Total Assists {sortConfig.key === 'assists' && (sortConfig.direction === 'desc' ? '↓' : '↑')}
-      </th>
-      <th className="stats-sortable-header" onClick={() => handleSort('digs')}>
-        Total Digs {sortConfig.key === 'digs' && (sortConfig.direction === 'desc' ? '↓' : '↑')}
-      </th>
-      <th className="stats-sortable-header" onClick={() => handleSort('blocks')}>
-        Total Blocks {sortConfig.key === 'blocks' && (sortConfig.direction === 'desc' ? '↓' : '↑')}
-      </th>
-      <th className="stats-sortable-header" onClick={() => handleSort('service_aces')}>
-        Total Aces {sortConfig.key === 'service_aces' && (sortConfig.direction === 'desc' ? '↓' : '↑')}
-      </th>
-      <th className="stats-sortable-header" onClick={() => handleSort('total_errors')}>
-        Total Errors {sortConfig.key === 'total_errors' && (sortConfig.direction === 'desc' ? '↓' : '↑')}
-      </th>
-      <th className="stats-sortable-header" onClick={() => handleSort('total_receptions')}>
-        Total Receptions {sortConfig.key === 'total_receptions' && (sortConfig.direction === 'desc' ? '↓' : '↑')}
-      </th>
-      <th className="stats-sortable-header" onClick={() => handleSort('service_errors')}>
-        Service Errors {sortConfig.key === 'service_errors' && (sortConfig.direction === 'desc' ? '↓' : '↑')}
-      </th>
-      <th className="stats-sortable-header" onClick={() => handleSort('attack_errors')}>
-        Attack Errors {sortConfig.key === 'attack_errors' && (sortConfig.direction === 'desc' ? '↓' : '↑')}
-      </th>
-      <th className="stats-sortable-header" onClick={() => handleSort('reception_errors')}>
-        Reception Errors {sortConfig.key === 'reception_errors' && (sortConfig.direction === 'desc' ? '↓' : '↑')}
-      </th>
-      <th className="stats-sortable-header" onClick={() => handleSort('assist_errors')}>
-      Assist Errors {sortConfig.key === 'assist_errors' && (sortConfig.direction === 'desc' ? '↓' : '↑')}
-      </th>
-      <th className="stats-sortable-header" onClick={() => handleSort('eff')}>
-        Efficiency {sortConfig.key === 'eff' && (sortConfig.direction === 'desc' ? '↓' : '↑')}
-      </th>
-    </>
-  );
 
-  // Render Volleyball Team Headers with additional stats
-  const renderVolleyballTeamHeaders = () => (
-    <>
-      <th className="stats-sortable-header" onClick={() => handleSort('kills')}>
-        Total Kills {sortConfig.key === 'kills' && (sortConfig.direction === 'desc' ? '↓' : '↑')}
-      </th>
-      <th className="stats-sortable-header" onClick={() => handleSort('assists')}>
-        Total Assists {sortConfig.key === 'assists' && (sortConfig.direction === 'desc' ? '↓' : '↑')}
-      </th>
-      <th className="stats-sortable-header" onClick={() => handleSort('digs')}>
-        Total Digs {sortConfig.key === 'digs' && (sortConfig.direction === 'desc' ? '↓' : '↑')}
-      </th>
-      <th className="stats-sortable-header" onClick={() => handleSort('blocks')}>
-        Total Blocks {sortConfig.key === 'blocks' && (sortConfig.direction === 'desc' ? '↓' : '↑')}
-      </th>
-      <th className="stats-sortable-header" onClick={() => handleSort('service_aces')}>
-        Total Aces {sortConfig.key === 'service_aces' && (sortConfig.direction === 'desc' ? '↓' : '↑')}
-      </th>
-      <th className="stats-sortable-header" onClick={() => handleSort('total_errors')}>
-        Total Errors {sortConfig.key === 'total_errors' && (sortConfig.direction === 'desc' ? '↓' : '↑')}
-      </th>
-      <th className="stats-sortable-header" onClick={() => handleSort('total_receptions')}>
-        Total Receptions {sortConfig.key === 'total_receptions' && (sortConfig.direction === 'desc' ? '↓' : '↑')}
-      </th>
-      <th className="stats-sortable-header" onClick={() => handleSort('service_errors')}>
-        Service Errors {sortConfig.key === 'service_errors' && (sortConfig.direction === 'desc' ? '↓' : '↑')}
-      </th>
-      <th className="stats-sortable-header" onClick={() => handleSort('attack_errors')}>
-        Attack Errors {sortConfig.key === 'attack_errors' && (sortConfig.direction === 'desc' ? '↓' : '↑')}
-      </th>
-      <th className="stats-sortable-header" onClick={() => handleSort('reception_errors')}>
-        Reception Errors {sortConfig.key === 'reception_errors' && (sortConfig.direction === 'desc' ? '↓' : '↑')}
-      </th>
-      <th className="stats-sortable-header" onClick={() => handleSort('assist_errors')}>
-      Assist Errors {sortConfig.key === 'assist_errors' && (sortConfig.direction === 'desc' ? '↓' : '↑')}
-      </th>
-      <th className="stats-sortable-header" onClick={() => handleSort('eff')}>
-        Efficiency {sortConfig.key === 'eff' && (sortConfig.direction === 'desc' ? '↓' : '↑')}
-      </th>
-    </>
-  );
 
-  // Render Basketball Headers
+      // Render Basketball Headers (totals vs averages)
   const renderBasketballPlayerHeaders = () => (
-    <>
-      <th className="stats-sortable-header" onClick={() => handleSort('ppg')}>
-        PPG {sortConfig.key === 'ppg' && (sortConfig.direction === 'desc' ? '↓' : '↑')}
-      </th>
-      <th className="stats-sortable-header" onClick={() => handleSort('rpg')}>
-        RPG {sortConfig.key === 'rpg' && (sortConfig.direction === 'desc' ? '↓' : '↑')}
-      </th>
-      <th className="stats-sortable-header" onClick={() => handleSort('apg')}>
-        APG {sortConfig.key === 'apg' && (sortConfig.direction === 'desc' ? '↓' : '↑')}
-      </th>
-      <th className="stats-sortable-header" onClick={() => handleSort('bpg')}>
-        BPG {sortConfig.key === 'bpg' && (sortConfig.direction === 'desc' ? '↓' : '↑')}
-      </th>
-    </>
+    statsDisplayMode === 'totals' ? (
+      <>
+        <th className="stats-sortable-header" onClick={() => handleSort('total_points')}>
+          Total PTS {sortConfig.key === 'total_points' && (sortConfig.direction === 'desc' ? '?' : '?')}
+        </th>
+        <th className="stats-sortable-header" onClick={() => handleSort('total_rebounds')}>
+          Total REB {sortConfig.key === 'total_rebounds' && (sortConfig.direction === 'desc' ? '?' : '?')}
+        </th>
+        <th className="stats-sortable-header" onClick={() => handleSort('total_assists')}>
+          Total AST {sortConfig.key === 'total_assists' && (sortConfig.direction === 'desc' ? '?' : '?')}
+        </th>
+        <th className="stats-sortable-header" onClick={() => handleSort('total_steals')}>
+          Total STL {sortConfig.key === 'total_steals' && (sortConfig.direction === 'desc' ? '?' : '?')}
+        </th>
+        <th className="stats-sortable-header" onClick={() => handleSort('total_blocks')}>
+          Total BLK {sortConfig.key === 'total_blocks' && (sortConfig.direction === 'desc' ? '?' : '?')}
+        </th>
+        <th className="stats-sortable-header" onClick={() => handleSort('total_three_points')}>
+          Total 3PM {sortConfig.key === 'total_three_points' && (sortConfig.direction === 'desc' ? '?' : '?')}
+        </th>
+        <th className="stats-sortable-header" onClick={() => handleSort('total_turnovers')}>
+          Total TO {sortConfig.key === 'total_turnovers' && (sortConfig.direction === 'desc' ? '?' : '?')}
+        </th>
+        <th className="stats-sortable-header" onClick={() => handleSort('total_fouls')}>
+          Total FOULS {sortConfig.key === 'total_fouls' && (sortConfig.direction === 'desc' ? '?' : '?')}
+        </th>
+      </>
+    ) : (
+      <>
+        <th className="stats-sortable-header" onClick={() => handleSort('ppg')}>
+          PPG {sortConfig.key === 'ppg' && (sortConfig.direction === 'desc' ? '?' : '?')}
+        </th>
+        <th className="stats-sortable-header" onClick={() => handleSort('rpg')}>
+          RPG {sortConfig.key === 'rpg' && (sortConfig.direction === 'desc' ? '?' : '?')}
+        </th>
+        <th className="stats-sortable-header" onClick={() => handleSort('apg')}>
+          APG {sortConfig.key === 'apg' && (sortConfig.direction === 'desc' ? '?' : '?')}
+        </th>
+        <th className="stats-sortable-header" onClick={() => handleSort('bpg')}>
+          BPG {sortConfig.key === 'bpg' && (sortConfig.direction === 'desc' ? '?' : '?')}
+        </th>
+      </>
+    )
   );
 
   const renderBasketballTeamHeaders = () => (
-    <>
-      <th className="stats-sortable-header" onClick={() => handleSort('ppg')}>
-        PPG {sortConfig.key === 'ppg' && (sortConfig.direction === 'desc' ? '↓' : '↑')}
-      </th>
-      <th className="stats-sortable-header" onClick={() => handleSort('rpg')}>
-        RPG {sortConfig.key === 'rpg' && (sortConfig.direction === 'desc' ? '↓' : '↑')}
-      </th>
-      <th className="stats-sortable-header" onClick={() => handleSort('apg')}>
-        APG {sortConfig.key === 'apg' && (sortConfig.direction === 'desc' ? '↓' : '↑')}
-      </th>
-      <th className="stats-sortable-header" onClick={() => handleSort('bpg')}>
-        BPG {sortConfig.key === 'bpg' && (sortConfig.direction === 'desc' ? '↓' : '↑')}
-      </th>
-    </>
+    statsDisplayMode === 'totals' ? (
+      <>
+        <th className="stats-sortable-header" onClick={() => handleSort('total_points')}>
+          Total PTS {sortConfig.key === 'total_points' && (sortConfig.direction === 'desc' ? '?' : '?')}
+        </th>
+        <th className="stats-sortable-header" onClick={() => handleSort('total_rebounds')}>
+          Total REB {sortConfig.key === 'total_rebounds' && (sortConfig.direction === 'desc' ? '?' : '?')}
+        </th>
+        <th className="stats-sortable-header" onClick={() => handleSort('total_assists')}>
+          Total AST {sortConfig.key === 'total_assists' && (sortConfig.direction === 'desc' ? '?' : '?')}
+        </th>
+        <th className="stats-sortable-header" onClick={() => handleSort('total_steals')}>
+          Total STL {sortConfig.key === 'total_steals' && (sortConfig.direction === 'desc' ? '?' : '?')}
+        </th>
+        <th className="stats-sortable-header" onClick={() => handleSort('total_blocks')}>
+          Total BLK {sortConfig.key === 'total_blocks' && (sortConfig.direction === 'desc' ? '?' : '?')}
+        </th>
+        <th className="stats-sortable-header" onClick={() => handleSort('total_three_points')}>
+          Total 3PM {sortConfig.key === 'total_three_points' && (sortConfig.direction === 'desc' ? '?' : '?')}
+        </th>
+        <th className="stats-sortable-header" onClick={() => handleSort('total_turnovers')}>
+          Total TO {sortConfig.key === 'total_turnovers' && (sortConfig.direction === 'desc' ? '?' : '?')}
+        </th>
+        <th className="stats-sortable-header" onClick={() => handleSort('total_fouls')}>
+          Total FOULS {sortConfig.key === 'total_fouls' && (sortConfig.direction === 'desc' ? '?' : '?')}
+        </th>
+      </>
+    ) : (
+      <>
+        <th className="stats-sortable-header" onClick={() => handleSort('ppg')}>
+          PPG {sortConfig.key === 'ppg' && (sortConfig.direction === 'desc' ? '?' : '?')}
+        </th>
+        <th className="stats-sortable-header" onClick={() => handleSort('rpg')}>
+          RPG {sortConfig.key === 'rpg' && (sortConfig.direction === 'desc' ? '?' : '?')}
+        </th>
+        <th className="stats-sortable-header" onClick={() => handleSort('apg')}>
+          APG {sortConfig.key === 'apg' && (sortConfig.direction === 'desc' ? '?' : '?')}
+        </th>
+        <th className="stats-sortable-header" onClick={() => handleSort('bpg')}>
+          BPG {sortConfig.key === 'bpg' && (sortConfig.direction === 'desc' ? '?' : '?')}
+        </th>
+      </>
+    )
   );
 
+  // Render Volleyball Headers (totals vs per-set)
+  const renderVolleyballPlayerHeaders = () => (
+    volleyballDisplayMode === 'totals' ? (
+      <>
+        <th className="stats-sortable-header" onClick={() => handleSort('kills')}>
+          Total Kills {sortConfig.key === 'kills' && (sortConfig.direction === 'desc' ? '?' : '?')}
+        </th>
+        <th className="stats-sortable-header" onClick={() => handleSort('service_aces')}>
+          Total Aces {sortConfig.key === 'service_aces' && (sortConfig.direction === 'desc' ? '?' : '?')}
+        </th>
+        <th className="stats-sortable-header" onClick={() => handleSort('assists')}>
+          Total Assists {sortConfig.key === 'assists' && (sortConfig.direction === 'desc' ? '?' : '?')}
+        </th>
+        <th className="stats-sortable-header" onClick={() => handleSort('digs')}>
+          Total Digs {sortConfig.key === 'digs' && (sortConfig.direction === 'desc' ? '?' : '?')}
+        </th>
+        <th className="stats-sortable-header" onClick={() => handleSort('blocks')}>
+          Total Blocks {sortConfig.key === 'blocks' && (sortConfig.direction === 'desc' ? '?' : '?')}
+        </th>
+        <th className="stats-sortable-header" onClick={() => handleSort('receptions')}>
+          Total Receptions {sortConfig.key === 'receptions' && (sortConfig.direction === 'desc' ? '?' : '?')}
+        </th>
+        <th className="stats-sortable-header" onClick={() => handleSort('serve_errors')}>
+          Service Errors {sortConfig.key === 'serve_errors' && (sortConfig.direction === 'desc' ? '?' : '?')}
+        </th>
+        <th className="stats-sortable-header" onClick={() => handleSort('attack_errors')}>
+          Attack Errors {sortConfig.key === 'attack_errors' && (sortConfig.direction === 'desc' ? '?' : '?')}
+        </th>
+        <th className="stats-sortable-header" onClick={() => handleSort('reception_errors')}>
+          Reception Errors {sortConfig.key === 'reception_errors' && (sortConfig.direction === 'desc' ? '?' : '?')}
+        </th>
+        <th className="stats-sortable-header" onClick={() => handleSort('assist_errors')}>
+          Assist Errors {sortConfig.key === 'assist_errors' && (sortConfig.direction === 'desc' ? '?' : '?')}
+        </th>
+        <th className="stats-sortable-header" onClick={() => handleSort('blocking_errors')}>
+          Blocking Errors {sortConfig.key === 'blocking_errors' && (sortConfig.direction === 'desc' ? '?' : '?')}
+        </th>
+        <th className="stats-sortable-header" onClick={() => handleSort('ball_handling_errors')}>
+          Ball Handling Errors {sortConfig.key === 'ball_handling_errors' && (sortConfig.direction === 'desc' ? '?' : '?')}
+        </th>
+        <th className="stats-sortable-header" onClick={() => handleSort('eff')}>
+          Efficiency {sortConfig.key === 'eff' && (sortConfig.direction === 'desc' ? '?' : '?')}
+        </th>
+      </>
+    ) : (
+      <>
+        <th className="stats-sortable-header" onClick={() => handleSort('kps')}>
+          KPS {sortConfig.key === 'kps' && (sortConfig.direction === 'desc' ? '?' : '?')}
+        </th>
+        <th className="stats-sortable-header" onClick={() => handleSort('aps')}>
+          APS {sortConfig.key === 'aps' && (sortConfig.direction === 'desc' ? '?' : '?')}
+        </th>
+        <th className="stats-sortable-header" onClick={() => handleSort('asps')}>
+          ASPS {sortConfig.key === 'asps' && (sortConfig.direction === 'desc' ? '?' : '?')}
+        </th>
+        <th className="stats-sortable-header" onClick={() => handleSort('dps')}>
+          DPS {sortConfig.key === 'dps' && (sortConfig.direction === 'desc' ? '?' : '?')}
+        </th>
+        <th className="stats-sortable-header" onClick={() => handleSort('bps')}>
+          BPS {sortConfig.key === 'bps' && (sortConfig.direction === 'desc' ? '?' : '?')}
+        </th>
+      </>
+    )
+  );
+
+  const renderVolleyballTeamHeaders = () => (
+    volleyballDisplayMode === 'totals' ? (
+      <>
+        <th className="stats-sortable-header" onClick={() => handleSort('kills')}>
+          Total Kills {sortConfig.key === 'kills' && (sortConfig.direction === 'desc' ? '?' : '?')}
+        </th>
+        <th className="stats-sortable-header" onClick={() => handleSort('assists')}>
+          Total Assists {sortConfig.key === 'assists' && (sortConfig.direction === 'desc' ? '?' : '?')}
+        </th>
+        <th className="stats-sortable-header" onClick={() => handleSort('digs')}>
+          Total Digs {sortConfig.key === 'digs' && (sortConfig.direction === 'desc' ? '?' : '?')}
+        </th>
+        <th className="stats-sortable-header" onClick={() => handleSort('blocks')}>
+          Total Blocks {sortConfig.key === 'blocks' && (sortConfig.direction === 'desc' ? '?' : '?')}
+        </th>
+        <th className="stats-sortable-header" onClick={() => handleSort('service_aces')}>
+          Total Aces {sortConfig.key === 'service_aces' && (sortConfig.direction === 'desc' ? '?' : '?')}
+        </th>
+        <th className="stats-sortable-header" onClick={() => handleSort('receptions')}>
+          Total Receptions {sortConfig.key === 'receptions' && (sortConfig.direction === 'desc' ? '?' : '?')}
+        </th>
+        <th className="stats-sortable-header" onClick={() => handleSort('serve_errors')}>
+          Service Errors {sortConfig.key === 'serve_errors' && (sortConfig.direction === 'desc' ? '?' : '?')}
+        </th>
+        <th className="stats-sortable-header" onClick={() => handleSort('attack_errors')}>
+          Attack Errors {sortConfig.key === 'attack_errors' && (sortConfig.direction === 'desc' ? '?' : '?')}
+        </th>
+        <th className="stats-sortable-header" onClick={() => handleSort('reception_errors')}>
+          Reception Errors {sortConfig.key === 'reception_errors' && (sortConfig.direction === 'desc' ? '?' : '?')}
+        </th>
+        <th className="stats-sortable-header" onClick={() => handleSort('assist_errors')}>
+          Assist Errors {sortConfig.key === 'assist_errors' && (sortConfig.direction === 'desc' ? '?' : '?')}
+        </th>
+        <th className="stats-sortable-header" onClick={() => handleSort('blocking_errors')}>
+          Blocking Errors {sortConfig.key === 'blocking_errors' && (sortConfig.direction === 'desc' ? '?' : '?')}
+        </th>
+        <th className="stats-sortable-header" onClick={() => handleSort('ball_handling_errors')}>
+          Ball Handling Errors {sortConfig.key === 'ball_handling_errors' && (sortConfig.direction === 'desc' ? '?' : '?')}
+        </th>
+        <th className="stats-sortable-header" onClick={() => handleSort('eff')}>
+          Efficiency {sortConfig.key === 'eff' && (sortConfig.direction === 'desc' ? '?' : '?')}
+        </th>
+      </>
+    ) : (
+      <>
+        <th className="stats-sortable-header" onClick={() => handleSort('kps')}>
+          KPS {sortConfig.key === 'kps' && (sortConfig.direction === 'desc' ? '?' : '?')}
+        </th>
+        <th className="stats-sortable-header" onClick={() => handleSort('aps')}>
+          APS {sortConfig.key === 'aps' && (sortConfig.direction === 'desc' ? '?' : '?')}
+        </th>
+        <th className="stats-sortable-header" onClick={() => handleSort('asps')}>
+          ASPS {sortConfig.key === 'asps' && (sortConfig.direction === 'desc' ? '?' : '?')}
+        </th>
+        <th className="stats-sortable-header" onClick={() => handleSort('dps')}>
+          DPS {sortConfig.key === 'dps' && (sortConfig.direction === 'desc' ? '?' : '?')}
+        </th>
+        <th className="stats-sortable-header" onClick={() => handleSort('bps')}>
+          BPS {sortConfig.key === 'bps' && (sortConfig.direction === 'desc' ? '?' : '?')}
+        </th>
+      </>
+    )
+  );
+
+  // Render stat cells for reuse across tables
+  const renderBasketballPlayerStatCells = (player) => (
+    statsDisplayMode === 'totals' ? (
+      <>
+        <td className={getPerformanceColor(player.total_points, 'total_points')}>{player.total_points || 0}</td>
+        <td className={getPerformanceColor(player.total_rebounds, 'total_rebounds')}>{player.total_rebounds || 0}</td>
+        <td className={getPerformanceColor(player.total_assists, 'total_assists')}>{player.total_assists || 0}</td>
+        <td className="stats-steals">{player.total_steals || 0}</td>
+        <td className="stats-blocks">{player.total_blocks || 0}</td>
+        <td className="stats-three-points">{player.total_three_points || 0}</td>
+        <td className="stats-turnovers">{player.total_turnovers || 0}</td>
+        <td className="stats-fouls">{player.total_fouls || 0}</td>
+      </>
+    ) : (
+      <>
+        <td className={getPerformanceColor(player.ppg, 'ppg')}>{player.ppg || 0}</td>
+        <td className={getPerformanceColor(player.rpg, 'rpg')}>{player.rpg || 0}</td>
+        <td className={getPerformanceColor(player.apg, 'apg')}>{player.apg || 0}</td>
+        <td className="stats-bpg">{player.bpg || 0}</td>
+      </>
+    )
+  );
+
+  const renderVolleyballPlayerStatCells = (player) => (
+    volleyballDisplayMode === 'totals' ? (
+      <>
+        <td className={getPerformanceColor(player.kills, 'kills')}>{player.kills || 0}</td>
+        <td className="stats-service-aces">{player.service_aces || 0}</td>
+        <td className={getPerformanceColor(player.assists, 'assists')}>{player.assists || 0}</td>
+        <td className={getPerformanceColor(player.digs, 'digs')}>{player.digs || 0}</td>
+        <td className="stats-blocks">{player.blocks || 0}</td>
+        <td className={getPerformanceColor(player.receptions, 'receptions')}>{player.receptions || 0}</td>
+        <td className="stats-error">{player.serve_errors || 0}</td>
+        <td className="stats-error">{player.attack_errors || 0}</td>
+        <td className="stats-error">{player.reception_errors || 0}</td>
+        <td className="stats-error">{player.assist_errors || 0}</td>
+        <td className="stats-error">{player.blocking_errors || 0}</td>
+        <td className="stats-error">{player.ball_handling_errors || 0}</td>
+        <td className={getPerformanceColor(player.eff, 'eff')}>{player.eff || 0}</td>
+      </>
+    ) : (
+      <>
+        <td className={getPerformanceColor(player.kps, 'kps')}>{player.kps || 0}</td>
+        <td className="stats-service-aces">{player.aps || 0}</td>
+        <td className={getPerformanceColor(player.asps, 'asps')}>{player.asps || 0}</td>
+        <td className={getPerformanceColor(player.dps, 'dps')}>{player.dps || 0}</td>
+        <td className="stats-blocks">{player.bps || 0}</td>
+      </>
+    )
+  );
+
+  const renderBasketballTeamStatCells = (team) => (
+    statsDisplayMode === 'totals' ? (
+      <>
+        <td className={getPerformanceColor(team.total_points, 'total_points')}>{team.total_points || 0}</td>
+        <td className={getPerformanceColor(team.total_rebounds, 'total_rebounds')}>{team.total_rebounds || 0}</td>
+        <td className={getPerformanceColor(team.total_assists, 'total_assists')}>{team.total_assists || 0}</td>
+        <td className="stats-steals">{team.total_steals || 0}</td>
+        <td className="stats-blocks">{team.total_blocks || 0}</td>
+        <td className="stats-three-points">{team.total_three_points || 0}</td>
+        <td className="stats-turnovers">{team.total_turnovers || 0}</td>
+        <td className="stats-fouls">{team.total_fouls || 0}</td>
+      </>
+    ) : (
+      <>
+        <td className={getPerformanceColor(team.ppg, 'ppg')}>{team.ppg || 0}</td>
+        <td className={getPerformanceColor(team.rpg, 'rpg')}>{team.rpg || 0}</td>
+        <td className={getPerformanceColor(team.apg, 'apg')}>{team.apg || 0}</td>
+        <td className="stats-bpg">{team.bpg || 0}</td>
+      </>
+    )
+  );
+
+  const renderVolleyballTeamStatCells = (team) => (
+    volleyballDisplayMode === 'totals' ? (
+      <>
+        <td className={getPerformanceColor(team.kills, 'kills')}>{team.kills || 0}</td>
+        <td className={getPerformanceColor(team.assists, 'assists')}>{team.assists || 0}</td>
+        <td className={getPerformanceColor(team.digs, 'digs')}>{team.digs || 0}</td>
+        <td className="stats-blocks">{team.blocks || 0}</td>
+        <td className="stats-service-aces">{team.service_aces || 0}</td>
+        <td className={getPerformanceColor(team.receptions, 'receptions')}>{team.receptions || 0}</td>
+        <td className="stats-error">{team.serve_errors || 0}</td>
+        <td className="stats-error">{team.attack_errors || 0}</td>
+        <td className="stats-error">{team.reception_errors || 0}</td>
+        <td className="stats-error">{team.assist_errors || 0}</td>
+        <td className="stats-error">{team.blocking_errors || 0}</td>
+        <td className="stats-error">{team.ball_handling_errors || 0}</td>
+        <td className={getPerformanceColor(team.eff, 'eff')}>{team.eff || 0}</td>
+      </>
+    ) : (
+      <>
+        <td className={getPerformanceColor(team.kps, 'kps')}>{team.kps || 0}</td>
+        <td className="stats-service-aces">{team.aps || 0}</td>
+        <td className={getPerformanceColor(team.asps, 'asps')}>{team.asps || 0}</td>
+        <td className={getPerformanceColor(team.dps, 'dps')}>{team.dps || 0}</td>
+        <td className="stats-blocks">{team.bps || 0}</td>
+      </>
+    )
+  );
   // Render recent tournament containers
   const renderRecentTournamentContainers = () => {
     // Don't show recent containers when a specific event is selected
     if (selectedEvent) return null;
+
+    const recentSportType = selectedRecentBracket?.sport_type || getCurrentSportType();
 
     if (!recentTournament) {
       return (
         <div className="recent-tournament-section">
           <div className="empty-state">
             <p>No recent tournaments available.</p>
+
           </div>
+
         </div>
+
       );
+
     }
 
+
+
     return (
+
       <div className="recent-tournament-section">
+
         {/* New Filter Container - Matching Schedule Page Style */}
+
         <div className="stats-filter-matches-container">
+
   <div className="stats-filter-matches-header">
+
     <FaFilter className="stats-filter-matches-icon" />
+
     <span className="stats-filter-matches-title">FILTER STATISTICS</span>
+
   </div>
+
   
+
  <div className="stats-filter-matches-content">
+
   {/* Single Row with Tournament, Bracket, and Period */}
+
   <div className="stats-filter-matches-row" style={{ display: 'flex', gap: '1.5rem', alignItems: 'flex-end' }}>
-    <div className="stats-filter-matches-group" style={{ flex: '1', minWidth: '200px' }}>
-      <div className="stats-filter-matches-label">
-        <FaTrophy className="stats-filter-matches-label-icon" />
-        <span>TOURNAMENT</span>
-      </div>
-      <select
-        value={recentTournament?.id || ""}
-        onChange={(e) => {
-          const tournamentId = parseInt(e.target.value);
-          const tournament = events.find(ev => ev.id === tournamentId);
-          if (tournament) {
-            setRecentTournament(tournament);
-            setDateRangeFilter({ start: '', end: '' });
-            setFilteredByDateStandings([]);
-            const fetchBrackets = async () => {
-              try {
-                let bracketsRes;
-                try {
-                  bracketsRes = await fetch(`http://localhost:5000/api/events/${tournament.id}/brackets`);
-                } catch (err) {
-                  bracketsRes = await fetch(`http://localhost:5000/api/awards/events/${tournament.id}/completed-brackets`);
-                }
-                const brackets = await bracketsRes.json();
-                setRecentBrackets(brackets || []);
-                if (brackets && brackets.length > 0) {
-                  setSelectedRecentBracket(brackets[0]);
-                  await loadRecentBracketData(tournament, brackets[0]);
-                }
-              } catch (err) {
-                console.error("Error fetching brackets:", err);
-              }
-            };
-            fetchBrackets();
-          }
-        }}
-        className="stats-filter-matches-select"
-      >
-        {events.map(event => (
-          <option key={event.id} value={event.id}>{event.name}</option>
-        ))}
-      </select>
-    </div>
 
     <div className="stats-filter-matches-group" style={{ flex: '1', minWidth: '200px' }}>
+
       <div className="stats-filter-matches-label">
-        <FaMedal className="stats-filter-matches-label-icon" />
-        <span>BRACKET</span>
+
+        <FaTrophy className="stats-filter-matches-label-icon" />
+
+        <span>TOURNAMENT</span>
+
       </div>
-      <select 
-        value={selectedRecentBracket?.id || ''}
+
+      <select
+
+        value={recentTournament?.id || ""}
+
         onChange={(e) => {
-          const bracketId = parseInt(e.target.value);
-          const bracket = recentBrackets.find(b => b.id === bracketId);
-          if (bracket) {
-            setSelectedRecentBracket(bracket);
+
+          const tournamentId = parseInt(e.target.value);
+
+          const tournament = events.find(ev => ev.id === tournamentId);
+
+          if (tournament) {
+
+            setRecentTournament(tournament);
+
             setDateRangeFilter({ start: '', end: '' });
+
             setFilteredByDateStandings([]);
-            loadRecentBracketData(recentTournament, bracket);
+
+            const fetchBrackets = async () => {
+
+              try {
+
+                let bracketsRes;
+
+                try {
+
+                  bracketsRes = await fetch(`http://localhost:5000/api/events/${tournament.id}/brackets`);
+
+                } catch (err) {
+
+                  bracketsRes = await fetch(`http://localhost:5000/api/awards/events/${tournament.id}/completed-brackets`);
+
+                }
+
+                const brackets = await bracketsRes.json();
+
+                setRecentBrackets(brackets || []);
+
+                if (brackets && brackets.length > 0) {
+
+                  setSelectedRecentBracket(brackets[0]);
+
+                  await loadRecentBracketData(tournament, brackets[0]);
+
+                }
+
+              } catch (err) {
+
+                console.error("Error fetching brackets:", err);
+
+              }
+
+            };
+
+            fetchBrackets();
+
           }
+
         }}
+
         className="stats-filter-matches-select"
-        disabled={recentBrackets.length === 0}
+
       >
-        {recentBrackets.map(bracket => (
-          <option key={bracket.id} value={bracket.id}>
-            {bracket.name}
-          </option>
+
+        {events.map(event => (
+
+          <option key={event.id} value={event.id}>{event.name}</option>
+
         ))}
+
       </select>
+
     </div>
+
+
+
+    <div className="stats-filter-matches-group" style={{ flex: '1', minWidth: '200px' }}>
+
+      <div className="stats-filter-matches-label">
+
+        <FaMedal className="stats-filter-matches-label-icon" />
+
+        <span>BRACKET</span>
+
+      </div>
+
+      <select 
+
+        value={selectedRecentBracket?.id || ''}
+
+        onChange={(e) => {
+
+          const bracketId = parseInt(e.target.value);
+
+          const bracket = recentBrackets.find(b => b.id === bracketId);
+
+          if (bracket) {
+
+            setSelectedRecentBracket(bracket);
+
+            setDateRangeFilter({ start: '', end: '' });
+
+            setFilteredByDateStandings([]);
+
+            loadRecentBracketData(recentTournament, bracket);
+
+          }
+
+        }}
+
+        className="stats-filter-matches-select"
+
+        disabled={recentBrackets.length === 0}
+
+      >
+
+        {recentBrackets.map(bracket => (
+
+          <option key={bracket.id} value={bracket.id}>
+
+            {bracket.name}
+
+          </option>
+
+        ))}
+
+      </select>
+
+    </div>
+
 {tournamentPeriod && selectedRecentBracket && (  // ADD selectedRecentBracket check
+
   <div className="stats-filter-matches-group" style={{ flex: '1', minWidth: '250px' }}>
+
     <div className="stats-filter-matches-label" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--text-secondary)', fontSize: '0.85rem', fontWeight: '500', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+
       <FaCalendarAlt className="stats-filter-matches-label-icon" style={{ fontSize: '0.9rem', color: 'var(--primary-color)' }} />
+
       <span>TOURNAMENT PERIOD</span>
+
     </div>
+
     <div className="stats-period-display" style={{ display: 'flex', alignItems: 'center', gap: '1rem', padding: '0.75rem 1rem', background: 'var(--background-secondary)', border: '2px solid var(--border-color)', borderRadius: 'var(--border-radius)', height: '48px', boxSizing: 'border-box' }}>
+
       <span className="stats-period-date" style={{ fontSize: '0.95rem', fontWeight: '600', color: 'var(--text-primary)' }}>
+
         {new Date(tournamentPeriod.start).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+
       </span>
-      <span className="stats-period-separator" style={{ color: 'var(--primary-color)', fontWeight: 'bold', fontSize: '1.2rem' }}>→</span>
+
+      <span className="stats-period-separator" style={{ color: 'var(--primary-color)', fontWeight: 'bold', fontSize: '1.2rem' }}>?</span>
+
       <span className="stats-period-date" style={{ fontSize: '0.95rem', fontWeight: '600', color: 'var(--text-primary)' }}>
+
         {new Date(tournamentPeriod.end).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+
       </span>
+
     </div>
+
   </div>
+
 )}
+
   </div>
+
+
 
   {/* Date Range Filter Row */}
+
   <div className="stats-filter-matches-row">
+
     <div className="stats-filter-matches-group" style={{ width: '100%' }}>
+
       <div className="stats-filter-matches-label">
+
         <FaChartBar className="stats-filter-matches-label-icon" />
+
         <span>FILTER BY DATE RANGE</span>
+
       </div>
+
       <div className="stats-date-range-inputs">
+
         <input
+
           type="date"
+
           value={dateRangeFilter.start}
+
           onChange={(e) => setDateRangeFilter({ ...dateRangeFilter, start: e.target.value })}
+
           min={tournamentPeriod?.start}
+
           max={tournamentPeriod?.end}
+
           className="stats-date-input"
+
           placeholder="Start Date"
+
         />
+
         <span className="stats-date-separator">to</span>
+
         <input
+
           type="date"
+
           value={dateRangeFilter.end}
+
           onChange={(e) => setDateRangeFilter({ ...dateRangeFilter, end: e.target.value })}
+
           min={dateRangeFilter.start || tournamentPeriod?.start}
+
           max={tournamentPeriod?.end}
+
           className="stats-date-input"
+
           placeholder="End Date"
+
         />
+
         <button
+
           onClick={() => {
+
             if (selectedRecentBracket && dateRangeFilter.start && dateRangeFilter.end) {
+
               filterStandingsByDate(selectedRecentBracket.id, dateRangeFilter.start, dateRangeFilter.end);
+
             }
+
           }}
+
           disabled={!dateRangeFilter.start || !dateRangeFilter.end}
+
           className="stats-date-apply-btn"
+
         >
+
           Apply Filter
+
         </button>
+
         {(dateRangeFilter.start || dateRangeFilter.end || filteredByDateStandings.length > 0) && (
+
           <button
+
             onClick={() => {
+
               setDateRangeFilter({ start: '', end: '' });
+
               setFilteredByDateStandings([]);
+
             }}
+
             className="stats-date-clear-btn"
+
           >
+
             Clear
+
           </button>
+
         )}
+
       </div>
+
     </div>
+
   </div>
+
+
 
   {/* Date Filter Status */}
+
   {filteredByDateStandings.length > 0 && (
+
     <div className="stats-filter-status">
-      <span className="stats-filter-status-icon">ℹ️</span>
+
+      <span className="stats-filter-status-icon">??</span>
+
       <span>Showing standings from {new Date(dateRangeFilter.start).toLocaleDateString()} to {new Date(dateRangeFilter.end).toLocaleDateString()}</span>
+
     </div>
+
   )}
-</div>
+
 </div>
 
+</div>
+
+
+
         {/* Stats Containers Grid */}
+
         <div className="recent-stats-vertical">
-          {/* Container 2: Team Standing */}
-     {/* Container 2: Team Standing */}
-<div className="recent-container container-2">
+
+{/* Team Standings Section - now first */}
+
+<div className="recent-container stats-standings-container">
+
   <div className="container-header">
-    <h3>Team Statistics</h3>
+
+    <h3>Team Standings</h3>
+
   </div>
+
   <div className="container-content">
+
     <div className="stats-table-container">
+
       <table className="stats-table">
+
+        <thead>
+
+          <tr>
+
+            <th>Rank</th>
+
+<th>Team</th>
+
+<th style={{ textAlign: 'center' }}>W</th>
+
+<th style={{ textAlign: 'center' }}>L</th>
+
+            {selectedRecentBracket?.sport_type === "basketball" ? (
+
+              <>
+
+                <th style={{ width: '80px', textAlign: 'center' }}>PF</th>
+
+                <th style={{ width: '80px', textAlign: 'center' }}>PA</th>
+
+                <th style={{ width: '100px', textAlign: 'center' }}>Diff</th>
+
+              </>
+
+            ) : (
+
+              <>
+
+                <th style={{ width: '80px', textAlign: 'center' }}>SF</th>
+
+                <th style={{ width: '80px', textAlign: 'center' }}>SA</th>
+
+                <th style={{ width: '100px', textAlign: 'center' }}>Ratio</th>
+
+              </>
+
+            )}
+
+            <th style={{ width: '100px', textAlign: 'center' }}>Win%</th>
+
+          </tr>
+
+        </thead>
+
+        <tbody>
+
+          {filteredStandings.map((team, index) => (
+
+            <tr key={index} className={team.position <= 3 ? `awards_standings_podium_${team.position}` : ""}>
+
+              <td className="stats-rank-cell">
+
+                <div className={`stats-rank-badge ${
+
+                  team.position === 1 ? 'stats-rank-1' : 
+
+                  team.position === 2 ? 'stats-rank-2' :
+
+                  team.position === 3 ? 'stats-rank-3' : 'stats-rank-other'
+
+                }`}>
+
+                  {team.position === 1 && <span className="awards_standings_medal">??</span>}
+
+                  {team.position === 2 && <span className="awards_standings_medal">??</span>}
+
+                  {team.position === 3 && <span className="awards_standings_medal">??</span>}
+
+                  {team.position > 3 && team.position}
+
+                </div>
+
+              </td>
+
+              <td className="stats-team-name">
+
+                <strong>{team.team || 'Unknown Team'}</strong>
+
+              </td>
+
+              <td style={{ textAlign: 'center', fontWeight: '600' }}>{team.wins || 0}</td>
+
+              <td style={{ textAlign: 'center' }}>{team.losses || 0}</td>
+
+              {selectedRecentBracket?.sport_type === "basketball" ? (
+
+                <>
+
+                  <td style={{ textAlign: 'center' }}>{team.points_for || 0}</td>
+
+                  <td style={{ textAlign: 'center' }}>{team.points_against || 0}</td>
+
+                  <td style={{ 
+
+                    textAlign: 'center', 
+
+                    fontWeight: '600',
+
+                    color: String(team.point_diff || 0).startsWith('+') ? '#10b981' : 
+
+                           String(team.point_diff || 0).startsWith('-') ? '#ef4444' : '#94a3b8'
+
+                  }}>
+
+                    {team.point_diff || 0}
+
+                  </td>
+
+                </>
+
+              ) : (
+
+                <>
+
+                  <td style={{ textAlign: 'center' }}>{team.sets_for || 0}</td>
+
+                  <td style={{ textAlign: 'center' }}>{team.sets_against || 0}</td>
+
+                  <td style={{ textAlign: 'center' }}>{team.set_ratio || 0}</td>
+
+                </>
+
+              )}
+
+              <td style={{ textAlign: 'center', fontWeight: '700', color: '#3b82f6' }}>
+
+                {team.win_percentage || '0.0%'}
+
+              </td>
+
+            </tr>
+
+          ))}
+
+        </tbody>
+
+      </table>
+
+    </div>
+
+
+
+    {filteredStandings.length === 0 && (
+
+      <div className="empty-state">
+
+        <p>No standings data available for this tournament.</p>
+
+      </div>
+
+    )}
+
+</div>
+
+</div>
+
+          {/* Container 2: Team Standing */}
+
+     {/* Container 2: Team Standing */}
+
+<div className="recent-container container-2">
+
+  <div className="container-header" style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
+
+    <h3>Team Statistics</h3>
+    <div className="stats-mode-toggle">
+      {recentSportType === 'basketball' ? (
+        <button
+          className="stats-toggle-btn"
+          style={getToggleStyle('basketball')}
+          onClick={() => setStatsDisplayMode(prev => prev === 'averages' ? 'totals' : 'averages')}
+          title={`Switch to ${statsDisplayMode === 'averages' ? 'Totals' : 'Per Game Averages'}`}
+        >
+          <FaChartBar /> {statsDisplayMode === 'averages' ? 'Show Totals' : 'Show Averages'}
+        </button>
+      ) : (
+        <button
+          className="stats-toggle-btn"
+          style={getToggleStyle('volleyball')}
+          onClick={() => setVolleyballDisplayMode(prev => prev === 'averages' ? 'totals' : 'averages')}
+          title={`Switch to ${volleyballDisplayMode === 'averages' ? 'Totals' : 'Per-Set Averages'}`}
+        >
+          <FaChartBar /> {volleyballDisplayMode === 'averages' ? 'Show Totals' : 'Show Per-Set'}
+        </button>
+      )}
+    </div>
+
+  </div>
+
+  <div className="container-content">
+
+    <div className="stats-table-container">
+
+      <table className="stats-table">
+
         <thead>
           <tr>
             <th>Rank</th>
             <th>Team</th>
-            <th>GP</th>
-            <th>Overall</th>
-            {selectedRecentBracket?.sport_type === "basketball" ? (
-              <>
-                <th>PPG</th>
-                <th>RPG</th>
-                <th>APG</th>
-                <th>BPG</th>
-              </>
-            ) : (
-              <>
-                <th>Kills</th>
-                <th>Assists</th>
-                <th>Digs</th>
-                <th>Blocks</th>
-                <th>Aces</th>
-                <th>Errors</th>
-                <th>Receptions</th>
-                <th>Svc Errors</th>
-                <th>Att Errors</th>
-                <th>Rec Errors</th>
-                <th>Assist Errors</th> {/* ADD THIS */}
-                <th>Eff</th>
-              </>
-            )}
+            <th 
+              className="stats-sortable-header" 
+              onClick={() => handleSort(recentSportType === 'volleyball' ? 'total_sets_played' : 'games_played')}
+            >
+              {recentSportType === 'volleyball' ? 'S' : 'GP'} {sortConfig.key === (recentSportType === 'volleyball' ? 'total_sets_played' : 'games_played') && (sortConfig.direction === 'desc' ? '▼' : '▲')}
+            </th>
+            <th className="stats-sortable-header" onClick={() => handleSort('overall_score')}>
+              Overall {sortConfig.key === 'overall_score' && (sortConfig.direction === 'desc' ? '▼' : '▲')}
+            </th>
+            {recentSportType === "basketball" ? renderBasketballTeamHeaders() : renderVolleyballTeamHeaders()}
           </tr>
         </thead>
         <tbody>
@@ -965,990 +2144,1554 @@ const loadRecentBracketData = async (event, bracket) => {
                 </div>
               </td>
               <td className="stats-team-name">{team.team_name || 'Unknown Team'}</td>
-              <td className="stats-games-played">{team.games_played || 0}</td>
+              <td className="stats-games-played">
+                {recentSportType === 'volleyball' ? (team.total_sets_played || 0) : (team.games_played || 0)}
+              </td>
               <td className={getPerformanceColor(team.overall_score, 'overall_score')}>
                 {team.overall_score || 0}
               </td>
-              {selectedRecentBracket?.sport_type === "basketball" ? (
-                <>
-                  <td className={getPerformanceColor(team.ppg, 'ppg')}>{team.ppg || 0}</td>
-                  <td className={getPerformanceColor(team.rpg, 'rpg')}>{team.rpg || 0}</td>
-                  <td className={getPerformanceColor(team.apg, 'apg')}>{team.apg || 0}</td>
-                  <td className="stats-bpg">{team.bpg || 0}</td>
-                </>
-              ) : (
-                <>
-                  <td className={getPerformanceColor(team.kills, 'kills')}>{team.kills || 0}</td>
-                  <td className={getPerformanceColor(team.assists, 'assists')}>{team.assists || 0}</td>
-                  <td className={getPerformanceColor(team.digs, 'digs')}>{team.digs || 0}</td>
-                  <td className="stats-blocks">{team.blocks || 0}</td>
-                  <td className="stats-service-aces">{team.service_aces || 0}</td>
-                  <td className={getPerformanceColor(team.total_errors, 'total_errors')}>
-                    {team.total_errors || 0}
-                  </td>
-                  <td className={getPerformanceColor(team.total_receptions, 'total_receptions')}>
-                    {team.total_receptions || 0}
-                  </td>
-                  <td className={getPerformanceColor(team.service_errors, 'service_errors')}>
-                    {team.service_errors || 0}
-                  </td>
-                  <td className={getPerformanceColor(team.attack_errors, 'attack_errors')}>
-                    {team.attack_errors || 0}
-                  </td>
-                  <td className={getPerformanceColor(team.reception_errors, 'reception_errors')}>
-                    {team.reception_errors || 0}
-                  </td>
-                  {/* ADD THIS CELL */}
-                  <td className={getPerformanceColor(team.assist_errors, 'assist_errors')}>
-                    {team.assist_errors || 0}
-                  </td>
-                  <td className={getPerformanceColor(team.eff, 'eff')}>
-                    {team.eff || 0}
-                  </td>
-                </>
-              )}
+              {recentSportType === "basketball" ? renderBasketballTeamStatCells(team) : renderVolleyballTeamStatCells(team)}
             </tr>
           ))}
         </tbody>
       </table>
     </div>
+
     {allTeamsData.length === 0 && (
+
       <div className="empty-state">
+
         <p>No team statistics available.</p>
+
       </div>
+
     )}
+
   </div>
+
 </div>
 
-{/* Team Standings Section - Remove the divider, use container pattern */}
-<div className="recent-container stats-standings-container">
-  <div className="container-header">
-    <h3>Team Standings</h3>
-  </div>
-  <div className="container-content">
-    <div className="stats-table-container">
-      <table className="stats-table">
-        <thead>
-          <tr>
-            <th>Rank</th>
-<th>Team</th>
-<th style={{ textAlign: 'center' }}>W</th>
-<th style={{ textAlign: 'center' }}>L</th>
-            {selectedRecentBracket?.sport_type === "basketball" ? (
-              <>
-                <th style={{ width: '80px', textAlign: 'center' }}>PF</th>
-                <th style={{ width: '80px', textAlign: 'center' }}>PA</th>
-                <th style={{ width: '100px', textAlign: 'center' }}>Diff</th>
-              </>
-            ) : (
-              <>
-                <th style={{ width: '80px', textAlign: 'center' }}>SF</th>
-                <th style={{ width: '80px', textAlign: 'center' }}>SA</th>
-                <th style={{ width: '100px', textAlign: 'center' }}>Ratio</th>
-              </>
-            )}
-            <th style={{ width: '100px', textAlign: 'center' }}>Win%</th>
-          </tr>
-        </thead>
-        <tbody>
-          {filteredStandings.map((team, index) => (
-            <tr key={index} className={team.position <= 3 ? `awards_standings_podium_${team.position}` : ""}>
-              <td className="stats-rank-cell">
-                <div className={`stats-rank-badge ${
-                  team.position === 1 ? 'stats-rank-1' : 
-                  team.position === 2 ? 'stats-rank-2' :
-                  team.position === 3 ? 'stats-rank-3' : 'stats-rank-other'
-                }`}>
-                  {team.position === 1 && <span className="awards_standings_medal">🥇</span>}
-                  {team.position === 2 && <span className="awards_standings_medal">🥈</span>}
-                  {team.position === 3 && <span className="awards_standings_medal">🥉</span>}
-                  {team.position > 3 && team.position}
-                </div>
-              </td>
-              <td className="stats-team-name">
-                <strong>{team.team || 'Unknown Team'}</strong>
-              </td>
-              <td style={{ textAlign: 'center', fontWeight: '600' }}>{team.wins || 0}</td>
-              <td style={{ textAlign: 'center' }}>{team.losses || 0}</td>
-              {selectedRecentBracket?.sport_type === "basketball" ? (
-                <>
-                  <td style={{ textAlign: 'center' }}>{team.points_for || 0}</td>
-                  <td style={{ textAlign: 'center' }}>{team.points_against || 0}</td>
-                  <td style={{ 
-                    textAlign: 'center', 
-                    fontWeight: '600',
-                    color: String(team.point_diff || 0).startsWith('+') ? '#10b981' : 
-                           String(team.point_diff || 0).startsWith('-') ? '#ef4444' : '#94a3b8'
-                  }}>
-                    {team.point_diff || 0}
-                  </td>
-                </>
-              ) : (
-                <>
-                  <td style={{ textAlign: 'center' }}>{team.sets_for || 0}</td>
-                  <td style={{ textAlign: 'center' }}>{team.sets_against || 0}</td>
-                  <td style={{ textAlign: 'center' }}>{team.set_ratio || 0}</td>
-                </>
-              )}
-              <td style={{ textAlign: 'center', fontWeight: '700', color: '#3b82f6' }}>
-                {team.win_percentage || '0.0%'}
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+          {/* Container 3: Player Stats */}
+
+<div className="recent-container container-3">
+
+  <div className="container-header" style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
+
+    <h3>Player Statistics</h3>
+    <div className="stats-mode-toggle">
+      {recentSportType === 'basketball' ? (
+        <button
+          className="stats-toggle-btn"
+          style={getToggleStyle('basketball')}
+          onClick={() => setStatsDisplayMode(prev => prev === 'averages' ? 'totals' : 'averages')}
+          title={`Switch to ${statsDisplayMode === 'averages' ? 'Totals' : 'Per Game Averages'}`}
+        >
+          <FaChartBar /> {statsDisplayMode === 'averages' ? 'Show Totals' : 'Show Averages'}
+        </button>
+      ) : (
+        <button
+          className="stats-toggle-btn"
+          style={getToggleStyle('volleyball')}
+          onClick={() => setVolleyballDisplayMode(prev => prev === 'averages' ? 'totals' : 'averages')}
+          title={`Switch to ${volleyballDisplayMode === 'averages' ? 'Totals' : 'Per-Set Averages'}`}
+        >
+          <FaChartBar /> {volleyballDisplayMode === 'averages' ? 'Show Totals' : 'Show Per-Set'}
+        </button>
+      )}
     </div>
 
-    {filteredStandings.length === 0 && (
-      <div className="empty-state">
-        <p>No standings data available for this tournament.</p>
-      </div>
-    )}
   </div>
-</div>
-          {/* Container 3: Player Stats */}
-         <div className="recent-container container-3">
-  <div className="container-header">
-    <h3>Player Statistics</h3>
-  </div>
+
   <div className="container-content">
+
     <div className="stats-table-container">
+
       <table className="stats-table">
+
         <thead>
           <tr>
             <th>Rank</th>
             <th>Player</th>
             <th>Team</th>
             <th>Jersey</th>
-            <th>GP</th>
-            <th>Overall</th>
-            {selectedRecentBracket?.sport_type === 'basketball' ? (
-              <>
-                <th>PPG</th>
-                <th>RPG</th>
-                <th>APG</th>
-                <th>BPG</th>
-              </>
-            ) : (
-              <>
-                <th>Kills</th>
-                <th>Assists</th>
-                <th>Digs</th>
-                <th>Blocks</th>
-                <th>Aces</th>
-                <th>Errors</th>
-                <th>Receptions</th>
-                <th>Svc Errors</th>
-                <th>Att Errors</th>
-                <th>Rec Errors</th>
-                <th>Assist Errors</th> {/* ADD THIS */}
-                <th>Eff</th>
-              </>
-            )}
+            <th 
+              className="stats-sortable-header" 
+              onClick={() => handleSort(recentSportType === 'volleyball' ? 'total_sets_played' : 'games_played')}
+            >
+              {recentSportType === 'volleyball' ? 'S' : 'GP'} {sortConfig.key === (recentSportType === 'volleyball' ? 'total_sets_played' : 'games_played') && (sortConfig.direction === 'desc' ? '▼' : '▲')}
+            </th>
+            <th 
+              className="stats-sortable-header" 
+              onClick={() => handleSort('overall_score')}
+            >
+              Overall {sortConfig.key === 'overall_score' && (sortConfig.direction === 'desc' ? '▼' : '▲')}
+            </th>
+            {recentSportType === 'basketball' ? renderBasketballPlayerHeaders() : renderVolleyballPlayerHeaders()}
           </tr>
         </thead>
         <tbody>
           {allPlayersData.slice(0, 10).map((player, index) => (
             <tr key={player.id || index} className="stats-player-row">
               <td className="stats-rank-cell">
+
                 <div className={`stats-rank-badge ${index === 0 ? 'stats-rank-1' : index === 1 ? 'stats-rank-2' : index === 2 ? 'stats-rank-3' : 'stats-rank-other'}`}>
+
                   {index + 1}
+
                 </div>
+
               </td>
               <td className="stats-player-name">{player.name || 'Unknown Player'}</td>
               <td className="stats-team-name">{player.team_name || 'Unknown Team'}</td>
               <td className="stats-jersey-number">{player.jersey_number || ''}</td>
-              <td className="stats-games-played">{player.games_played || 0}</td>
+              <td className="stats-games-played">
+                {recentSportType === 'volleyball' ? (player.total_sets_played || 0) : (player.games_played || 0)}
+              </td>
               <td className={getPerformanceColor(player.overall_score, 'overall_score')}>
                 {player.overall_score || 0}
               </td>
-              {selectedRecentBracket?.sport_type === 'basketball' ? (
-                <>
-                  <td className={getPerformanceColor(player.ppg, 'ppg')}>{player.ppg || 0}</td>
-                  <td className={getPerformanceColor(player.rpg, 'rpg')}>{player.rpg || 0}</td>
-                  <td className={getPerformanceColor(player.apg, 'apg')}>{player.apg || 0}</td>
-                  <td className="stats-bpg">{player.bpg || 0}</td>
-                </>
-              ) : (
-                <>
-                  <td className={getPerformanceColor(player.kills, 'kills')}>{player.kills || 0}</td>
-                  <td className={getPerformanceColor(player.assists, 'assists')}>{player.assists || 0}</td>
-                  <td className={getPerformanceColor(player.digs, 'digs')}>{player.digs || 0}</td>
-                  <td className="stats-blocks">{player.blocks || 0}</td>
-                  <td className="stats-service-aces">{player.service_aces || 0}</td>
-                  <td className={getPerformanceColor(player.total_errors, 'total_errors')}>
-                    {player.total_errors || 0}
-                  </td>
-                  <td className={getPerformanceColor(player.total_receptions, 'total_receptions')}>
-                    {player.total_receptions || 0}
-                  </td>
-                  <td className={getPerformanceColor(player.service_errors, 'service_errors')}>
-                    {player.service_errors || 0}
-                  </td>
-                  <td className={getPerformanceColor(player.attack_errors, 'attack_errors')}>
-                    {player.attack_errors || 0}
-                  </td>
-                  <td className={getPerformanceColor(player.reception_errors, 'reception_errors')}>
-                    {player.reception_errors || 0}
-                  </td>
-                  {/* ADD THIS CELL */}
-                  <td className={getPerformanceColor(player.assist_errors, 'assist_errors')}>
-                    {player.assist_errors || 0}
-                  </td>
-                  <td className={getPerformanceColor(player.eff, 'eff')}>
-                    {player.eff || 0}
-                  </td>
-                </>
-              )}
+              {recentSportType === 'basketball' ? renderBasketballPlayerStatCells(player) : renderVolleyballPlayerStatCells(player)}
             </tr>
           ))}
         </tbody>
       </table>
               </div>
+
               {allPlayersData.length === 0 && (
+
                 <div className="empty-state">
+
                   <p>No player statistics available.</p>
+
                 </div>
+
               )}
+
             </div>
+
           </div>
+
         </div>
+
       </div>
+
     );
+
   };
 
+
+
   // Calculate flattened rows for events table
+
   const getFlattenedRows = () => {
+
     const rows = [];
+
     filteredEvents.forEach(event => {
+
       if (event.brackets && event.brackets.length > 0) {
+
         event.brackets.forEach(bracket => {
+
           rows.push({ event, bracket });
+
         });
+
       } else {
+
         rows.push({ event, bracket: null });
+
       }
+
     });
+
     return rows;
+
   };
+
+
 
   const flattenedRows = getFlattenedRows();
 
+
+
   // Events pagination calculations
+
   const totalRows = flattenedRows.length;
+
   const totalPages = Math.ceil(totalRows / itemsPerPage);
+
   const indexOfLastRow = currentPage * itemsPerPage;
+
   const indexOfFirstRow = indexOfLastRow - itemsPerPage;
+
   const currentRows = flattenedRows.slice(indexOfFirstRow, indexOfLastRow);
 
+
+
   // Events pagination handlers
+
   const goToPage = (page) => {
+
     setCurrentPage(Math.max(1, Math.min(page, totalPages)));
+
   };
+
+
 
   const goToNextPage = () => {
+
     if (currentPage < totalPages) setCurrentPage(currentPage + 1);
+
   };
+
+
 
   const goToPrevPage = () => {
+
     if (currentPage > 1) setCurrentPage(currentPage - 1);
+
   };
 
+
+
   if (!isInitialized) {
+
     return (
+
       <div className="user-teams-page">
+
         <div className="loading-state">
+
           <div className="loading-spinner"></div>
+
           <p>Loading statistics...</p>
+
         </div>
+
       </div>
+
     );
+
   }
 
+
+
   return (
+
     <div className="user-teams-page">
+
       <div className="teams-header">
+
         <div className="header-content">
+
           <div className="header-top">
+
             <button className="back-btn" onClick={handleBackToHome}>
+
               <FaArrowLeft className="back-arrow" />
+
               Back to Home
+
             </button>
+
           </div>
+
           <div className="header-center">
+
             <h1><FaChartLine className="header-icon" /> Statistics</h1>
+
             <p>Explore team performance and player statistics</p>
+
           </div>
+
         </div>
+
       </div>
+
+
 
       <div className="teams-container">
+
         <div className="content">
+
           {error && (
+
             <div className="error-message">
+
               <p>{error}</p>
+
               <button onClick={() => setError(null)} className="error-close">×</button>
+
             </div>
+
           )}
+
+
 
           {/* Recent Tournament Containers - Only shown when no specific event is selected */}
+
           {renderRecentTournamentContainers()}
 
+
+
           {/* Results Tab */}
+
           {activeTab === "results" && selectedEvent && (
+
             <div className="view-section">
+
               <div className="section-header" style={{ marginBottom: '1.5rem' }}>
+
                 <div>
+
                   <button className="back-btn" onClick={handleBackToEvents} style={{ marginBottom: '1rem' }}>
+
                     <FaArrowLeft className="back-arrow" />
+
                     Back to Events
+
                   </button>
+
                   <h2>{selectedEvent.name}</h2>
+
                   
+
                   {selectedBracket && (
+
                     <div style={{ display: 'flex', gap: '1rem', marginTop: '0.5rem', flexWrap: 'wrap' }}>
+
                       <span><strong>Sport:</strong> {selectedBracket.sport_type}</span>
+
                       <span><strong>Champion:</strong> {selectedBracket.winner_team_name}</span>
+
                       <span><strong>Type:</strong> {selectedBracket.elimination_type === 'double' ? 'Double Elimination' : 'Single Elimination'}</span>
+
                     </div>
+
                   )}
+
                 </div>
+
               </div>
 
+
+
               {!selectedBracket ? (
+
                 <div className="empty-state">
+
                   <p>No brackets available for this event.</p>
+
                 </div>
+
               ) : (
+
                 <>
+
                   {/* Stats Cards */}
+
                   <div className="stats-cards-grid" style={{
+
                     display: 'grid',
+
                     gridTemplateColumns: 'repeat(3, 1fr)',
+
                     gap: '20px',
+
                     padding: '0 20px',  // Add consistent horizontal padding
+
                     marginBottom: '24px'
+
                   }}>
+
                     <div className="stats-card stats-view-mode-card">
+
                       <div className="stats-card-header">
+
                         <span className="stats-card-label">View Mode</span>
+
                         <FaChartBar className="stats-card-icon" />
+
                       </div>
+
                       <select 
+
                         value={viewMode}
+
                         onChange={(e) => setViewMode(e.target.value)}
+
                         className="stats-view-mode-select"
+
                         style={{
+
                           width: '100%',
+
                           padding: '8px 12px',
+
                           border: '2px solid var(--border-color)',
+
                           borderRadius: '6px',
+
                           fontSize: '14px',
+
                           backgroundColor: 'var(--background-secondary)',
+
                           color: 'var(--text-primary)',
+
                           cursor: 'pointer',
+
                           fontWeight: '500',
+
                           outline: 'none',
+
                           transition: 'var(--transition)',
+
                           marginTop: '0.5rem'
+
                         }}
+
                       >
-                        <option value="standings">🏆 Team Standings</option>
-                        <option value="players">👤 Player Statistics</option>
-                        <option value="teams">🏀 Team Statistics</option>
+
+                        <option value="standings">?? Team Standings</option>
+
+                        <option value="players">?? Player Statistics</option>
+
+                        <option value="teams">?? Team Statistics</option>
+
                       </select>
+
                       <div className="stats-card-subtext">
+
                         Change data view
+
                       </div>
+
                     </div>
+
                     
+
                     <div className="stats-card stats-card-primary">
+
                       <div className="stats-card-header">
+
                         <span className="stats-card-label">Total Players</span>
+
                         <FaUsers className="stats-card-icon" />
+
                       </div>
+
                       <div className="stats-card-value">
+
                         {eventStatistics.total_players || 0}
+
                       </div>
+
                       <div className="stats-card-subtext">
+
                         Competing
+
                       </div>
+
                     </div>
+
                     
+
                     <div className="stats-card stats-card-success">
+
                       <div className="stats-card-header">
+
                         <span className="stats-card-label">
+
                           {getCurrentSportType() === 'basketball' ? 'Avg PPG' : 'Avg Kills'}
+
                         </span>
+
                         <FaChartBar className="stats-card-icon" />
+
                       </div>
+
                       <div className="stats-card-value">
+
                         {getCurrentSportType() === 'basketball' ? eventStatistics.avg_ppg : eventStatistics.avg_kills}
+
                       </div>
+
                       <div className="stats-card-subtext">
+
                         {getCurrentSportType() === 'basketball' ? 'Points Per Game' : 'Kills Per Game'}
+
                       </div>
+
                     </div>
+
                     
+
                     <div className="stats-card stats-card-info">
+
                       <div className="stats-card-header">
+
                         <span className="stats-card-label">Total Games</span>
-                        <div className="stats-card-icon">🎯</div>
+
+                        <div className="stats-card-icon">??</div>
+
                       </div>
+
                       <div className="stats-card-value">
+
                         {eventStatistics.total_games || 0}
+
                       </div>
+
                       <div className="stats-card-subtext">
+
                         Matches Played
+
                       </div>
+
                     </div>
+
                   </div>
 
+
+
                   {loading ? (
+
                     <div className="loading-state">
+
                       <div className="loading-spinner"></div>
+
                       <p>Loading data...</p>
+
                     </div>
+
                   ) : (
+
                     <>
+
                       {/* Team Standings View */}
+
                       {viewMode === "standings" && (
+
                         <div className="stats-tab-content">
+
                           <div className="stats-section-header" style={{ marginBottom: '1.5rem' }}>
+
                             <h2 className="stats-section-title">Team Standings</h2>
+
                             <p className="stats-section-subtitle">
+
                               Final standings for {selectedBracket.name}
+
                             </p>
+
                             {selectedBracket.sport_type === 'volleyball' && !hasVolleyballData && (
+
                               <div style={{ fontSize: '14px', color: '#666', marginTop: '10px', fontStyle: 'italic' }}>
+
                                 Volleyball standings are not available for this tournament
+
                               </div>
+
                             )}
+
                           </div>
 
+
+
                           <div className="stats-table-controls">
-                            <div className="stats-search-container">
-                              <FaSearch className="stats-search-icon" />
-                              <input
-                                type="text"
-                                className="stats-search-input"
-                                placeholder="Search teams..."
-                                value={searchTerm}
-                                onChange={(e) => setSearchTerm(e.target.value)}
-                              />
+
+                            <div className="stats-mode-toggle">
+
+                              {getCurrentSportType() === 'basketball' ? (
+
+                                <button
+                                  className="stats-toggle-btn"
+                                  style={getToggleStyle('basketball')}
+                                  onClick={() => setStatsDisplayMode(prev => prev === 'averages' ? 'totals' : 'averages')}
+                                  title={`Switch to ${statsDisplayMode === 'averages' ? 'Totals' : 'Per Game Averages'}`}
+                                >
+                                  <FaChartBar /> {statsDisplayMode === 'averages' ? 'Show Totals' : 'Show Averages'}
+                                </button>
+
+                              ) : (
+
+                                <button
+                                  className="stats-toggle-btn"
+                                  style={getToggleStyle('volleyball')}
+                                  onClick={() => setVolleyballDisplayMode(prev => prev === 'averages' ? 'totals' : 'averages')}
+                                  title={`Switch to ${volleyballDisplayMode === 'averages' ? 'Totals' : 'Per-Set Averages'}`}
+                                >
+                                  <FaChartBar /> {volleyballDisplayMode === 'averages' ? 'Show Totals' : 'Show Per-Set'}
+                                </button>
+
+                              )}
+
                             </div>
+
+                            <div className="stats-search-container">
+
+                              <FaSearch className="stats-search-icon" />
+
+                              <input
+
+                                type="text"
+
+                                className="stats-search-input"
+
+                                placeholder="Search teams..."
+
+                                value={searchTerm}
+
+                                onChange={(e) => setSearchTerm(e.target.value)}
+
+                              />
+
+                            </div>
+
                           </div>
+
+
 
                           {selectedBracket.sport_type === 'volleyball' && !hasVolleyballData ? (
+
                             <div className="empty-state">
+
                               <p>Volleyball standings data is not available.</p>
+
                               <p style={{ fontSize: '14px', color: '#666', marginTop: '10px' }}>
+
                                 This is expected for volleyball tournaments - player and team statistics are still available.
+
                               </p>
+
                             </div>
+
                           ) : (
+
                             <>
+
                               <div className="stats-table-container">
+
                                 <table className="stats-table">
+
                                   <thead>
+
                                     <tr>
+
                                       <th>Rank</th>
+
                                       <th>Team</th>
+
                                       <th>W</th>
+
                                       <th>L</th>
+
                                       {selectedBracket.sport_type === "basketball" ? (
+
                                         <>
+
                                           <th>PF</th>
+
                                           <th>PA</th>
+
                                           <th>Diff</th>
+
                                         </>
+
                                       ) : (
+
                                         <>
+
                                           <th>SF</th>
+
                                           <th>SA</th>
+
                                           <th>Ratio</th>
+
                                         </>
+
                                       )}
+
                                       <th>Win%</th>
+
                                     </tr>
+
                                   </thead>
+
                                   <tbody>
+
                                     {filteredStandings.map((team, index) => (
+
                                       <tr key={index} className={team.position <= 3 ? `awards_standings_podium_${team.position}` : ""}>
+
                                         <td className="stats-rank-cell">
+
                                           <div className={`stats-rank-badge ${
+
                                             team.position === 1 ? 'stats-rank-1' : 
+
                                             team.position === 2 ? 'stats-rank-2' :
+
                                             team.position === 3 ? 'stats-rank-3' : 'stats-rank-other'
+
                                           }`}>
-                                            {team.position === 1 && <span className="awards_standings_medal">🥇</span>}
-                                            {team.position === 2 && <span className="awards_standings_medal">🥈</span>}
-                                            {team.position === 3 && <span className="awards_standings_medal">🥉</span>}
+
+                                            {team.position === 1 && <span className="awards_standings_medal">??</span>}
+
+                                            {team.position === 2 && <span className="awards_standings_medal">??</span>}
+
+                                            {team.position === 3 && <span className="awards_standings_medal">??</span>}
+
                                             {team.position > 3 && (team.position || index + 1)}
+
                                           </div>
+
                                         </td>
+
                                         <td className="stats-team-name">
+
                                           <strong>{team.team || 'Unknown Team'}</strong>
+
                                         </td>
+
                                         <td>{team.wins || 0}</td>
+
                                         <td>{team.losses || 0}</td>
+
                                         {selectedBracket.sport_type === "basketball" ? (
+
                                           <>
+
                                             <td>{team.points_for || 0}</td>
+
                                             <td>{team.points_against || 0}</td>
+
                                             <td className={String(team.point_diff || 0).startsWith('+') ? 'stats-high-value' : String(team.point_diff || 0).startsWith('-') ? 'stats-low-value' : ''}>
+
                                               {team.point_diff || 0}
+
                                             </td>
+
                                           </>
+
                                         ) : (
+
                                           <>
+
                                             <td>{team.sets_for || 0}</td>
+
                                             <td>{team.sets_against || 0}</td>
+
                                             <td>{team.set_ratio || 0}</td>
+
                                           </>
+
                                         )}
+
                                         <td>{team.win_percentage || '0.0%'}</td>
+
                                       </tr>
+
                                     ))}
+
                                   </tbody>
+
                                 </table>
+
                               </div>
+
+
 
                               {filteredStandings.length === 0 && (
+
                                 <div className="empty-state">
+
                                   <p>No standings data available.</p>
+
                                 </div>
+
                               )}
+
                             </>
+
                           )}
+
                         </div>
+
                       )}
+
+
 
                       {/* Player Statistics View */}
+
                       {viewMode === "players" && (
+
                         <div className="stats-tab-content">
+
                           <div className="stats-section-header" style={{ marginBottom: '1.5rem' }}>
+
                             <h2 className="stats-section-title">Player Statistics</h2>
+
                             <p className="stats-section-subtitle">
+
                               Players ranked by performance in {selectedBracket.name}
+
                             </p>
+
                           </div>
+
+
 
                           <div className="stats-table-controls">
-                            <div className="stats-search-container">
-                              <FaSearch className="stats-search-icon" />
-                              <input
-                                type="text"
-                                placeholder="Search players or teams..."
-                                value={searchTerm}
-                                onChange={(e) => setSearchTerm(e.target.value)}
-                                className="stats-search-input"
-                              />
+
+                            <div className="stats-mode-toggle">
+
+                              {getCurrentSportType() === 'basketball' ? (
+
+                                <button
+                                  className="stats-toggle-btn"
+                                  style={getToggleStyle('basketball')}
+                                  onClick={() => setStatsDisplayMode(prev => prev === 'averages' ? 'totals' : 'averages')}
+                                  title={`Switch to ${statsDisplayMode === 'averages' ? 'Totals' : 'Per Game Averages'}`}
+                                >
+                                  <FaChartBar /> {statsDisplayMode === 'averages' ? 'Show Totals' : 'Show Averages'}
+                                </button>
+
+                              ) : (
+
+                                <button
+                                  className="stats-toggle-btn"
+                                  style={getToggleStyle('volleyball')}
+                                  onClick={() => setVolleyballDisplayMode(prev => prev === 'averages' ? 'totals' : 'averages')}
+                                  title={`Switch to ${volleyballDisplayMode === 'averages' ? 'Totals' : 'Per-Set Averages'}`}
+                                >
+                                  <FaChartBar /> {volleyballDisplayMode === 'averages' ? 'Show Totals' : 'Show Per-Set'}
+                                </button>
+
+                              )}
+
                             </div>
+
+                            <div className="stats-search-container">
+
+                              <FaSearch className="stats-search-icon" />
+
+                              <input
+
+                                type="text"
+
+                                placeholder="Search players or teams..."
+
+                                value={searchTerm}
+
+                                onChange={(e) => setSearchTerm(e.target.value)}
+
+                                className="stats-search-input"
+
+                              />
+
+                            </div>
+
                           </div>
 
+
+
                           <div className="stats-results-info">
+
                             <div className="stats-results-count">
+
                               {searchTerm ? (
+
                                 <>
+
                                   Showing {Math.min(itemsPerPage, currentPlayers.length)} of {currentPlayers.length} results
-                                  {searchTerm && <span className="stats-search-indicator"> • Searching: "{searchTerm}"</span>}
+
+                                  {searchTerm && <span className="stats-search-indicator">  Searching: "{searchTerm}"</span>}
+
                                 </>
+
                               ) : (
+
                                 <>Showing {indexOfFirstItem + 1}-{Math.min(indexOfLastItem, filteredPlayers.length)} of {filteredPlayers.length} players</>
+
                               )}
+
                             </div>
+
                             <div className="stats-items-per-page">
+
                               <label className="stats-items-per-page-label">Show:</label>
+
                               <select
+
                                 value={itemsPerPage}
+
                                 onChange={(e) => setItemsPerPage(Number(e.target.value))}
+
                                 className="stats-items-per-page-select"
+
                               >
+
                                 <option value={5}>5</option>
+
                                 <option value={10}>10</option>
+
                                 <option value={20}>20</option>
+
                                 <option value={50}>50</option>
+
                                 <option value={100}>100</option>
+
                               </select>
+
                               <span className="stats-items-per-page-text">per page</span>
+
                             </div>
+
                           </div>
+
                           
+
                           <div className="stats-table-container">
+
                             <table className="stats-table">
+
                               <thead>
+
                                 <tr>
+
                                   <th>Rank</th>
+
                                   <th>Player</th>
+
                                   <th>Team</th>
+
                                   <th>Jersey</th>
-                                  <th className="stats-sortable-header" onClick={() => handleSort('games_played')}>
-                                    GP {sortConfig.key === 'games_played' && (sortConfig.direction === 'desc' ? '↓' : '↑')}
+
+                                  <th className="stats-sortable-header" onClick={() => handleSort(getCurrentSportType() === 'volleyball' ? 'total_sets_played' : 'games_played')}>
+                                    {getCurrentSportType() === 'volleyball' ? 'S' : 'GP'} {sortConfig.key === (getCurrentSportType() === 'volleyball' ? 'total_sets_played' : 'games_played') && (sortConfig.direction === 'desc' ? '?' : '?')}
                                   </th>
+
                                   <th className="stats-sortable-header" onClick={() => handleSort('overall_score')}>
-                                    Overall {sortConfig.key === 'overall_score' && (sortConfig.direction === 'desc' ? '↓' : '↑')}
+
+                                    Overall {sortConfig.key === 'overall_score' && (sortConfig.direction === 'desc' ? '?' : '?')}
+
                                   </th>
+
                                   {getCurrentSportType() === 'basketball' ? renderBasketballPlayerHeaders() : renderVolleyballPlayerHeaders()}
+
                                 </tr>
+
                               </thead>
+
                               <tbody>
+
                                 {getCurrentSportType() === 'basketball' ? 
+
                                   currentPlayers.map((player, index) => (
+
                                     <tr key={player.id || index} className="stats-player-row">
+
                                       <td className="stats-rank-cell">
+
                                         <div className={`stats-rank-badge ${
+
                                           indexOfFirstItem + index === 0 ? 'stats-rank-1' : 
+
                                           indexOfFirstItem + index === 1 ? 'stats-rank-2' :
+
                                           indexOfFirstItem + index === 2 ? 'stats-rank-3' : 'stats-rank-other'
+
                                         }`}>
+
                                           {indexOfFirstItem + index + 1}
+
                                         </div>
+
                                       </td>
+
                                       <td className="stats-player-name">{player.name || 'Unknown Player'}</td>
+
                                       <td className="stats-team-name">{player.team_name || 'Unknown Team'}</td>
+
                                       <td className="stats-jersey-number">{player.jersey_number || ''}</td>
-                                      <td className="stats-games-played">{player.games_played || 0}</td>
+
+                                      <td className="stats-games-played">{getCurrentSportType() === 'volleyball' ? (player.total_sets_played || 0) : (player.games_played || 0)}</td>
+
                                       <td className={getPerformanceColor(player.overall_score, 'overall_score')}>
+
                                         {player.overall_score || 0}
+
                                       </td>
-                                      <td className={getPerformanceColor(player.ppg, 'ppg')}>{player.ppg || 0}</td>
-                                      <td className={getPerformanceColor(player.rpg, 'rpg')}>{player.rpg || 0}</td>
-                                      <td className={getPerformanceColor(player.apg, 'apg')}>{player.apg || 0}</td>
-                                      <td className="stats-bpg">{player.bpg || 0}</td>
+
+                                      {renderBasketballPlayerStatCells(player)}
+
                                     </tr>
+
                                   )) : 
+
                                   currentPlayers.map((player, index) => (
+
                                     <tr key={player.id || index} className="stats-player-row">
+
                                       <td className="stats-rank-cell">
+
                                         <div className={`stats-rank-badge ${
+
                                           indexOfFirstItem + index === 0 ? 'stats-rank-1' : 
+
                                           indexOfFirstItem + index === 1 ? 'stats-rank-2' :
+
                                           indexOfFirstItem + index === 2 ? 'stats-rank-3' : 'stats-rank-other'
+
                                         }`}>
+
                                           {indexOfFirstItem + index + 1}
+
                                         </div>
+
                                       </td>
+
                                       <td className="stats-player-name">{player.name || 'Unknown Player'}</td>
+
                                       <td className="stats-team-name">{player.team_name || 'Unknown Team'}</td>
+
                                       <td className="stats-jersey-number">{player.jersey_number || ''}</td>
-                                      <td className="stats-games-played">{player.games_played || 0}</td>
+
+                                      <td className="stats-games-played">{getCurrentSportType() === 'volleyball' ? (player.total_sets_played || 0) : (player.games_played || 0)}</td>
+
                                       <td className={getPerformanceColor(player.overall_score, 'overall_score')}>
+
                                         {player.overall_score || 0}
+
                                       </td>
-                                      <td className={getPerformanceColor(player.kills, 'kills')}>{player.kills || 0}</td>
-                                      <td className={getPerformanceColor(player.assists, 'assists')}>{player.assists || 0}</td>
-                                      <td className={getPerformanceColor(player.digs, 'digs')}>{player.digs || 0}</td>
-                                      <td className="stats-blocks">{player.blocks || 0}</td>
-                                      <td className="stats-service-aces">{player.service_aces || 0}</td>
-                                      <td className={getPerformanceColor(player.total_errors, 'total_errors')}>
-                                        {player.total_errors || 0}
-                                      </td>
-                                      <td className={getPerformanceColor(player.total_receptions, 'total_receptions')}>
-                                        {player.total_receptions || 0}
-                                      </td>
-                                      <td className={getPerformanceColor(player.service_errors, 'service_errors')}>
-                                        {player.service_errors || 0}
-                                      </td>
-                                      <td className={getPerformanceColor(player.attack_errors, 'attack_errors')}>
-                                        {player.attack_errors || 0}
-                                      </td>
-                                      <td className={getPerformanceColor(player.reception_errors, 'reception_errors')}>
-                                        {player.reception_errors || 0}
-                                      </td>
-                                      {/* ADDED: assist_errors cell */}
-                                      <td className={getPerformanceColor(player.assist_errors, 'assist_errors')}>
-                                        {player.assist_errors || 0}
-                                      </td>
-                                      <td className={getPerformanceColor(player.eff, 'eff')}>
-                                        {player.eff || 0}
-                                      </td>
+
+                                      {renderVolleyballPlayerStatCells(player)}
+
                                     </tr>
+
                                   ))
+
                                 }
+
                               </tbody>
+
                             </table>
+
                           </div>
+
+
 
                           {filteredPlayers.length === 0 && (
+
                             <div className="empty-state">
+
                               <p>No players found matching your search.</p>
+
                             </div>
+
                           )}
+
+
 
                           {totalPagesPlayers > 1 && (
+
                             <div className="stats-pagination-container">
+
                               <div className="stats-pagination-info">
+
                                 Page {currentPage} of {totalPagesPlayers}
+
                               </div>
+
                               
+
                               <div className="stats-pagination-controls">
+
                                 <button 
+
                                   className="stats-pagination-btn"
+
                                   onClick={() => paginate(currentPage - 1)}
+
                                   disabled={currentPage === 1}
+
                                 >
+
                                   Previous
+
                                 </button>
+
                                 
+
                                 <div className="stats-pagination-numbers">
+
                                   {[...Array(totalPagesPlayers)].map((_, index) => {
+
                                     const pageNumber = index + 1;
+
                                     if (
+
                                       pageNumber === 1 ||
+
                                       pageNumber === totalPagesPlayers ||
+
                                       (pageNumber >= currentPage - 1 && pageNumber <= currentPage + 1)
+
                                     ) {
+
                                       return (
+
                                         <button
+
                                           key={pageNumber}
+
                                           className={`stats-pagination-number ${currentPage === pageNumber ? 'active' : ''}`}
+
                                           onClick={() => paginate(pageNumber)}
+
                                         >
+
                                           {pageNumber}
+
                                         </button>
+
                                       );
+
                                     } else if (
+
                                       pageNumber === currentPage - 2 ||
+
                                       pageNumber === currentPage + 2
+
                                     ) {
+
                                       return <span key={pageNumber} className="stats-pagination-ellipsis">...</span>;
+
                                     }
+
                                     return null;
+
                                   })}
+
                                 </div>
+
                                 
+
                                 <button 
+
                                   className="stats-pagination-btn"
+
                                   onClick={() => paginate(currentPage + 1)}
+
                                   disabled={currentPage === totalPagesPlayers}
+
                                 >
+
                                   Next
+
                                 </button>
+
                               </div>
+
                             </div>
+
                           )}
 
+
+
                           <div className="stats-table-footer">
-                            <div>Total {filteredPlayers.length} players • Last updated: {new Date().toLocaleString()}</div>
+
+                            <div>Total {filteredPlayers.length} players  Last updated: {new Date().toLocaleString()}</div>
+
                           </div>
+
                         </div>
+
                       )}
+
+
 
                       {/* Team Statistics View */}
+
                       {viewMode === "teams" && (
+
                         <div className="stats-tab-content">
+
                           <div className="stats-section-header" style={{ marginBottom: '1.5rem' }}>
+
                             <h2 className="stats-section-title">Team Statistics</h2>
+
                             <p className="stats-section-subtitle">
+
                               Teams ranked by overall performance in {selectedBracket.name}
+
                             </p>
+
                           </div>
+
+
 
                           <div className="stats-table-controls">
+
                             <div className="stats-search-container">
+
                               <FaSearch className="stats-search-icon" />
+
                               <input
+
                                 type="text"
+
                                 placeholder="Search teams..."
+
                                 value={searchTerm}
+
                                 onChange={(e) => setSearchTerm(e.target.value)}
+
                                 className="stats-search-input"
+
                               />
+
                             </div>
+
                           </div>
+
+
 
                           <div className="stats-results-info">
+
                             <div className="stats-results-count">
+
                               {searchTerm ? (
+
                                 <>
+
                                   Showing {Math.min(itemsPerPage, currentTeams.length)} of {currentTeams.length} results
-                                  {searchTerm && <span className="stats-search-indicator"> • Searching: "{searchTerm}"</span>}
+
+                                  {searchTerm && <span className="stats-search-indicator">  Searching: "{searchTerm}"</span>}
+
                                 </>
+
                               ) : (
+
                                 <>Showing {indexOfFirstItem + 1}-{Math.min(indexOfLastItem, filteredTeams.length)} of {filteredTeams.length} teams</>
+
                               )}
+
                             </div>
+
                             <div className="stats-items-per-page">
+
                               <label className="stats-items-per-page-label">Show:</label>
+
                               <select
+
                                 value={itemsPerPage}
+
                                 onChange={(e) => setItemsPerPage(Number(e.target.value))}
+
                                 className="stats-items-per-page-select"
+
                               >
+
                                 <option value={5}>5</option>
+
                                 <option value={10}>10</option>
+
                                 <option value={20}>20</option>
+
                                 <option value={50}>50</option>
+
                                 <option value={100}>100</option>
+
                               </select>
+
                               <span className="stats-items-per-page-text">per page</span>
+
                             </div>
+
                           </div>
+
                           
+
                           <div className="stats-table-container">
+
                             <table className="stats-table">
+
                               <thead>
+
                                 <tr>
+
                                   <th>Rank</th>
+
                                   <th>Team</th>
-                                  <th className="stats-sortable-header" onClick={() => handleSort('games_played')}>
-                                    GP {sortConfig.key === 'games_played' && (sortConfig.direction === 'desc' ? '↓' : '↑')}
+
+                                  <th className="stats-sortable-header" onClick={() => handleSort(getCurrentSportType() === 'volleyball' ? 'total_sets_played' : 'games_played')}>
+                                    {getCurrentSportType() === 'volleyball' ? 'S' : 'GP'} {sortConfig.key === (getCurrentSportType() === 'volleyball' ? 'total_sets_played' : 'games_played') && (sortConfig.direction === 'desc' ? '?' : '?')}
                                   </th>
+
                                   <th className="stats-sortable-header" onClick={() => handleSort('overall_score')}>
-                                    Overall {sortConfig.key === 'overall_score' && (sortConfig.direction === 'desc' ? '↓' : '↑')}
+
+                                    Overall {sortConfig.key === 'overall_score' && (sortConfig.direction === 'desc' ? '?' : '?')}
+
                                   </th>
+
                                   {getCurrentSportType() === 'basketball' ? renderBasketballTeamHeaders() : renderVolleyballTeamHeaders()}
+
                                 </tr>
+
                               </thead>
+
                               <tbody>
+
                                 {getCurrentSportType() === 'basketball' ? 
+
                                   currentTeams.map((team, index) => (
+
                                     <tr key={team.team_id || index} className="stats-player-row">
+
                                       <td className="stats-rank-cell">
+
                                         <div className={`stats-rank-badge ${
+
                                           indexOfFirstItem + index === 0 ? 'stats-rank-1' : 
+
                                           indexOfFirstItem + index === 1 ? 'stats-rank-2' :
+
                                           indexOfFirstItem + index === 2 ? 'stats-rank-3' : 'stats-rank-other'
+
                                         }`}>
+
                                           {indexOfFirstItem + index + 1}
+
                                         </div>
+
                                       </td>
+
                                       <td className="stats-team-name">{team.team_name || 'Unknown Team'}</td>
-                                      <td className="stats-games-played">{team.games_played || 0}</td>
+
+                                      <td className="stats-games-played">{getCurrentSportType() === 'volleyball' ? (team.total_sets_played || 0) : (team.games_played || 0)}</td>
+
                                       <td className={getPerformanceColor(team.overall_score, 'overall_score')}>
+
                                         {team.overall_score || 0}
+
                                       </td>
-                                      <td className={getPerformanceColor(team.ppg, 'ppg')}>{team.ppg || 0}</td>
-                                      <td className={getPerformanceColor(team.rpg, 'rpg')}>{team.rpg || 0}</td>
-                                      <td className={getPerformanceColor(team.apg, 'apg')}>{team.apg || 0}</td>
-                                      <td className="stats-bpg">{team.bpg || 0}</td>
+
+                                      {renderBasketballTeamStatCells(team)}
+
                                     </tr>
+
                                   )) : 
+
                                   currentTeams.map((team, index) => (
+
                                     <tr key={team.team_id || index} className="stats-player-row">
+
                                       <td className="stats-rank-cell">
+
                                         <div className={`stats-rank-badge ${
+
                                           indexOfFirstItem + index === 0 ? 'stats-rank-1' : 
+
                                           indexOfFirstItem + index === 1 ? 'stats-rank-2' :
+
                                           indexOfFirstItem + index === 2 ? 'stats-rank-3' : 'stats-rank-other'
+
                                         }`}>
+
                                           {indexOfFirstItem + index + 1}
+
                                         </div>
+
                                       </td>
+
                                       <td className="stats-team-name">{team.team_name || 'Unknown Team'}</td>
-                                      <td className="stats-games-played">{team.games_played || 0}</td>
+
+                                      <td className="stats-games-played">{getCurrentSportType() === 'volleyball' ? (team.total_sets_played || 0) : (team.games_played || 0)}</td>
+
                                       <td className={getPerformanceColor(team.overall_score, 'overall_score')}>
+
                                         {team.overall_score || 0}
+
                                       </td>
-                                      <td className={getPerformanceColor(team.kills, 'kills')}>{team.kills || 0}</td>
-                                      <td className={getPerformanceColor(team.assists, 'assists')}>{team.assists || 0}</td>
-                                      <td className={getPerformanceColor(team.digs, 'digs')}>{team.digs || 0}</td>
-                                      <td className="stats-blocks">{team.blocks || 0}</td>
-                                      <td className="stats-service-aces">{team.service_aces || 0}</td>
-                                      <td className={getPerformanceColor(team.total_errors, 'total_errors')}>
-                                        {team.total_errors || 0}
-                                      </td>
-                                      <td className={getPerformanceColor(team.total_receptions, 'total_receptions')}>
-                                        {team.total_receptions || 0}
-                                      </td>
-                                      <td className={getPerformanceColor(team.service_errors, 'service_errors')}>
-                                        {team.service_errors || 0}
-                                      </td>
-                                      <td className={getPerformanceColor(team.attack_errors, 'attack_errors')}>
-                                        {team.attack_errors || 0}
-                                      </td>
-                                      <td className={getPerformanceColor(team.reception_errors, 'reception_errors')}>
-                                        {team.reception_errors || 0}
-                                      </td>
-                                      {/* ADDED: assist_errors cell */}
-                                      <td className={getPerformanceColor(team.assist_errors, 'assist_errors')}>
-                                        {team.assist_errors || 0}
-                                      </td>
-                                      <td className={getPerformanceColor(team.eff, 'eff')}>
-                                        {team.eff || 0}
-                                      </td>
+
+                                      {renderVolleyballTeamStatCells(team)}
+
                                     </tr>
+
                                   ))
+
                                 }
+
                               </tbody>
+
                             </table>
+
                           </div>
+
+
 
                           {filteredTeams.length === 0 && (
+
                             <div className="empty-state">
+
                               <p>No teams found matching your search.</p>
+
                             </div>
+
                           )}
+
+
 
                           {totalPagesTeams > 1 && (
+
                             <div className="stats-pagination-container">
+
                               <div className="stats-pagination-info">
+
                                 Page {currentPage} of {totalPagesTeams}
+
                               </div>
+
                               
+
                               <div className="stats-pagination-controls">
+
                                 <button 
+
                                   className="stats-pagination-btn"
+
                                   onClick={() => paginate(currentPage - 1)}
+
                                   disabled={currentPage === 1}
+
                                 >
+
                                   Previous
+
                                 </button>
+
                                 
+
                                 <div className="stats-pagination-numbers">
+
                                   {[...Array(totalPagesTeams)].map((_, index) => {
+
                                     const pageNumber = index + 1;
+
                                     if (
+
                                       pageNumber === 1 ||
+
                                       pageNumber === totalPagesTeams ||
+
                                       (pageNumber >= currentPage - 1 && pageNumber <= currentPage + 1)
+
                                     ) {
+
                                       return (
+
                                         <button
+
                                           key={pageNumber}
+
                                           className={`stats-pagination-number ${currentPage === pageNumber ? 'active' : ''}`}
+
                                           onClick={() => paginate(pageNumber)}
+
                                         >
+
                                           {pageNumber}
+
                                         </button>
+
                                       );
+
                                     } else if (
+
                                       pageNumber === currentPage - 2 ||
+
                                       pageNumber === currentPage + 2
+
                                     ) {
+
                                       return <span key={pageNumber} className="stats-pagination-ellipsis">...</span>;
+
                                     }
+
                                     return null;
+
                                   })}
+
                                 </div>
+
                                 
+
                                 <button 
+
                                   className="stats-pagination-btn"
+
                                   onClick={() => paginate(currentPage + 1)}
+
                                   disabled={currentPage === totalPagesTeams}
+
                                 >
+
                                   Next
+
                                 </button>
+
                               </div>
+
                             </div>
+
                           )}
 
+
+
                           <div className="stats-table-footer">
-                            <div>Total {filteredTeams.length} teams • Last updated: {new Date().toLocaleString()}</div>
+
+                            <div>Total {filteredTeams.length} teams  Last updated: {new Date().toLocaleString()}</div>
+
                           </div>
+
                         </div>
+
                       )}
+
                     </>
+
                   )}
+
                 </>
+
               )}
+
             </div>
+
           )}
+
         </div>
+
       </div>
+
     </div>
+
   );
+
 };
 
+
+
 export default UserStatsPage;
+
+
+
+
+
+
+
+
+
