@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+﻿import React, { useState, useEffect } from "react";
 import { FaSearch, FaUsers, FaChartLine, FaTrophy, FaArrowLeft, FaChartBar, FaEye, FaFilter, FaMedal, FaCalendarAlt } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
 import '../../style/User_StatsPage.css'

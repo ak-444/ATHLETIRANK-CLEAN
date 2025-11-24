@@ -1257,127 +1257,135 @@ router.get("/events/:eventId/teams-statistics", async (req, res) => {
         ORDER BY overall_score DESC, ppg DESC, rpg DESC, apg DESC
       `;
     } else {
-      // Volleyball teams - simplified set counting
+      // Volleyball teams - use actual sets played for per-set averages
       query = `
         SELECT 
-          t.id as team_id,
-          t.name as team_name,
-          b.id as bracket_id,
-          b.name as bracket_name,
-          '${sportType}' as sport_type,
-          COUNT(DISTINCT ps.match_id) as games_played,
-          
-          -- Calculate total sets - count sets where team had any activity
-          (SELECT SUM(
-  CASE 
-    WHEN ps2.kills_per_set IS NOT NULL THEN
-      (
-        (CASE WHEN JSON_EXTRACT(ps2.kills_per_set, '$[0]') > 0 OR JSON_EXTRACT(ps2.service_aces_per_set, '$[0]') > 0 OR JSON_EXTRACT(ps2.volleyball_assists_per_set, '$[0]') > 0 OR JSON_EXTRACT(ps2.digs_per_set, '$[0]') > 0 OR JSON_EXTRACT(ps2.volleyball_blocks_per_set, '$[0]') > 0 OR JSON_EXTRACT(ps2.serve_errors_per_set, '$[0]') > 0 OR JSON_EXTRACT(ps2.attack_errors_per_set, '$[0]') > 0 THEN 1 ELSE 0 END) +
-        (CASE WHEN JSON_EXTRACT(ps2.kills_per_set, '$[1]') > 0 OR JSON_EXTRACT(ps2.service_aces_per_set, '$[1]') > 0 OR JSON_EXTRACT(ps2.volleyball_assists_per_set, '$[1]') > 0 OR JSON_EXTRACT(ps2.digs_per_set, '$[1]') > 0 OR JSON_EXTRACT(ps2.volleyball_blocks_per_set, '$[1]') > 0 OR JSON_EXTRACT(ps2.serve_errors_per_set, '$[1]') > 0 OR JSON_EXTRACT(ps2.attack_errors_per_set, '$[1]') > 0 THEN 1 ELSE 0 END) +
-        (CASE WHEN JSON_EXTRACT(ps2.kills_per_set, '$[2]') > 0 OR JSON_EXTRACT(ps2.service_aces_per_set, '$[2]') > 0 OR JSON_EXTRACT(ps2.volleyball_assists_per_set, '$[2]') > 0 OR JSON_EXTRACT(ps2.digs_per_set, '$[2]') > 0 OR JSON_EXTRACT(ps2.volleyball_blocks_per_set, '$[2]') > 0 OR JSON_EXTRACT(ps2.serve_errors_per_set, '$[2]') > 0 OR JSON_EXTRACT(ps2.attack_errors_per_set, '$[2]') > 0 THEN 1 ELSE 0 END) +
-        (CASE WHEN JSON_EXTRACT(ps2.kills_per_set, '$[3]') > 0 OR JSON_EXTRACT(ps2.service_aces_per_set, '$[3]') > 0 OR JSON_EXTRACT(ps2.volleyball_assists_per_set, '$[3]') > 0 OR JSON_EXTRACT(ps2.digs_per_set, '$[3]') > 0 OR JSON_EXTRACT(ps2.volleyball_blocks_per_set, '$[3]') > 0 OR JSON_EXTRACT(ps2.serve_errors_per_set, '$[3]') > 0 OR JSON_EXTRACT(ps2.attack_errors_per_set, '$[3]') > 0 THEN 1 ELSE 0 END) +
-        (CASE WHEN JSON_EXTRACT(ps2.kills_per_set, '$[4]') > 0 OR JSON_EXTRACT(ps2.service_aces_per_set, '$[4]') > 0 OR JSON_EXTRACT(ps2.volleyball_assists_per_set, '$[4]') > 0 OR JSON_EXTRACT(ps2.digs_per_set, '$[4]') > 0 OR JSON_EXTRACT(ps2.volleyball_blocks_per_set, '$[4]') > 0 OR JSON_EXTRACT(ps2.serve_errors_per_set, '$[4]') > 0 OR JSON_EXTRACT(ps2.attack_errors_per_set, '$[4]') > 0 THEN 1 ELSE 0 END)
-      )
-    ELSE 0
-  END
-)
-FROM player_stats ps2
-JOIN players p2 ON ps2.player_id = p2.id
-JOIN matches m2 ON ps2.match_id = m2.id
-WHERE p2.team_id = t.id 
-  AND m2.bracket_id = b.id
-  AND m2.status = 'completed'
-) as total_sets_played,
-          -- TOTAL COUNTS
-          SUM(ps.kills) as kills,
-          SUM(ps.volleyball_assists) as assists,
-          SUM(ps.digs) as digs,
-          SUM(ps.volleyball_blocks) as blocks,
-          SUM(ps.service_aces) as service_aces,
-          SUM(ps.receptions) as receptions,
-          SUM(ps.serve_errors) as serve_errors,
-          SUM(ps.attack_errors) as attack_errors,
-          SUM(ps.reception_errors) as reception_errors,
-          SUM(COALESCE(ps.assist_errors, 0)) as assist_errors,
-          SUM(COALESCE(ps.blocking_errors, 0)) as blocking_errors,
-          SUM(COALESCE(ps.ball_handling_errors, 0)) as ball_handling_errors,
-          
-          -- Per-Set Averages - divide by total sets
-          ROUND(SUM(ps.kills) / NULLIF((SELECT COUNT(DISTINCT m2.id) * 3 
-                                        FROM matches m2
-                                        WHERE (m2.team1_id = t.id OR m2.team2_id = t.id)
-                                          AND m2.bracket_id = b.id
-                                          AND m2.status = 'completed'), 0), 2) as kps,
-          ROUND(SUM(ps.service_aces) / NULLIF((SELECT COUNT(DISTINCT m2.id) * 3 
-                                               FROM matches m2
-                                               WHERE (m2.team1_id = t.id OR m2.team2_id = t.id)
-                                                 AND m2.bracket_id = b.id
-                                                 AND m2.status = 'completed'), 0), 2) as aps,
-          ROUND(SUM(ps.volleyball_assists) / NULLIF((SELECT COUNT(DISTINCT m2.id) * 3 
-                                                     FROM matches m2
-                                                     WHERE (m2.team1_id = t.id OR m2.team2_id = t.id)
-                                                       AND m2.bracket_id = b.id
-                                                       AND m2.status = 'completed'), 0), 2) as asps,
-          ROUND(SUM(ps.digs) / NULLIF((SELECT COUNT(DISTINCT m2.id) * 3 
-                                       FROM matches m2
-                                       WHERE (m2.team1_id = t.id OR m2.team2_id = t.id)
-                                         AND m2.bracket_id = b.id
-                                         AND m2.status = 'completed'), 0), 2) as dps,
-          ROUND(SUM(ps.volleyball_blocks) / NULLIF((SELECT COUNT(DISTINCT m2.id) * 3 
-                                                    FROM matches m2
-                                                    WHERE (m2.team1_id = t.id OR m2.team2_id = t.id)
-                                                      AND m2.bracket_id = b.id
-                                                      AND m2.status = 'completed'), 0), 2) as bps,
-          
-          -- Hitting Percentage
-          ROUND(
-            CASE 
-              WHEN SUM(ps.attack_attempts) > 0 
-              THEN (SUM(ps.kills) - SUM(ps.attack_errors)) / SUM(ps.attack_attempts) * 100
-              ELSE 0 
-            END, 1
-          ) as hitting_percentage,
-          
-          -- Efficiency
-          ROUND(
-            (SUM(ps.kills) + SUM(ps.volleyball_blocks) + SUM(ps.service_aces) + 
-             SUM(ps.volleyball_assists) + SUM(ps.digs) - 
-             (SUM(ps.serve_errors) + SUM(ps.attack_errors) + SUM(ps.reception_errors) + 
-              SUM(COALESCE(ps.assist_errors, 0)) + SUM(COALESCE(ps.blocking_errors, 0)) + 
-              SUM(COALESCE(ps.ball_handling_errors, 0)))) / 
-            NULLIF(COUNT(DISTINCT ps.match_id), 0), 1
-          ) as eff,
-          
-          -- Overall Score
-          ROUND(
-            (SUM(ps.kills) + SUM(ps.volleyball_blocks) + SUM(ps.service_aces) + 
-             SUM(ps.volleyball_assists) + SUM(ps.digs) - 
-             (SUM(ps.serve_errors) + SUM(ps.attack_errors) + SUM(ps.reception_errors) + 
-              SUM(COALESCE(ps.assist_errors, 0)) + SUM(COALESCE(ps.blocking_errors, 0)) + 
-              SUM(COALESCE(ps.ball_handling_errors, 0)))) / 
-            NULLIF(COUNT(DISTINCT ps.match_id), 0), 1
-          ) as overall_score,
-          
-          -- Win/Loss record
-          (SELECT COUNT(*) FROM matches m 
-           WHERE (m.team1_id = t.id OR m.team2_id = t.id) 
-           AND m.winner_id = t.id 
-           AND m.status = 'completed') as wins,
-          (SELECT COUNT(*) FROM matches m 
-           WHERE (m.team1_id = t.id OR m.team2_id = t.id) 
-           AND m.winner_id != t.id 
-           AND m.status = 'completed') as losses
-        FROM teams t
-        JOIN bracket_teams bt ON t.id = bt.team_id
-        JOIN brackets b ON bt.bracket_id = b.id
-        LEFT JOIN players p ON p.team_id = t.id
-        LEFT JOIN player_stats ps ON ps.player_id = p.id
-        LEFT JOIN matches m ON ps.match_id = m.id AND m.status = 'completed'
-        WHERE b.event_id = ?
-          ${bracketFilter}
-        GROUP BY t.id, t.name, b.id, b.name
-        HAVING games_played > 0
-        ORDER BY overall_score DESC, kps DESC, dps DESC, asps DESC
+          base.team_id,
+          base.team_name,
+          base.bracket_id,
+          base.bracket_name,
+          base.sport_type,
+          base.games_played,
+          base.total_sets_played,
+          base.kills,
+          base.assists,
+          base.digs,
+          base.blocks,
+          base.service_aces,
+          base.receptions,
+          base.serve_errors,
+          base.attack_errors,
+          base.reception_errors,
+          base.assist_errors,
+          base.blocking_errors,
+          base.ball_handling_errors,
+          ROUND(base.kills / NULLIF(base.total_sets_played, 0), 2) as kps,
+          ROUND(base.service_aces / NULLIF(base.total_sets_played, 0), 2) as aps,
+          ROUND(base.assists / NULLIF(base.total_sets_played, 0), 2) as asps,
+          ROUND(base.digs / NULLIF(base.total_sets_played, 0), 2) as dps,
+          ROUND(base.blocks / NULLIF(base.total_sets_played, 0), 2) as bps,
+          base.hitting_percentage,
+          base.eff,
+          base.overall_score,
+          base.wins,
+          base.losses
+        FROM (
+          SELECT 
+            t.id as team_id,
+            t.name as team_name,
+            b.id as bracket_id,
+            b.name as bracket_name,
+            '${sportType}' as sport_type,
+            COUNT(DISTINCT ps.match_id) as games_played,
+            
+            -- Calculate total sets based on distinct match/set combinations with activity
+            (
+              SELECT COUNT(*) FROM (
+                SELECT DISTINCT m2.id, s.set_index
+                FROM matches m2
+                JOIN player_stats ps2 ON ps2.match_id = m2.id
+                JOIN players p2 ON ps2.player_id = p2.id
+                JOIN (
+                  SELECT 0 AS set_index UNION ALL SELECT 1 UNION ALL SELECT 2 UNION ALL SELECT 3 UNION ALL SELECT 4
+                ) s ON 1=1
+                WHERE p2.team_id = t.id 
+                  AND m2.bracket_id = b.id
+                  AND m2.status = 'completed'
+                  AND (
+                    JSON_EXTRACT(ps2.kills_per_set, CONCAT('$[', s.set_index, ']')) > 0 OR
+                    JSON_EXTRACT(ps2.service_aces_per_set, CONCAT('$[', s.set_index, ']')) > 0 OR
+                    JSON_EXTRACT(ps2.volleyball_assists_per_set, CONCAT('$[', s.set_index, ']')) > 0 OR
+                    JSON_EXTRACT(ps2.digs_per_set, CONCAT('$[', s.set_index, ']')) > 0 OR
+                    JSON_EXTRACT(ps2.volleyball_blocks_per_set, CONCAT('$[', s.set_index, ']')) > 0 OR
+                    JSON_EXTRACT(ps2.serve_errors_per_set, CONCAT('$[', s.set_index, ']')) > 0 OR
+                    JSON_EXTRACT(ps2.attack_errors_per_set, CONCAT('$[', s.set_index, ']')) > 0
+                  )
+              ) set_counts
+            ) as total_sets_played,
+            -- TOTAL COUNTS
+            SUM(ps.kills) as kills,
+            SUM(ps.volleyball_assists) as assists,
+            SUM(ps.digs) as digs,
+            SUM(ps.volleyball_blocks) as blocks,
+            SUM(ps.service_aces) as service_aces,
+            SUM(ps.receptions) as receptions,
+            SUM(ps.serve_errors) as serve_errors,
+            SUM(ps.attack_errors) as attack_errors,
+            SUM(ps.reception_errors) as reception_errors,
+            SUM(COALESCE(ps.assist_errors, 0)) as assist_errors,
+            SUM(COALESCE(ps.blocking_errors, 0)) as blocking_errors,
+            SUM(COALESCE(ps.ball_handling_errors, 0)) as ball_handling_errors,
+            
+            -- Hitting Percentage
+            ROUND(
+              CASE 
+                WHEN SUM(ps.attack_attempts) > 0 
+                THEN (SUM(ps.kills) - SUM(ps.attack_errors)) / SUM(ps.attack_attempts) * 100
+                ELSE 0 
+              END, 1
+            ) as hitting_percentage,
+            
+            -- Efficiency
+            ROUND(
+              (SUM(ps.kills) + SUM(ps.volleyball_blocks) + SUM(ps.service_aces) + 
+               SUM(ps.volleyball_assists) + SUM(ps.digs) - 
+               (SUM(ps.serve_errors) + SUM(ps.attack_errors) + SUM(ps.reception_errors) + 
+                SUM(COALESCE(ps.assist_errors, 0)) + SUM(COALESCE(ps.blocking_errors, 0)) + 
+                SUM(COALESCE(ps.ball_handling_errors, 0)))) / 
+              NULLIF(COUNT(DISTINCT ps.match_id), 0), 1
+            ) as eff,
+            
+            -- Overall Score
+            ROUND(
+              (SUM(ps.kills) + SUM(ps.volleyball_blocks) + SUM(ps.service_aces) + 
+               SUM(ps.volleyball_assists) + SUM(ps.digs) - 
+               (SUM(ps.serve_errors) + SUM(ps.attack_errors) + SUM(ps.reception_errors) + 
+                SUM(COALESCE(ps.assist_errors, 0)) + SUM(COALESCE(ps.blocking_errors, 0)) + 
+                SUM(COALESCE(ps.ball_handling_errors, 0)))) / 
+              NULLIF(COUNT(DISTINCT ps.match_id), 0), 1
+            ) as overall_score,
+            
+            -- Win/Loss record
+            (SELECT COUNT(*) FROM matches m 
+             WHERE (m.team1_id = t.id OR m.team2_id = t.id) 
+             AND m.winner_id = t.id 
+             AND m.status = 'completed') as wins,
+            (SELECT COUNT(*) FROM matches m 
+             WHERE (m.team1_id = t.id OR m.team2_id = t.id) 
+             AND m.winner_id != t.id 
+             AND m.status = 'completed') as losses
+          FROM teams t
+          JOIN bracket_teams bt ON t.id = bt.team_id
+          JOIN brackets b ON bt.bracket_id = b.id
+          LEFT JOIN players p ON p.team_id = t.id
+          LEFT JOIN player_stats ps ON ps.player_id = p.id
+          LEFT JOIN matches m ON ps.match_id = m.id AND m.status = 'completed'
+          WHERE b.event_id = ?
+            ${bracketFilter}
+          GROUP BY t.id, t.name, b.id, b.name
+          HAVING games_played > 0
+        ) as base
+        ORDER BY base.overall_score DESC, kps DESC, dps DESC, asps DESC
       `;
     }
     
