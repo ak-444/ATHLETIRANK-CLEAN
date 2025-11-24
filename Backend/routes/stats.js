@@ -200,7 +200,7 @@ router.get("/matches/:matchId/audit-logs", async (req, res) => {
   }
 });
 
-// Get existing stats for a match - UPDATED to include assist_errors
+// Get existing stats for a match
 router.get("/matches/:matchId/stats", async (req, res) => {
   try {
     const query = `
@@ -308,6 +308,7 @@ router.get("/matches/:matchId/stats", async (req, res) => {
     res.status(500).json({ error: "Failed to fetch stats" });
   }
 });
+
 router.post("/matches/:matchId/stats", async (req, res) => {
   const { players, team1_id, team2_id, awards = [], userEmail, userRole, isUpdate } = req.body;
   const matchId = req.params.matchId;
@@ -737,6 +738,7 @@ router.post("/matches/:matchId/stats", async (req, res) => {
     conn.release();
   }
 });
+
 // Get match awards
 router.get("/matches/:matchId/awards", async (req, res) => {
   try {
@@ -757,7 +759,7 @@ router.get("/matches/:matchId/awards", async (req, res) => {
   }
 });
 
-// Get player statistics summary for a match or event - UPDATED to include assist_errors
+// Get player statistics summary for a match or event
 router.get("/matches/:matchId/summary", async (req, res) => {
   try {
     const { matchId } = req.params;
@@ -810,7 +812,7 @@ router.get("/matches/:matchId/summary", async (req, res) => {
   }
 });
 
-// UPDATED: Get event statistics - WITH assist_errors included
+// Get event statistics
 router.get("/events/:eventId/statistics", async (req, res) => {
   try {
     const { eventId } = req.params;
@@ -841,7 +843,7 @@ router.get("/events/:eventId/statistics", async (req, res) => {
         ${bracketFilter}
     `, queryParams);
     
-    // Get average statistics for the event/bracket - UPDATED to include assist_errors
+    // Get average statistics for the event/bracket
     const [avgStatsResult] = await db.pool.query(`
       SELECT 
         ROUND(AVG(ps.points), 1) as avg_ppg,
@@ -881,7 +883,7 @@ router.get("/events/:eventId/statistics", async (req, res) => {
   }
 });
 
-// UPDATED: Get comprehensive player statistics - WITH assist_errors
+// Get comprehensive player statistics - UPDATED with participation-based set counting
 router.get("/events/:eventId/players-statistics", async (req, res) => {
   try {
     const { eventId } = req.params;
@@ -962,7 +964,7 @@ router.get("/events/:eventId/players-statistics", async (req, res) => {
         ORDER BY overall_score DESC, ppg DESC, rpg DESC, apg DESC
       `;
     } else {
-      // Volleyball - UPDATED: Added assist_errors
+      // Volleyball - Calculate sets played based on actual participation
       query = `
         SELECT 
           p.id,
@@ -973,6 +975,27 @@ router.get("/events/:eventId/players-statistics", async (req, res) => {
           b.id as bracket_id,
           b.name as bracket_name,
           '${sportType}' as sport_type,
+          -- Calculate total sets played - count non-zero entries in per-set arrays
+          (SELECT SUM(
+            CASE 
+              WHEN ps2.kills_per_set IS NOT NULL THEN
+                (
+                  -- Count sets where player had ANY activity
+                  (CASE WHEN JSON_EXTRACT(ps2.kills_per_set, '$[0]') > 0 OR JSON_EXTRACT(ps2.service_aces_per_set, '$[0]') > 0 OR JSON_EXTRACT(ps2.volleyball_assists_per_set, '$[0]') > 0 OR JSON_EXTRACT(ps2.digs_per_set, '$[0]') > 0 OR JSON_EXTRACT(ps2.volleyball_blocks_per_set, '$[0]') > 0 OR JSON_EXTRACT(ps2.serve_errors_per_set, '$[0]') > 0 OR JSON_EXTRACT(ps2.attack_errors_per_set, '$[0]') > 0 THEN 1 ELSE 0 END) +
+                  (CASE WHEN JSON_EXTRACT(ps2.kills_per_set, '$[1]') > 0 OR JSON_EXTRACT(ps2.service_aces_per_set, '$[1]') > 0 OR JSON_EXTRACT(ps2.volleyball_assists_per_set, '$[1]') > 0 OR JSON_EXTRACT(ps2.digs_per_set, '$[1]') > 0 OR JSON_EXTRACT(ps2.volleyball_blocks_per_set, '$[1]') > 0 OR JSON_EXTRACT(ps2.serve_errors_per_set, '$[1]') > 0 OR JSON_EXTRACT(ps2.attack_errors_per_set, '$[1]') > 0 THEN 1 ELSE 0 END) +
+                  (CASE WHEN JSON_EXTRACT(ps2.kills_per_set, '$[2]') > 0 OR JSON_EXTRACT(ps2.service_aces_per_set, '$[2]') > 0 OR JSON_EXTRACT(ps2.volleyball_assists_per_set, '$[2]') > 0 OR JSON_EXTRACT(ps2.digs_per_set, '$[2]') > 0 OR JSON_EXTRACT(ps2.volleyball_blocks_per_set, '$[2]') > 0 OR JSON_EXTRACT(ps2.serve_errors_per_set, '$[2]') > 0 OR JSON_EXTRACT(ps2.attack_errors_per_set, '$[2]') > 0 THEN 1 ELSE 0 END) +
+                  (CASE WHEN JSON_EXTRACT(ps2.kills_per_set, '$[3]') > 0 OR JSON_EXTRACT(ps2.service_aces_per_set, '$[3]') > 0 OR JSON_EXTRACT(ps2.volleyball_assists_per_set, '$[3]') > 0 OR JSON_EXTRACT(ps2.digs_per_set, '$[3]') > 0 OR JSON_EXTRACT(ps2.volleyball_blocks_per_set, '$[3]') > 0 OR JSON_EXTRACT(ps2.serve_errors_per_set, '$[3]') > 0 OR JSON_EXTRACT(ps2.attack_errors_per_set, '$[3]') > 0 THEN 1 ELSE 0 END) +
+                  (CASE WHEN JSON_EXTRACT(ps2.kills_per_set, '$[4]') > 0 OR JSON_EXTRACT(ps2.service_aces_per_set, '$[4]') > 0 OR JSON_EXTRACT(ps2.volleyball_assists_per_set, '$[4]') > 0 OR JSON_EXTRACT(ps2.digs_per_set, '$[4]') > 0 OR JSON_EXTRACT(ps2.volleyball_blocks_per_set, '$[4]') > 0 OR JSON_EXTRACT(ps2.serve_errors_per_set, '$[4]') > 0 OR JSON_EXTRACT(ps2.attack_errors_per_set, '$[4]') > 0 THEN 1 ELSE 0 END)
+                )
+              ELSE 0
+            END
+          )
+          FROM player_stats ps2
+          JOIN matches m2 ON ps2.match_id = m2.id
+          WHERE ps2.player_id = p.id 
+            AND m2.bracket_id = b.id
+            AND m2.status = 'completed'
+          ) as total_sets_played,
           COUNT(DISTINCT ps.match_id) as games_played,
           -- TOTAL COUNTS
           SUM(ps.kills) as kills,
@@ -988,6 +1011,112 @@ router.get("/events/:eventId/players-statistics", async (req, res) => {
           SUM(COALESCE(ps.assist_errors, 0)) as assist_errors,
           SUM(COALESCE(ps.blocking_errors, 0)) as blocking_errors,
           SUM(COALESCE(ps.ball_handling_errors, 0)) as ball_handling_errors,
+          -- Per-Set Averages using actual sets played
+          ROUND(
+            SUM(ps.kills) / NULLIF((SELECT SUM(
+              CASE 
+                WHEN ps2.kills_per_set IS NOT NULL THEN
+                  (
+                    (CASE WHEN JSON_EXTRACT(ps2.kills_per_set, '$[0]') > 0 OR JSON_EXTRACT(ps2.service_aces_per_set, '$[0]') > 0 OR JSON_EXTRACT(ps2.volleyball_assists_per_set, '$[0]') > 0 OR JSON_EXTRACT(ps2.digs_per_set, '$[0]') > 0 OR JSON_EXTRACT(ps2.volleyball_blocks_per_set, '$[0]') > 0 OR JSON_EXTRACT(ps2.serve_errors_per_set, '$[0]') > 0 OR JSON_EXTRACT(ps2.attack_errors_per_set, '$[0]') > 0 THEN 1 ELSE 0 END) +
+                    (CASE WHEN JSON_EXTRACT(ps2.kills_per_set, '$[1]') > 0 OR JSON_EXTRACT(ps2.service_aces_per_set, '$[1]') > 0 OR JSON_EXTRACT(ps2.volleyball_assists_per_set, '$[1]') > 0 OR JSON_EXTRACT(ps2.digs_per_set, '$[1]') > 0 OR JSON_EXTRACT(ps2.volleyball_blocks_per_set, '$[1]') > 0 OR JSON_EXTRACT(ps2.serve_errors_per_set, '$[1]') > 0 OR JSON_EXTRACT(ps2.attack_errors_per_set, '$[1]') > 0 THEN 1 ELSE 0 END) +
+                    (CASE WHEN JSON_EXTRACT(ps2.kills_per_set, '$[2]') > 0 OR JSON_EXTRACT(ps2.service_aces_per_set, '$[2]') > 0 OR JSON_EXTRACT(ps2.volleyball_assists_per_set, '$[2]') > 0 OR JSON_EXTRACT(ps2.digs_per_set, '$[2]') > 0 OR JSON_EXTRACT(ps2.volleyball_blocks_per_set, '$[2]') > 0 OR JSON_EXTRACT(ps2.serve_errors_per_set, '$[2]') > 0 OR JSON_EXTRACT(ps2.attack_errors_per_set, '$[2]') > 0 THEN 1 ELSE 0 END) +
+                    (CASE WHEN JSON_EXTRACT(ps2.kills_per_set, '$[3]') > 0 OR JSON_EXTRACT(ps2.service_aces_per_set, '$[3]') > 0 OR JSON_EXTRACT(ps2.volleyball_assists_per_set, '$[3]') > 0 OR JSON_EXTRACT(ps2.digs_per_set, '$[3]') > 0 OR JSON_EXTRACT(ps2.volleyball_blocks_per_set, '$[3]') > 0 OR JSON_EXTRACT(ps2.serve_errors_per_set, '$[3]') > 0 OR JSON_EXTRACT(ps2.attack_errors_per_set, '$[3]') > 0 THEN 1 ELSE 0 END) +
+                    (CASE WHEN JSON_EXTRACT(ps2.kills_per_set, '$[4]') > 0 OR JSON_EXTRACT(ps2.service_aces_per_set, '$[4]') > 0 OR JSON_EXTRACT(ps2.volleyball_assists_per_set, '$[4]') > 0 OR JSON_EXTRACT(ps2.digs_per_set, '$[4]') > 0 OR JSON_EXTRACT(ps2.volleyball_blocks_per_set, '$[4]') > 0 OR JSON_EXTRACT(ps2.serve_errors_per_set, '$[4]') > 0 OR JSON_EXTRACT(ps2.attack_errors_per_set, '$[4]') > 0 THEN 1 ELSE 0 END)
+                  )
+                ELSE 0
+              END
+            )
+            FROM player_stats ps2
+            JOIN matches m2 ON ps2.match_id = m2.id
+            WHERE ps2.player_id = p.id 
+              AND m2.bracket_id = b.id
+              AND m2.status = 'completed'
+            ), 0), 2
+          ) as kps,
+          ROUND(
+            SUM(ps.service_aces) / NULLIF((SELECT SUM(
+              CASE 
+                WHEN ps2.kills_per_set IS NOT NULL THEN
+                  (
+                    (CASE WHEN JSON_EXTRACT(ps2.kills_per_set, '$[0]') > 0 OR JSON_EXTRACT(ps2.service_aces_per_set, '$[0]') > 0 OR JSON_EXTRACT(ps2.volleyball_assists_per_set, '$[0]') > 0 OR JSON_EXTRACT(ps2.digs_per_set, '$[0]') > 0 OR JSON_EXTRACT(ps2.volleyball_blocks_per_set, '$[0]') > 0 OR JSON_EXTRACT(ps2.serve_errors_per_set, '$[0]') > 0 OR JSON_EXTRACT(ps2.attack_errors_per_set, '$[0]') > 0 THEN 1 ELSE 0 END) +
+                    (CASE WHEN JSON_EXTRACT(ps2.kills_per_set, '$[1]') > 0 OR JSON_EXTRACT(ps2.service_aces_per_set, '$[1]') > 0 OR JSON_EXTRACT(ps2.volleyball_assists_per_set, '$[1]') > 0 OR JSON_EXTRACT(ps2.digs_per_set, '$[1]') > 0 OR JSON_EXTRACT(ps2.volleyball_blocks_per_set, '$[1]') > 0 OR JSON_EXTRACT(ps2.serve_errors_per_set, '$[1]') > 0 OR JSON_EXTRACT(ps2.attack_errors_per_set, '$[1]') > 0 THEN 1 ELSE 0 END) +
+                    (CASE WHEN JSON_EXTRACT(ps2.kills_per_set, '$[2]') > 0 OR JSON_EXTRACT(ps2.service_aces_per_set, '$[2]') > 0 OR JSON_EXTRACT(ps2.volleyball_assists_per_set, '$[2]') > 0 OR JSON_EXTRACT(ps2.digs_per_set, '$[2]') > 0 OR JSON_EXTRACT(ps2.volleyball_blocks_per_set, '$[2]') > 0 OR JSON_EXTRACT(ps2.serve_errors_per_set, '$[2]') > 0 OR JSON_EXTRACT(ps2.attack_errors_per_set, '$[2]') > 0 THEN 1 ELSE 0 END) +
+                    (CASE WHEN JSON_EXTRACT(ps2.kills_per_set, '$[3]') > 0 OR JSON_EXTRACT(ps2.service_aces_per_set, '$[3]') > 0 OR JSON_EXTRACT(ps2.volleyball_assists_per_set, '$[3]') > 0 OR JSON_EXTRACT(ps2.digs_per_set, '$[3]') > 0 OR JSON_EXTRACT(ps2.volleyball_blocks_per_set, '$[3]') > 0 OR JSON_EXTRACT(ps2.serve_errors_per_set, '$[3]') > 0 OR JSON_EXTRACT(ps2.attack_errors_per_set, '$[3]') > 0 THEN 1 ELSE 0 END) +
+                    (CASE WHEN JSON_EXTRACT(ps2.kills_per_set, '$[4]') > 0 OR JSON_EXTRACT(ps2.service_aces_per_set, '$[4]') > 0 OR JSON_EXTRACT(ps2.volleyball_assists_per_set, '$[4]') > 0 OR JSON_EXTRACT(ps2.digs_per_set, '$[4]') > 0 OR JSON_EXTRACT(ps2.volleyball_blocks_per_set, '$[4]') > 0 OR JSON_EXTRACT(ps2.serve_errors_per_set, '$[4]') > 0 OR JSON_EXTRACT(ps2.attack_errors_per_set, '$[4]') > 0 THEN 1 ELSE 0 END)
+                  )
+                ELSE 0
+              END
+            )
+            FROM player_stats ps2
+            JOIN matches m2 ON ps2.match_id = m2.id
+            WHERE ps2.player_id = p.id 
+              AND m2.bracket_id = b.id
+              AND m2.status = 'completed'
+            ), 0), 2
+          ) as aps,
+          ROUND(
+            SUM(ps.volleyball_assists) / NULLIF((SELECT SUM(
+              CASE 
+                WHEN ps2.kills_per_set IS NOT NULL THEN
+                  (
+                    (CASE WHEN JSON_EXTRACT(ps2.kills_per_set, '$[0]') > 0 OR JSON_EXTRACT(ps2.service_aces_per_set, '$[0]') > 0 OR JSON_EXTRACT(ps2.volleyball_assists_per_set, '$[0]') > 0 OR JSON_EXTRACT(ps2.digs_per_set, '$[0]') > 0 OR JSON_EXTRACT(ps2.volleyball_blocks_per_set, '$[0]') > 0 OR JSON_EXTRACT(ps2.serve_errors_per_set, '$[0]') > 0 OR JSON_EXTRACT(ps2.attack_errors_per_set, '$[0]') > 0 THEN 1 ELSE 0 END) +
+                    (CASE WHEN JSON_EXTRACT(ps2.kills_per_set, '$[1]') > 0 OR JSON_EXTRACT(ps2.service_aces_per_set, '$[1]') > 0 OR JSON_EXTRACT(ps2.volleyball_assists_per_set, '$[1]') > 0 OR JSON_EXTRACT(ps2.digs_per_set, '$[1]') > 0 OR JSON_EXTRACT(ps2.volleyball_blocks_per_set, '$[1]') > 0 OR JSON_EXTRACT(ps2.serve_errors_per_set, '$[1]') > 0 OR JSON_EXTRACT(ps2.attack_errors_per_set, '$[1]') > 0 THEN 1 ELSE 0 END) +
+                    (CASE WHEN JSON_EXTRACT(ps2.kills_per_set, '$[2]') > 0 OR JSON_EXTRACT(ps2.service_aces_per_set, '$[2]') > 0 OR JSON_EXTRACT(ps2.volleyball_assists_per_set, '$[2]') > 0 OR JSON_EXTRACT(ps2.digs_per_set, '$[2]') > 0 OR JSON_EXTRACT(ps2.volleyball_blocks_per_set, '$[2]') > 0 OR JSON_EXTRACT(ps2.serve_errors_per_set, '$[2]') > 0 OR JSON_EXTRACT(ps2.attack_errors_per_set, '$[2]') > 0 THEN 1 ELSE 0 END) +
+                    (CASE WHEN JSON_EXTRACT(ps2.kills_per_set, '$[3]') > 0 OR JSON_EXTRACT(ps2.service_aces_per_set, '$[3]') > 0 OR JSON_EXTRACT(ps2.volleyball_assists_per_set, '$[3]') > 0 OR JSON_EXTRACT(ps2.digs_per_set, '$[3]') > 0 OR JSON_EXTRACT(ps2.volleyball_blocks_per_set, '$[3]') > 0 OR JSON_EXTRACT(ps2.serve_errors_per_set, '$[3]') > 0 OR JSON_EXTRACT(ps2.attack_errors_per_set, '$[3]') > 0 THEN 1 ELSE 0 END) +
+                    (CASE WHEN JSON_EXTRACT(ps2.kills_per_set, '$[4]') > 0 OR JSON_EXTRACT(ps2.service_aces_per_set, '$[4]') > 0 OR JSON_EXTRACT(ps2.volleyball_assists_per_set, '$[4]') > 0 OR JSON_EXTRACT(ps2.digs_per_set, '$[4]') > 0 OR JSON_EXTRACT(ps2.volleyball_blocks_per_set, '$[4]') > 0 OR JSON_EXTRACT(ps2.serve_errors_per_set, '$[4]') > 0 OR JSON_EXTRACT(ps2.attack_errors_per_set, '$[4]') > 0 THEN 1 ELSE 0 END)
+                  )
+                ELSE 0
+              END
+            )
+            FROM player_stats ps2
+            JOIN matches m2 ON ps2.match_id = m2.id
+            WHERE ps2.player_id = p.id 
+              AND m2.bracket_id = b.id
+              AND m2.status = 'completed'
+            ), 0), 2
+          ) as asps,
+          ROUND(
+            SUM(ps.digs) / NULLIF((SELECT SUM(
+              CASE 
+                WHEN ps2.kills_per_set IS NOT NULL THEN
+                  (
+                    (CASE WHEN JSON_EXTRACT(ps2.kills_per_set, '$[0]') > 0 OR JSON_EXTRACT(ps2.service_aces_per_set, '$[0]') > 0 OR JSON_EXTRACT(ps2.volleyball_assists_per_set, '$[0]') > 0 OR JSON_EXTRACT(ps2.digs_per_set, '$[0]') > 0 OR JSON_EXTRACT(ps2.volleyball_blocks_per_set, '$[0]') > 0 OR JSON_EXTRACT(ps2.serve_errors_per_set, '$[0]') > 0 OR JSON_EXTRACT(ps2.attack_errors_per_set, '$[0]') > 0 THEN 1 ELSE 0 END) +
+                    (CASE WHEN JSON_EXTRACT(ps2.kills_per_set, '$[1]') > 0 OR JSON_EXTRACT(ps2.service_aces_per_set, '$[1]') > 0 OR JSON_EXTRACT(ps2.volleyball_assists_per_set, '$[1]') > 0 OR JSON_EXTRACT(ps2.digs_per_set, '$[1]') > 0 OR JSON_EXTRACT(ps2.volleyball_blocks_per_set, '$[1]') > 0 OR JSON_EXTRACT(ps2.serve_errors_per_set, '$[1]') > 0 OR JSON_EXTRACT(ps2.attack_errors_per_set, '$[1]') > 0 THEN 1 ELSE 0 END) +
+                    (CASE WHEN JSON_EXTRACT(ps2.kills_per_set, '$[2]') > 0 OR JSON_EXTRACT(ps2.service_aces_per_set, '$[2]') > 0 OR JSON_EXTRACT(ps2.volleyball_assists_per_set, '$[2]') > 0 OR JSON_EXTRACT(ps2.digs_per_set, '$[2]') > 0 OR JSON_EXTRACT(ps2.volleyball_blocks_per_set, '$[2]') > 0 OR JSON_EXTRACT(ps2.serve_errors_per_set, '$[2]') > 0 OR JSON_EXTRACT(ps2.attack_errors_per_set, '$[2]') > 0 THEN 1 ELSE 0 END) +
+                    (CASE WHEN JSON_EXTRACT(ps2.kills_per_set, '$[3]') > 0 OR JSON_EXTRACT(ps2.service_aces_per_set, '$[3]') > 0 OR JSON_EXTRACT(ps2.volleyball_assists_per_set, '$[3]') > 0 OR JSON_EXTRACT(ps2.digs_per_set, '$[3]') > 0 OR JSON_EXTRACT(ps2.volleyball_blocks_per_set, '$[3]') > 0 OR JSON_EXTRACT(ps2.serve_errors_per_set, '$[3]') > 0 OR JSON_EXTRACT(ps2.attack_errors_per_set, '$[3]') > 0 THEN 1 ELSE 0 END) +
+                    (CASE WHEN JSON_EXTRACT(ps2.kills_per_set, '$[4]') > 0 OR JSON_EXTRACT(ps2.service_aces_per_set, '$[4]') > 0 OR JSON_EXTRACT(ps2.volleyball_assists_per_set, '$[4]') > 0 OR JSON_EXTRACT(ps2.digs_per_set, '$[4]') > 0 OR JSON_EXTRACT(ps2.volleyball_blocks_per_set, '$[4]') > 0 OR JSON_EXTRACT(ps2.serve_errors_per_set, '$[4]') > 0 OR JSON_EXTRACT(ps2.attack_errors_per_set, '$[4]') > 0 THEN 1 ELSE 0 END)
+                  )
+                ELSE 0
+              END
+            )
+            FROM player_stats ps2
+            JOIN matches m2 ON ps2.match_id = m2.id
+            WHERE ps2.player_id = p.id 
+              AND m2.bracket_id = b.id
+              AND m2.status = 'completed'
+            ), 0), 2
+          ) as dps,
+          ROUND(
+            SUM(ps.volleyball_blocks) / NULLIF((SELECT SUM(
+              CASE 
+                WHEN ps2.kills_per_set IS NOT NULL THEN
+                  (
+                    (CASE WHEN JSON_EXTRACT(ps2.kills_per_set, '$[0]') > 0 OR JSON_EXTRACT(ps2.service_aces_per_set, '$[0]') > 0 OR JSON_EXTRACT(ps2.volleyball_assists_per_set, '$[0]') > 0 OR JSON_EXTRACT(ps2.digs_per_set, '$[0]') > 0 OR JSON_EXTRACT(ps2.volleyball_blocks_per_set, '$[0]') > 0 OR JSON_EXTRACT(ps2.serve_errors_per_set, '$[0]') > 0 OR JSON_EXTRACT(ps2.attack_errors_per_set, '$[0]') > 0 THEN 1 ELSE 0 END) +
+                    (CASE WHEN JSON_EXTRACT(ps2.kills_per_set, '$[1]') > 0 OR JSON_EXTRACT(ps2.service_aces_per_set, '$[1]') > 0 OR JSON_EXTRACT(ps2.volleyball_assists_per_set, '$[1]') > 0 OR JSON_EXTRACT(ps2.digs_per_set, '$[1]') > 0 OR JSON_EXTRACT(ps2.volleyball_blocks_per_set, '$[1]') > 0 OR JSON_EXTRACT(ps2.serve_errors_per_set, '$[1]') > 0 OR JSON_EXTRACT(ps2.attack_errors_per_set, '$[1]') > 0 THEN 1 ELSE 0 END) +
+                    (CASE WHEN JSON_EXTRACT(ps2.kills_per_set, '$[2]') > 0 OR JSON_EXTRACT(ps2.service_aces_per_set, '$[2]') > 0 OR JSON_EXTRACT(ps2.volleyball_assists_per_set, '$[2]') > 0 OR JSON_EXTRACT(ps2.digs_per_set, '$[2]') > 0 OR JSON_EXTRACT(ps2.volleyball_blocks_per_set, '$[2]') > 0 OR JSON_EXTRACT(ps2.serve_errors_per_set, '$[2]') > 0 OR JSON_EXTRACT(ps2.attack_errors_per_set, '$[2]') > 0 THEN 1 ELSE 0 END) +
+                    (CASE WHEN JSON_EXTRACT(ps2.kills_per_set, '$[3]') > 0 OR JSON_EXTRACT(ps2.service_aces_per_set, '$[3]') > 0 OR JSON_EXTRACT(ps2.volleyball_assists_per_set, '$[3]') > 0 OR JSON_EXTRACT(ps2.digs_per_set, '$[3]') > 0 OR JSON_EXTRACT(ps2.volleyball_blocks_per_set, '$[3]') > 0 OR JSON_EXTRACT(ps2.serve_errors_per_set, '$[3]') > 0 OR JSON_EXTRACT(ps2.attack_errors_per_set, '$[3]') > 0 THEN 1 ELSE 0 END) +
+                    (CASE WHEN JSON_EXTRACT(ps2.kills_per_set, '$[4]') > 0 OR JSON_EXTRACT(ps2.service_aces_per_set, '$[4]') > 0 OR JSON_EXTRACT(ps2.volleyball_assists_per_set, '$[4]') > 0 OR JSON_EXTRACT(ps2.digs_per_set, '$[4]') > 0 OR JSON_EXTRACT(ps2.volleyball_blocks_per_set, '$[4]') > 0 OR JSON_EXTRACT(ps2.serve_errors_per_set, '$[4]') > 0 OR JSON_EXTRACT(ps2.attack_errors_per_set, '$[4]') > 0 THEN 1 ELSE 0 END)
+                  )
+                ELSE 0
+              END
+            )
+            FROM player_stats ps2
+            JOIN matches m2 ON ps2.match_id = m2.id
+            WHERE ps2.player_id = p.id 
+              AND m2.bracket_id = b.id
+              AND m2.status = 'completed'
+            ), 0), 2
+          ) as bps,
           -- Total counts for export
           SUM(ps.kills) as total_kills,
           SUM(ps.volleyball_assists) as total_volleyball_assists,
@@ -1003,14 +1132,14 @@ router.get("/events/:eventId/players-statistics", async (req, res) => {
               ELSE 0 
             END, 1
           ) as hitting_percentage,
-          -- Efficiency calculation - UPDATED to include assist_errors
+          -- Efficiency calculation
           ROUND(
             (SUM(ps.kills) + SUM(ps.volleyball_blocks) + SUM(ps.service_aces) + 
              SUM(ps.volleyball_assists) + SUM(ps.digs) - 
              (SUM(ps.serve_errors) + SUM(ps.attack_errors) + SUM(ps.reception_errors) + SUM(COALESCE(ps.assist_errors, 0)))) / 
             NULLIF(COUNT(DISTINCT ps.match_id), 0), 1
           ) as eff,
-          -- Overall Score - UPDATED to include assist_errors
+          -- Overall Score
           ROUND(
             (SUM(ps.kills) + SUM(ps.volleyball_blocks) + SUM(ps.service_aces) + 
              SUM(ps.volleyball_assists) + SUM(ps.digs) - 
@@ -1027,7 +1156,7 @@ router.get("/events/:eventId/players-statistics", async (req, res) => {
           ${bracketFilter}
         GROUP BY p.id, p.name, p.jersey_number, p.position, t.name, b.id, b.name
         HAVING games_played > 0
-        ORDER BY overall_score DESC, kills DESC, digs DESC, assists DESC
+        ORDER BY overall_score DESC, kps DESC, dps DESC, asps DESC
       `;
     }
     
@@ -1040,7 +1169,7 @@ router.get("/events/:eventId/players-statistics", async (req, res) => {
   }
 });
 
-// UPDATED: Get comprehensive team statistics - WITH assist_errors
+// Get comprehensive team statistics - UPDATED with simplified set counting
 router.get("/events/:eventId/teams-statistics", async (req, res) => {
   try {
     const { eventId } = req.params;
@@ -1128,7 +1257,7 @@ router.get("/events/:eventId/teams-statistics", async (req, res) => {
         ORDER BY overall_score DESC, ppg DESC, rpg DESC, apg DESC
       `;
     } else {
-      // Volleyball - UPDATED: Added assist_errors
+      // Volleyball teams - simplified set counting
       query = `
         SELECT 
           t.id as team_id,
@@ -1137,6 +1266,15 @@ router.get("/events/:eventId/teams-statistics", async (req, res) => {
           b.name as bracket_name,
           '${sportType}' as sport_type,
           COUNT(DISTINCT ps.match_id) as games_played,
+          
+          -- Calculate total sets - count sets where team had any activity
+          (SELECT COUNT(DISTINCT m2.id) * 3 
+           FROM matches m2
+           WHERE (m2.team1_id = t.id OR m2.team2_id = t.id)
+             AND m2.bracket_id = b.id
+             AND m2.status = 'completed'
+          ) as total_sets_played,
+          
           -- TOTAL COUNTS
           SUM(ps.kills) as kills,
           SUM(ps.volleyball_assists) as assists,
@@ -1144,18 +1282,40 @@ router.get("/events/:eventId/teams-statistics", async (req, res) => {
           SUM(ps.volleyball_blocks) as blocks,
           SUM(ps.service_aces) as service_aces,
           SUM(ps.receptions) as receptions,
-          -- INDIVIDUAL ERROR COLUMNS
           SUM(ps.serve_errors) as serve_errors,
           SUM(ps.attack_errors) as attack_errors,
           SUM(ps.reception_errors) as reception_errors,
           SUM(COALESCE(ps.assist_errors, 0)) as assist_errors,
-          -- Total counts for export
-          SUM(ps.kills) as total_kills,
-          SUM(ps.volleyball_assists) as total_volleyball_assists,
-          SUM(ps.digs) as total_digs,
-          SUM(ps.volleyball_blocks) as total_volleyball_blocks,
-          SUM(ps.service_aces) as total_service_aces,
-          SUM(ps.receptions) as total_receptions,
+          SUM(COALESCE(ps.blocking_errors, 0)) as blocking_errors,
+          SUM(COALESCE(ps.ball_handling_errors, 0)) as ball_handling_errors,
+          
+          -- Per-Set Averages - divide by total sets
+          ROUND(SUM(ps.kills) / NULLIF((SELECT COUNT(DISTINCT m2.id) * 3 
+                                        FROM matches m2
+                                        WHERE (m2.team1_id = t.id OR m2.team2_id = t.id)
+                                          AND m2.bracket_id = b.id
+                                          AND m2.status = 'completed'), 0), 2) as kps,
+          ROUND(SUM(ps.service_aces) / NULLIF((SELECT COUNT(DISTINCT m2.id) * 3 
+                                               FROM matches m2
+                                               WHERE (m2.team1_id = t.id OR m2.team2_id = t.id)
+                                                 AND m2.bracket_id = b.id
+                                                 AND m2.status = 'completed'), 0), 2) as aps,
+          ROUND(SUM(ps.volleyball_assists) / NULLIF((SELECT COUNT(DISTINCT m2.id) * 3 
+                                                     FROM matches m2
+                                                     WHERE (m2.team1_id = t.id OR m2.team2_id = t.id)
+                                                       AND m2.bracket_id = b.id
+                                                       AND m2.status = 'completed'), 0), 2) as asps,
+          ROUND(SUM(ps.digs) / NULLIF((SELECT COUNT(DISTINCT m2.id) * 3 
+                                       FROM matches m2
+                                       WHERE (m2.team1_id = t.id OR m2.team2_id = t.id)
+                                         AND m2.bracket_id = b.id
+                                         AND m2.status = 'completed'), 0), 2) as dps,
+          ROUND(SUM(ps.volleyball_blocks) / NULLIF((SELECT COUNT(DISTINCT m2.id) * 3 
+                                                    FROM matches m2
+                                                    WHERE (m2.team1_id = t.id OR m2.team2_id = t.id)
+                                                      AND m2.bracket_id = b.id
+                                                      AND m2.status = 'completed'), 0), 2) as bps,
+          
           -- Hitting Percentage
           ROUND(
             CASE 
@@ -1164,20 +1324,27 @@ router.get("/events/:eventId/teams-statistics", async (req, res) => {
               ELSE 0 
             END, 1
           ) as hitting_percentage,
-          -- Efficiency calculation - UPDATED to include assist_errors
+          
+          -- Efficiency
           ROUND(
             (SUM(ps.kills) + SUM(ps.volleyball_blocks) + SUM(ps.service_aces) + 
              SUM(ps.volleyball_assists) + SUM(ps.digs) - 
-             (SUM(ps.serve_errors) + SUM(ps.attack_errors) + SUM(ps.reception_errors) + SUM(COALESCE(ps.assist_errors, 0)))) / 
+             (SUM(ps.serve_errors) + SUM(ps.attack_errors) + SUM(ps.reception_errors) + 
+              SUM(COALESCE(ps.assist_errors, 0)) + SUM(COALESCE(ps.blocking_errors, 0)) + 
+              SUM(COALESCE(ps.ball_handling_errors, 0)))) / 
             NULLIF(COUNT(DISTINCT ps.match_id), 0), 1
           ) as eff,
-          -- Overall Score - UPDATED to include assist_errors
+          
+          -- Overall Score
           ROUND(
             (SUM(ps.kills) + SUM(ps.volleyball_blocks) + SUM(ps.service_aces) + 
              SUM(ps.volleyball_assists) + SUM(ps.digs) - 
-             (SUM(ps.serve_errors) + SUM(ps.attack_errors) + SUM(ps.reception_errors) + SUM(COALESCE(ps.assist_errors, 0)))) / 
+             (SUM(ps.serve_errors) + SUM(ps.attack_errors) + SUM(ps.reception_errors) + 
+              SUM(COALESCE(ps.assist_errors, 0)) + SUM(COALESCE(ps.blocking_errors, 0)) + 
+              SUM(COALESCE(ps.ball_handling_errors, 0)))) / 
             NULLIF(COUNT(DISTINCT ps.match_id), 0), 1
           ) as overall_score,
+          
           -- Win/Loss record
           (SELECT COUNT(*) FROM matches m 
            WHERE (m.team1_id = t.id OR m.team2_id = t.id) 
@@ -1197,7 +1364,7 @@ router.get("/events/:eventId/teams-statistics", async (req, res) => {
           ${bracketFilter}
         GROUP BY t.id, t.name, b.id, b.name
         HAVING games_played > 0
-        ORDER BY overall_score DESC, kills DESC, digs DESC, assists DESC
+        ORDER BY overall_score DESC, kps DESC, dps DESC, asps DESC
       `;
     }
     
