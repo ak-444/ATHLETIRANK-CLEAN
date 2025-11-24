@@ -13,24 +13,30 @@ const DoubleEliminationBracket = ({ matches, eliminationType = 'double', selecte
   
   const isStaff = user?.role === 'sports_committee';
   
-  const handleMatchClick = (match) => {
+  const handleMatchClick = (match, isViewOnly = false) => {
     if (!isStaff || !selectedEvent || !selectedBracket) return;
+
+    const scrollPosition = typeof window !== 'undefined' 
+      ? (window.scrollY || document.documentElement.scrollTop || 0) 
+      : 0;
     
-    sessionStorage.setItem('selectedMatchData', JSON.stringify({
+    const matchData = {
       matchId: match.id,
       eventId: selectedEvent.id,
       bracketId: selectedBracket.id,
       match: match
-    }));
-    // Add viewOnly flag if viewing completed match
-  if (isViewOnly || match.status === 'completed') {
-    matchData.viewOnly = true;
-  }
+    };
+    if (isViewOnly || match.status === 'completed') {
+      matchData.viewOnly = true;
+    }
+    
+    sessionStorage.setItem('selectedMatchData', JSON.stringify(matchData));
     
     sessionStorage.setItem('staffEventsContext', JSON.stringify({
       selectedEvent: selectedEvent,
       selectedBracket: selectedBracket,
-      bracketViewType: 'bracket'
+      bracketViewType: 'bracket',
+      scrollPosition
     }));
     
     navigate('/StaffDashboard/stats');

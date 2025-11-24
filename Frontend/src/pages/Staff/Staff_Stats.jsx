@@ -2691,9 +2691,24 @@ const handleReEditStatistics = () => {
 };
 
 const handleBackToMatchList = () => {
+  let scrollPosition = 0;
+  let bracketViewType = 'bracket';
+  try {
+    const existingContext = sessionStorage.getItem('staffEventsContext');
+    if (existingContext) {
+      const parsed = JSON.parse(existingContext);
+      scrollPosition = parsed.scrollPosition || 0;
+      bracketViewType = parsed.bracketViewType || bracketViewType;
+    }
+  } catch (err) {
+    console.error('Error reading staffEventsContext:', err);
+  }
+
   sessionStorage.setItem('staffEventsContext', JSON.stringify({
     selectedEvent: selectedEvent,
-    selectedBracket: selectedBracket
+    selectedBracket: selectedBracket,
+    bracketViewType,
+    scrollPosition
   }));
   navigate('/StaffDashboard/events');
 };
@@ -4377,9 +4392,24 @@ const handleNextMatch = async () => {
                               sessionStorage.removeItem('adminEventsContext');
                               navigate('/AdminDashboard/events');
                             } else if (cameFromStaffEvents) {
+                              let scrollPosition = 0;
+                              let existingView = 'bracket';
+                              try {
+                                const existingContext = sessionStorage.getItem('staffEventsContext');
+                                if (existingContext) {
+                                  const parsed = JSON.parse(existingContext);
+                                  scrollPosition = parsed.scrollPosition || 0;
+                                  existingView = parsed.bracketViewType || existingView;
+                                }
+                              } catch (err) {
+                                console.error('Error reading staffEventsContext:', err);
+                              }
+
                               sessionStorage.setItem('staffEventsContext', JSON.stringify({
                                 selectedEvent: selectedEvent,
-                                selectedBracket: selectedBracket
+                                selectedBracket: selectedBracket,
+                                bracketViewType: existingView,
+                                scrollPosition
                               }));
                               navigate('/StaffDashboard/events');
                             } else {

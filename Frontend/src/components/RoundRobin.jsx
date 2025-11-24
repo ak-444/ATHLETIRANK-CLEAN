@@ -12,6 +12,10 @@ export default function RoundRobinBracketDisplay({ matches = [], selectedEvent, 
   const handleMatchClick = (match, isViewOnly = false) => {
     if (!isStaff || !selectedEvent || !selectedBracket) return;
     
+    const scrollPosition = typeof window !== 'undefined' 
+      ? (window.scrollY || document.documentElement.scrollTop || 0) 
+      : 0;
+    
     const matchData = {
       matchId: match.id,
       eventId: selectedEvent.id,
@@ -28,7 +32,8 @@ export default function RoundRobinBracketDisplay({ matches = [], selectedEvent, 
     sessionStorage.setItem('staffEventsContext', JSON.stringify({
       selectedEvent: selectedEvent,
       selectedBracket: selectedBracket,
-      bracketViewType: 'bracket'
+      bracketViewType: 'bracket',
+      scrollPosition
     }));
     
     navigate('/StaffDashboard/stats');

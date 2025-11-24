@@ -32,6 +32,12 @@ const [standings, setStandings] = useState([]);
 
   // Add state for expanded events
   const [expandedEvents, setExpandedEvents] = useState({});
+  const [pendingScrollPosition, setPendingScrollPosition] = useState(null);
+
+  const getScrollPosition = () => {
+    if (typeof window === "undefined") return 0;
+    return window.scrollY || document.documentElement.scrollTop || 0;
+  };
 
   // Toggle function for expanding events
   const toggleEventExpansion = (eventId) => {
@@ -110,15 +116,16 @@ const [standings, setStandings] = useState([]);
       
       if (storedContext) {
         try {
-          const { 
-            selectedEvent: savedEvent, 
-            selectedBracket: savedBracket,
-            bracketViewType: savedViewType,
-            activeTab: savedTab
-          } = JSON.parse(storedContext);
-          
-          if (savedEvent && events.length > 0) {
-            const event = events.find(e => e.id === savedEvent.id);
+            const { 
+              selectedEvent: savedEvent, 
+              selectedBracket: savedBracket,
+              bracketViewType: savedViewType,
+              activeTab: savedTab,
+              scrollPosition: savedScroll
+            } = JSON.parse(storedContext);
+            
+            if (savedEvent && events.length > 0) {
+              const event = events.find(e => e.id === savedEvent.id);
             
             if (event) {
               // If coming from dashboard with just an event (no bracket selected)
@@ -148,6 +155,9 @@ const [standings, setStandings] = useState([]);
                   if (savedViewType) {
                     setBracketViewType(savedViewType);
                   }
+                  if (savedScroll !== undefined) {
+                    setPendingScrollPosition(savedScroll);
+                  }
                   
                   handleBracketSelect(event, bracket);
                 }
@@ -162,6 +172,16 @@ const [standings, setStandings] = useState([]);
         }
       }
     }, [events]);
+
+  useEffect(() => {
+    if (pendingScrollPosition !== null && !loading && !loadingDetails) {
+      const target = pendingScrollPosition;
+      setPendingScrollPosition(null);
+      setTimeout(() => {
+        window.scrollTo({ top: target, behavior: 'auto' });
+      }, 50);
+    }
+  }, [pendingScrollPosition, loading, loadingDetails, activeTab, bracketViewType, matches.length]);
 
   // Filter events based on search term and status filter
   const filteredEvents = events.filter(event => {
@@ -243,7 +263,9 @@ const [standings, setStandings] = useState([]);
     sessionStorage.setItem('staffEventsContext', JSON.stringify({
       selectedEvent: selectedEvent,
       selectedBracket: selectedBracket,
-      bracketViewType: bracketViewType
+      bracketViewType: bracketViewType,
+      scrollPosition: getScrollPosition(),
+      activeTab: activeTab
     }));
     
     navigate('/StaffDashboard/stats');
@@ -263,7 +285,9 @@ const [standings, setStandings] = useState([]);
     sessionStorage.setItem('staffEventsContext', JSON.stringify({
       selectedEvent: selectedEvent,
       selectedBracket: selectedBracket,
-      bracketViewType: bracketViewType
+      bracketViewType: bracketViewType,
+      scrollPosition: getScrollPosition(),
+      activeTab: activeTab
     }));
     
     navigate('/StaffDashboard/stats');

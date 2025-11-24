@@ -16,6 +16,10 @@ const CustomBracket = ({ matches, eliminationType = 'single', selectedEvent, sel
 const handleMatchClick = (match, isViewOnly = false) => {
   if (!isStaff || !selectedEvent || !selectedBracket) return;
   
+  const scrollPosition = typeof window !== 'undefined' 
+    ? (window.scrollY || document.documentElement.scrollTop || 0) 
+    : 0;
+
   const matchData = {
     matchId: match.id,
     eventId: selectedEvent.id,
@@ -33,7 +37,8 @@ const handleMatchClick = (match, isViewOnly = false) => {
   sessionStorage.setItem('staffEventsContext', JSON.stringify({
     selectedEvent: selectedEvent,
     selectedBracket: selectedBracket,
-    bracketViewType: 'bracket'
+    bracketViewType: 'bracket',
+    scrollPosition
   }));
   
   navigate('/StaffDashboard/stats');
