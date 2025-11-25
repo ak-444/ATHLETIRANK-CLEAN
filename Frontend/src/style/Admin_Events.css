@@ -353,15 +353,15 @@
 
 .awards_standings_tabs {
   display: flex;
-  background: #171f2c !important;
- /* NEW COLOR */
-  border-bottom: 2px solid var(--border-color);
+  background: linear-gradient(120deg, rgba(17, 24, 39, 0.95), rgba(15, 23, 42, 0.9)) !important;
+  border-bottom: 1px solid var(--border-color);
+  padding: 0 6px;
 }
 
 .awards_standings_tab_button {
   background: transparent !important;
   border: none;
-  padding: 15px 30px;
+  padding: 14px 24px 12px 24px;
   color: var(--text-muted);
   cursor: pointer;
   transition: var(--transition);
@@ -371,6 +371,8 @@
   gap: 8px;
   font-size: 16px;
   border-bottom: 3px solid transparent;
+  border-radius: 0;
+  margin-right: 8px;
 }
 
 .awards_standings_tab_button:hover {

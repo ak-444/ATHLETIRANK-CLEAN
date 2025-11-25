@@ -1913,7 +1913,7 @@ const closeEditTeamModal = () => {
                                   textAlign: 'center',
                                   color: 'var(--text-muted)',
                                   fontSize: '14px',
-                                  background: 'rgba(0, 0, 0, 0.2)',
+                                  background: 'linear-gradient(135deg, rgba(59, 130, 246, 0.08), rgba(16, 185, 129, 0.08))',
                                   borderRadius: '0 0 8px 8px'
                                 }}>
                                   <p style={{ margin: '0 0 16px 0' }}>No brackets created for this event yet.</p>
@@ -3555,6 +3555,31 @@ const closeEditTeamModal = () => {
               <div style={{ color: 'var(--text-muted)', fontSize: '12px', marginTop: '4px' }}>
                 All matching teams are already assigned to this bracket
               </div>
+              <button
+                onClick={() => {
+                  sessionStorage.setItem('teamCreationContext', JSON.stringify({
+                    sport: editTeamModal.bracket.sport_type,
+                    source: 'admin-events-manage-teams'
+                  }));
+                  navigate('/AdminDashboard/teams');
+                }}
+                style={{
+                  marginTop: '12px',
+                  padding: '10px 16px',
+                  background: 'var(--primary-color)',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '6px',
+                  cursor: 'pointer',
+                  fontSize: '13px',
+                  fontWeight: '600',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '8px'
+                }}
+              >
+                <FaPlus /> Create new {editTeamModal.bracket.sport_type} team
+              </button>
             </div>
           ) : (
             <div style={{ display: 'flex', gap: '10px', alignItems: 'end' }}>
@@ -3801,10 +3826,10 @@ const closeEditTeamModal = () => {
                 ) : (
                   <>
                     {/* Team Selection and Info */}
-                    <div style={{ 
-                      display: 'flex', 
-                      justifyContent: 'space-between', 
-                      alignItems: 'center', 
+                    <div style={{
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center',
                       marginBottom: '20px',
                       padding: '16px',
                       background: 'rgba(59, 130, 246, 0.1)',
@@ -3812,11 +3837,14 @@ const closeEditTeamModal = () => {
                       border: '1px solid rgba(59, 130, 246, 0.2)'
                     }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+                        <div style={{ color: 'var(--text-primary)', fontWeight: 600, minWidth: '60px' }}>
+                          Teams:
+                        </div>
                         <select
                           value={editTeamModal.selectedTeam?.id || ''}
                           onChange={(e) => {
                             const team = editTeamModal.teams.find(t => t.id === parseInt(e.target.value));
-                            setEditTeamModal(prev => ({ 
+                            setEditTeamModal(prev => ({
                               ...prev, 
                               selectedTeam: team,
                               editingPlayer: null 

@@ -935,12 +935,16 @@ if (createdTeams.length > maxTeams) {
       setValidationError(`Bracket ${i + 1}: Please select a sport.`);
       return;
     }
-    if (bracket.selectedTeamIds.length < 2) {
-      setValidationError(`Bracket ${i + 1}: Please select at least 2 teams.`);
-      return;
-    }
     if (!bracket.bracketType) {
       setValidationError(`Bracket ${i + 1}: Please select a bracket type.`);
+      return;
+    }
+    if (bracket.bracketType === 'round_robin_knockout' && bracket.selectedTeamIds.length < 4) {
+      setValidationError(`Bracket ${i + 1}: Round Robin + Knockout requires at least 4 teams.`);
+      return;
+    }
+    if (bracket.selectedTeamIds.length < 2) {
+      setValidationError(`Bracket ${i + 1}: Please select at least 2 teams.`);
       return;
     }
   }
@@ -1235,7 +1239,7 @@ if (bracket.bracketType === 'round_robin') {
     onClick={handleContinueToTeams}
     className="bracket-submit-btn"
   >
-    Continue to Teams
+    Add Teams
     <FaChevronRight style={{ marginLeft: '8px' }} />
   </button>
 </div>
@@ -1733,7 +1737,7 @@ title={createdTeams.length >= maxTeams ? "Maximum team limit reached" : "Add Tea
       onClick={handleProceedToBracket}
       className="bracket-submit-btn"
     >
-      Proceed to Create Brackets
+      Setup Brackets
       <FaChevronRight style={{ marginLeft: '8px' }} />
     </button>
   )}

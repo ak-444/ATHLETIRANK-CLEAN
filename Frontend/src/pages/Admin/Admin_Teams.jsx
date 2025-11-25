@@ -142,6 +142,40 @@ Jane Smith,12,${formData.sport === 'Basketball' ? 'Shooting Guard' : 'Outside Hi
     }
   }, []);
 
+  // Open the create tab with preselected sport when coming from bracket manage-teams
+  useEffect(() => {
+    const creationContext = sessionStorage.getItem('teamCreationContext');
+    if (creationContext) {
+      try {
+        const { sport } = JSON.parse(creationContext);
+        const normalized = (sport || '').toLowerCase();
+        const mappedSport = normalized === 'volleyball'
+          ? 'Volleyball'
+          : normalized === 'basketball'
+            ? 'Basketball'
+            : sport || '';
+
+        setActiveTab('create');
+
+        if (mappedSport) {
+          setFormData(prev => ({
+            ...prev,
+            sport: mappedSport,
+            players: Array.from({ length: 12 }, () => ({
+              name: "",
+              position: "",
+              jerseyNumber: ""
+            }))
+          }));
+        }
+      } catch (err) {
+        console.error('Error loading team creation context', err);
+      } finally {
+        sessionStorage.removeItem('teamCreationContext');
+      }
+    }
+  }, []);
+
   // Position options
   const positions = {
     Basketball: ["Point Guard", "Shooting Guard", "Small Forward", "Power Forward", "Center"],
