@@ -2508,10 +2508,14 @@ if (selectedGame?.sport_type === "volleyball") {
         }
       };
 
+      const moreMatchesAvailable = hasMoreMatches();
+
       // IF OFFLINE: Save to localStorage
         if (!isOnline) {
         const saved = saveToLocalStorage(selectedGame.id, statsData, 'save_stats');
         if (saved) {
+          const pendingCount = JSON.parse(localStorage.getItem(STORAGE_KEYS.PENDING_SYNCS) || '[]').length;
+
           // Check if we're in admin edit mode
           if (isEditMode && cameFromAdmin) {
             // Admin edit mode - just show toast notification
@@ -2538,7 +2542,8 @@ if (selectedGame?.sport_type === "volleyball") {
             advancementMessage: '',
             isBracketReset: false,
             isOffline: true,
-             hasMoreMatches: remainingMatches.length > 0  // ADD THIS LINE
+            hasMoreMatches: moreMatchesAvailable,
+            pendingSyncs: pendingCount
           });
           setShowSuccessPage(true);
         }
@@ -2641,7 +2646,8 @@ if (selectedGame?.sport_type === "volleyball") {
         overtimePeriods: overtimePeriods,
         advancementMessage: advancementMessage,
         isBracketReset: isBracketReset,
-        isOffline: false
+        isOffline: false,
+        hasMoreMatches: moreMatchesAvailable
       });
       setShowSuccessPage(true);
       
@@ -2727,10 +2733,10 @@ const handleNextMatch = async () => {
       m.team2_id !== null
     );
     
-    if (availableMatches.length > 0) {
+    if (remainingMatches.length > 0) {
       // Sort by round number to get the next logical match
-      availableMatches.sort((a, b) => a.round_number - b.round_number);
-      const nextMatch = availableMatches[0];
+      remainingMatches.sort((a, b) => a.round_number - b.round_number);
+      const nextMatch = remainingMatches[0];
       
       setShowSuccessPage(false);
       setSavedMatchData(null);
@@ -4153,24 +4159,6 @@ const handleNextMatch = async () => {
                   <FaArrowLeft />
                   Back to Matches List
                 </button>
-               {savedMatchData.hasMoreMatches && (
-                <button 
-                  onClick={handleNextMatch}
-                  className="bracket-submit-btn"
-                  style={{ 
-                    width: '100%', 
-                    background: '#10b981', 
-                    fontSize: '16px', 
-                    display: 'flex', 
-                    alignItems: 'center', 
-                    justifyContent: 'center', 
-                    gap: '8px' 
-                  }}
-                >
-                  Next Match
-                  <FaArrowRight />
-                </button>
-              )}
               </div>
             </div>
           </div>
