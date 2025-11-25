@@ -1953,7 +1953,7 @@ const AdminStats = ({ sidebarOpen, preselectedEvent, preselectedBracket, embedde
     return (
       <div className="stats-cards-grid" style={{
         display: 'grid',
-        gridTemplateColumns: 'repeat(3, 1fr)',
+        gridTemplateColumns: 'repeat(2, 1fr)',
         gap: '20px',
         padding: '0 20px',
         marginBottom: '24px'
@@ -1971,22 +1971,7 @@ const AdminStats = ({ sidebarOpen, preselectedEvent, preselectedBracket, embedde
             Competing
           </div>
         </div>
-        
-        <div className="stats-card stats-card-success">
-          <div className="stats-card-header">
-            <span className="stats-card-label">
-              {sportType === 'basketball' ? 'Avg PPG' : 'Avg Kills'}
-            </span>
-            <FaChartBar className="stats-card-icon" />
-          </div>
-          <div className="stats-card-value">
-            {sportType === 'basketball' ? eventStatistics.avg_ppg : eventStatistics.avg_kills}
-          </div>
-          <div className="stats-card-subtext">
-            {sportType === 'basketball' ? 'Points Per Game' : 'Kills Per Game'}
-          </div>
-        </div>
-        
+
         <div className="stats-card stats-card-info">
           <div className="stats-card-header">
             <span className="stats-card-label">Total Games</span>
