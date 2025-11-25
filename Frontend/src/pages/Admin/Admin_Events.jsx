@@ -613,45 +613,64 @@ const getAwardsForDisplay = () => {
       });
     }
   } else {
-    // Volleyball Awards (6 position-based awards)
+    // Volleyball Awards (per-set formulas)
+    const perSet = (value) => `${safeNumber(value, 2)}/set`;
+    const scoreValue = (player, fallback) => safeNumber(
+      player?.position_score !== undefined ? player.position_score : fallback,
+      2
+    );
+
     if (awards.best_setter) {
+      const p = awards.best_setter;
+      const penalty = (p.ses || 0) + (p.bhs || 0) + (p.asses || 0);
       awardsArray.push({
         category: "Best Setter",
-        winner: awards.best_setter.player_name || 'Unknown',
-        team: awards.best_setter.team_name || 'Unknown',
-        stat: `${safeNumber(awards.best_setter.total_assists)} Assists`
+        winner: p.player_name || 'Unknown',
+        team: p.team_name || 'Unknown',
+        stat: `APS ${perSet(p.aps)} | Errors ${perSet(penalty)} | Score ${scoreValue(p, (p.aps || 0) - penalty)}`
       });
     }
     if (awards.best_libero) {
+      const p = awards.best_libero;
+      const penalty = (p.res || 0) + (p.bhs || 0);
       awardsArray.push({
         category: "Best Libero",
-        winner: awards.best_libero.player_name || 'Unknown',
-        team: awards.best_libero.team_name || 'Unknown',
-        stat: `${safeNumber(awards.best_libero.total_digs)} Digs, ${safeNumber(awards.best_libero.total_receptions)} Receptions`
+        winner: p.player_name || 'Unknown',
+        team: p.team_name || 'Unknown',
+        stat: `DPS ${perSet(p.dps)} + RPS ${perSet(p.rps)} | Errors ${perSet(penalty)} | Score ${scoreValue(p, (p.dps || 0) + (p.rps || 0) - penalty)}`
       });
     }
     if (awards.best_outside_hitter) {
+      const p = awards.best_outside_hitter;
+      const positives = (p.kps || 0) + (p.aps || 0) + (p.bps || 0) + (p.dps || 0) + (p.rps || 0);
+      const penalty = (p.aes || 0) + (p.ses || 0) + (p.res || 0) + (p.bhs || 0) + (p.bes || 0);
       awardsArray.push({
         category: "Best Outside Hitter",
-        winner: awards.best_outside_hitter.player_name || 'Unknown',
-        team: awards.best_outside_hitter.team_name || 'Unknown',
-        stat: `${safeNumber(awards.best_outside_hitter.total_kills)} Kills, ${safeNumber(awards.best_outside_hitter.total_aces)} Aces, ${safeNumber(awards.best_outside_hitter.total_blocks)} Blocks`
+        winner: p.player_name || 'Unknown',
+        team: p.team_name || 'Unknown',
+        stat: `KPS ${perSet(p.kps)}, APS ${perSet(p.aps)}, BPS ${perSet(p.bps)} | Score ${scoreValue(p, positives - penalty)}`
       });
     }
     if (awards.best_opposite_hitter) {
+      const p = awards.best_opposite_hitter;
+      const positives = (p.kps || 0) + (p.bps || 0) + (p.aps || 0);
+      const penalty = (p.aes || 0) + (p.bes || 0) + (p.bhs || 0) + (p.ses || 0);
       awardsArray.push({
         category: "Best Opposite Hitter",
-        winner: awards.best_opposite_hitter.player_name || 'Unknown',
-        team: awards.best_opposite_hitter.team_name || 'Unknown',
-        stat: `${safeNumber(awards.best_opposite_hitter.total_kills)} Kills, ${safeNumber(awards.best_opposite_hitter.total_blocks)} Blocks, ${safeNumber(awards.best_opposite_hitter.total_aces)} Aces`
+        winner: p.player_name || 'Unknown',
+        team: p.team_name || 'Unknown',
+        stat: `KPS ${perSet(p.kps)}, BPS ${perSet(p.bps)}, APS ${perSet(p.aps)} | Score ${scoreValue(p, positives - penalty)}`
       });
     }
     if (awards.best_middle_blocker) {
+      const p = awards.best_middle_blocker;
+      const positives = (p.bps || 0) + (p.kps || 0);
+      const penalty = (p.aes || 0) + (p.bes || 0) + (p.bhs || 0) + (p.asses || 0);
       awardsArray.push({
         category: "Best Middle Blocker",
-        winner: awards.best_middle_blocker.player_name || 'Unknown',
-        team: awards.best_middle_blocker.team_name || 'Unknown',
-        stat: `${safeNumber(awards.best_middle_blocker.total_blocks)} Blocks, ${safeNumber(awards.best_middle_blocker.total_kills)} Kills`
+        winner: p.player_name || 'Unknown',
+        team: p.team_name || 'Unknown',
+        stat: `BPS ${perSet(p.bps)}, KPS ${perSet(p.kps)} | Score ${scoreValue(p, positives - penalty)}`
       });
     }
   }
@@ -2494,41 +2513,63 @@ const closeEditTeamModal = () => {
                 </>
               ) : (
                 <>
-                  {/* VOLLEYBALL - Show totals with receptions and overall score */}
-                  <div className="awards_standings_stat_card awards_standings_highlight">
-                    <div className="awards_standings_stat_value">{safeNumber(mvpData.total_kills)}</div>
-                    <div className="awards_standings_stat_label">Kills</div>
-                  </div>
+                  {/* VOLLEYBALL - Per-set metrics and MVP total */}
                   <div className="awards_standings_stat_card">
-                    <div className="awards_standings_stat_value">{safeNumber(mvpData.total_assists)}</div>
-                    <div className="awards_standings_stat_label">Assists</div>
-                  </div>
-                  <div className="awards_standings_stat_card">
-                    <div className="awards_standings_stat_value">{safeNumber(mvpData.total_digs)}</div>
-                    <div className="awards_standings_stat_label">Digs</div>
-                  </div>
-                  <div className="awards_standings_stat_card">
-                    <div className="awards_standings_stat_value">{safeNumber(mvpData.total_blocks)}</div>
-                    <div className="awards_standings_stat_label">Blocks</div>
-                  </div>
-                  <div className="awards_standings_stat_card">
-                    <div className="awards_standings_stat_value">{safeNumber(mvpData.total_aces)}</div>
-                    <div className="awards_standings_stat_label">Aces</div>
-                  </div>
-                  <div className="awards_standings_stat_card">
-                    <div className="awards_standings_stat_value">{safeNumber(mvpData.total_receptions)}</div>
-                    <div className="awards_standings_stat_label">Receptions</div>
+                    <div className="awards_standings_stat_value">{safeNumber(mvpData.sets_played || mvpData.total_sets_played || 0, 0)}</div>
+                    <div className="awards_standings_stat_label">Sets Played</div>
                   </div>
                   <div className="awards_standings_stat_card awards_standings_highlight">
-                    <div className="awards_standings_stat_value">
-                      {mvpData.efficiency !== null && mvpData.efficiency !== undefined 
-                        ? Number(mvpData.efficiency).toFixed(1)
-                        : '0.0'
-                      }
-                    </div>
-                    <div className="awards_standings_stat_label">Overall</div>
+                    <div className="awards_standings_stat_value">{safeNumber(mvpData.mvp_score ?? mvpData.overall_score, 2)}</div>
+                    <div className="awards_standings_stat_label">MVP Total</div>
                   </div>
-                  
+                  <div className="awards_standings_stat_card awards_standings_highlight">
+                    <div className="awards_standings_stat_value">{safeNumber(mvpData.kps, 2)}</div>
+                    <div className="awards_standings_stat_label">KPS</div>
+                  </div>
+                  <div className="awards_standings_stat_card">
+                    <div className="awards_standings_stat_value">{safeNumber(mvpData.aps, 2)}</div>
+                    <div className="awards_standings_stat_label">APS</div>
+                  </div>
+                  <div className="awards_standings_stat_card">
+                    <div className="awards_standings_stat_value">{safeNumber(mvpData.bps, 2)}</div>
+                    <div className="awards_standings_stat_label">BPS</div>
+                  </div>
+                  <div className="awards_standings_stat_card">
+                    <div className="awards_standings_stat_value">{safeNumber(mvpData.dps, 2)}</div>
+                    <div className="awards_standings_stat_label">DPS</div>
+                  </div>
+                  <div className="awards_standings_stat_card">
+                    <div className="awards_standings_stat_value">{safeNumber(mvpData.rps, 2)}</div>
+                    <div className="awards_standings_stat_label">RPS</div>
+                  </div>
+                  <div className="awards_standings_stat_card">
+                    <div className="awards_standings_stat_value">{safeNumber(mvpData.sas, 2)}</div>
+                    <div className="awards_standings_stat_label">SAS</div>
+                  </div>
+                  <div className="awards_standings_stat_card">
+                    <div className="awards_standings_stat_value">{safeNumber(mvpData.aes, 2)}</div>
+                    <div className="awards_standings_stat_label">AES</div>
+                  </div>
+                  <div className="awards_standings_stat_card">
+                    <div className="awards_standings_stat_value">{safeNumber(mvpData.ses, 2)}</div>
+                    <div className="awards_standings_stat_label">SES</div>
+                  </div>
+                  <div className="awards_standings_stat_card">
+                    <div className="awards_standings_stat_value">{safeNumber(mvpData.res, 2)}</div>
+                    <div className="awards_standings_stat_label">RES</div>
+                  </div>
+                  <div className="awards_standings_stat_card">
+                    <div className="awards_standings_stat_value">{safeNumber(mvpData.bhs, 2)}</div>
+                    <div className="awards_standings_stat_label">BHS</div>
+                  </div>
+                  <div className="awards_standings_stat_card">
+                    <div className="awards_standings_stat_value">{safeNumber(mvpData.asses, 2)}</div>
+                    <div className="awards_standings_stat_label">ASSES</div>
+                  </div>
+                  <div className="awards_standings_stat_card">
+                    <div className="awards_standings_stat_value">{safeNumber(mvpData.bes, 2)}</div>
+                    <div className="awards_standings_stat_label">BES</div>
+                  </div>
                 </>
               )}
             </div>

@@ -160,64 +160,83 @@ const UserAwardsStandings = () => {
     
     const awardsArray = [];
     
-    if (selectedBracket.sport_type === "basketball") {
-      if (awards.mythical_five && awards.mythical_five.length > 0) {
-        awards.mythical_five.forEach((player, index) => {
-          awardsArray.push({
-            rank: index + 1,
+  if (selectedBracket.sport_type === "basketball") {
+    if (awards.mythical_five && awards.mythical_five.length > 0) {
+      awards.mythical_five.forEach((player, index) => {
+        awardsArray.push({
+          rank: index + 1,
             category: "MYTHICAL 5",
             winner: player.player_name || 'Unknown',
             team: player.team_name || 'Unknown',
             stat: `${safeNumber(player.ppg)} PPG, ${safeNumber(player.rpg)} RPG, ${safeNumber(player.apg)} APG`,
             overall: safeNumber(player.mvp_score, 1)
-          });
         });
-      }
-    } else {
-      if (awards.best_setter) {
-        awardsArray.push({
-          category: "Best Setter",
-          winner: awards.best_setter.player_name || 'Unknown',
-          team: awards.best_setter.team_name || 'Unknown',
-          stat: `${safeNumber(awards.best_setter.total_assists)} Assists`
-        });
-      }
-      if (awards.best_libero) {
-        awardsArray.push({
-          category: "Best Libero",
-          winner: awards.best_libero.player_name || 'Unknown',
-          team: awards.best_libero.team_name || 'Unknown',
-          stat: `${safeNumber(awards.best_libero.total_digs)} Digs, ${safeNumber(awards.best_libero.total_receptions)} Receptions`
-        });
-      }
-      if (awards.best_outside_hitter) {
-        awardsArray.push({
-          category: "Best Outside Hitter",
-          winner: awards.best_outside_hitter.player_name || 'Unknown',
-          team: awards.best_outside_hitter.team_name || 'Unknown',
-          stat: `${safeNumber(awards.best_outside_hitter.total_kills)} Kills, ${safeNumber(awards.best_outside_hitter.total_aces)} Aces`
-        });
-      }
-      if (awards.best_opposite_hitter) {
-        awardsArray.push({
-          category: "Best Opposite Hitter",
-          winner: awards.best_opposite_hitter.player_name || 'Unknown',
-          team: awards.best_opposite_hitter.team_name || 'Unknown',
-          stat: `${safeNumber(awards.best_opposite_hitter.total_kills)} Kills, ${safeNumber(awards.best_opposite_hitter.total_blocks)} Blocks`
-        });
-      }
-      if (awards.best_middle_blocker) {
-        awardsArray.push({
-          category: "Best Middle Blocker",
-          winner: awards.best_middle_blocker.player_name || 'Unknown',
-          team: awards.best_middle_blocker.team_name || 'Unknown',
-          stat: `${safeNumber(awards.best_middle_blocker.total_blocks)} Blocks, ${safeNumber(awards.best_middle_blocker.total_kills)} Kills`
-        });
-      }
+      });
     }
-    
-    return awardsArray.filter(a => a.winner && a.winner !== 'Unknown');
-  };
+  } else {
+    const perSet = (value) => `${safeNumber(value, 2)}/set`;
+    const scoreValue = (player, fallback) => safeNumber(
+      player?.position_score !== undefined ? player.position_score : fallback,
+      2
+    );
+
+    if (awards.best_setter) {
+      const p = awards.best_setter;
+      const penalty = (p.ses || 0) + (p.bhs || 0) + (p.asses || 0);
+      awardsArray.push({
+        category: "Best Setter",
+        winner: p.player_name || 'Unknown',
+        team: p.team_name || 'Unknown',
+        stat: `APS ${perSet(p.aps)} | Errors ${perSet(penalty)} | Score ${scoreValue(p, (p.aps || 0) - penalty)}`
+      });
+    }
+    if (awards.best_libero) {
+      const p = awards.best_libero;
+      const penalty = (p.res || 0) + (p.bhs || 0);
+      awardsArray.push({
+        category: "Best Libero",
+        winner: p.player_name || 'Unknown',
+        team: p.team_name || 'Unknown',
+        stat: `DPS ${perSet(p.dps)} + RPS ${perSet(p.rps)} | Errors ${perSet(penalty)} | Score ${scoreValue(p, (p.dps || 0) + (p.rps || 0) - penalty)}`
+      });
+    }
+    if (awards.best_outside_hitter) {
+      const p = awards.best_outside_hitter;
+      const positives = (p.kps || 0) + (p.aps || 0) + (p.bps || 0) + (p.dps || 0) + (p.rps || 0);
+      const penalty = (p.aes || 0) + (p.ses || 0) + (p.res || 0) + (p.bhs || 0) + (p.bes || 0);
+      awardsArray.push({
+        category: "Best Outside Hitter",
+        winner: p.player_name || 'Unknown',
+        team: p.team_name || 'Unknown',
+        stat: `KPS ${perSet(p.kps)}, APS ${perSet(p.aps)}, BPS ${perSet(p.bps)} | Score ${scoreValue(p, positives - penalty)}`
+      });
+    }
+    if (awards.best_opposite_hitter) {
+      const p = awards.best_opposite_hitter;
+      const positives = (p.kps || 0) + (p.bps || 0) + (p.aps || 0);
+      const penalty = (p.aes || 0) + (p.bes || 0) + (p.bhs || 0) + (p.ses || 0);
+      awardsArray.push({
+        category: "Best Opposite Hitter",
+        winner: p.player_name || 'Unknown',
+        team: p.team_name || 'Unknown',
+        stat: `KPS ${perSet(p.kps)}, BPS ${perSet(p.bps)}, APS ${perSet(p.aps)} | Score ${scoreValue(p, positives - penalty)}`
+      });
+    }
+    if (awards.best_middle_blocker) {
+      const p = awards.best_middle_blocker;
+      const positives = (p.bps || 0) + (p.kps || 0);
+      const penalty = (p.aes || 0) + (p.bes || 0) + (p.bhs || 0) + (p.asses || 0);
+      awardsArray.push({
+        category: "Best Middle Blocker",
+        winner: p.player_name || 'Unknown',
+        team: p.team_name || 'Unknown',
+        stat: `BPS ${perSet(p.bps)}, KPS ${perSet(p.kps)} | Score ${scoreValue(p, positives - penalty)}`
+      });
+    }
+  }
+  
+  return awardsArray.filter(a => a.winner && a.winner !== 'Unknown');
+};
 
   if (loading && !selectedEvent) {
     return (
@@ -469,41 +488,67 @@ const UserAwardsStandings = () => {
                                 <div style={{ color: '#64748b', fontSize: '12px', textTransform: 'uppercase', fontWeight: '600', letterSpacing: '0.5px' }}>Overall</div>
                               </div>
                             </>
-                          ) : (
-                            <>
-                              <div style={{ background: 'rgba(59, 130, 246, 0.1)', border: '1px solid #3b82f6', borderRadius: '8px', padding: '20px', textAlign: 'center' }}>
-                                <div style={{ fontSize: '28px', fontWeight: '700', color: '#e2e8f0', marginBottom: '8px' }}>{safeNumber(mvpData.total_kills)}</div>
-                                <div style={{ color: '#64748b', fontSize: '12px', textTransform: 'uppercase', fontWeight: '600', letterSpacing: '0.5px' }}>Kills</div>
-                              </div>
+                            ) : (
+                              <>
                               <div style={{ background: '#0f172a', border: '1px solid #2d3748', borderRadius: '8px', padding: '20px', textAlign: 'center' }}>
-                                <div style={{ fontSize: '28px', fontWeight: '700', color: '#e2e8f0', marginBottom: '8px' }}>{safeNumber(mvpData.total_assists)}</div>
-                                <div style={{ color: '#64748b', fontSize: '12px', textTransform: 'uppercase', fontWeight: '600', letterSpacing: '0.5px' }}>Assists</div>
-                              </div>
-                              <div style={{ background: '#0f172a', border: '1px solid #2d3748', borderRadius: '8px', padding: '20px', textAlign: 'center' }}>
-                                <div style={{ fontSize: '28px', fontWeight: '700', color: '#e2e8f0', marginBottom: '8px' }}>{safeNumber(mvpData.total_digs)}</div>
-                                <div style={{ color: '#64748b', fontSize: '12px', textTransform: 'uppercase', fontWeight: '600', letterSpacing: '0.5px' }}>Digs</div>
-                              </div>
-                              <div style={{ background: '#0f172a', border: '1px solid #2d3748', borderRadius: '8px', padding: '20px', textAlign: 'center' }}>
-                                <div style={{ fontSize: '28px', fontWeight: '700', color: '#e2e8f0', marginBottom: '8px' }}>{safeNumber(mvpData.total_blocks)}</div>
-                                <div style={{ color: '#64748b', fontSize: '12px', textTransform: 'uppercase', fontWeight: '600', letterSpacing: '0.5px' }}>Blocks</div>
-                              </div>
-                              <div style={{ background: '#0f172a', border: '1px solid #2d3748', borderRadius: '8px', padding: '20px', textAlign: 'center' }}>
-                                <div style={{ fontSize: '28px', fontWeight: '700', color: '#e2e8f0', marginBottom: '8px' }}>{safeNumber(mvpData.total_aces)}</div>
-                                <div style={{ color: '#64748b', fontSize: '12px', textTransform: 'uppercase', fontWeight: '600', letterSpacing: '0.5px' }}>Aces</div>
-                              </div>
-                              <div style={{ background: '#0f172a', border: '1px solid #2d3748', borderRadius: '8px', padding: '20px', textAlign: 'center' }}>
-                                <div style={{ fontSize: '28px', fontWeight: '700', color: '#e2e8f0', marginBottom: '8px' }}>{safeNumber(mvpData.total_receptions)}</div>
-                                <div style={{ color: '#64748b', fontSize: '12px', textTransform: 'uppercase', fontWeight: '600', letterSpacing: '0.5px' }}>Receptions</div>
+                                <div style={{ fontSize: '28px', fontWeight: '700', color: '#e2e8f0', marginBottom: '8px' }}>{safeNumber(mvpData.sets_played || mvpData.total_sets_played || 0, 0)}</div>
+                                <div style={{ color: '#64748b', fontSize: '12px', textTransform: 'uppercase', fontWeight: '600', letterSpacing: '0.5px' }}>Sets Played</div>
                               </div>
                               <div style={{ background: 'rgba(59, 130, 246, 0.1)', border: '1px solid #3b82f6', borderRadius: '8px', padding: '20px', textAlign: 'center' }}>
-                                <div style={{ fontSize: '28px', fontWeight: '700', color: '#e2e8f0', marginBottom: '8px' }}>
-                                  {mvpData.efficiency !== null && mvpData.efficiency !== undefined ? Number(mvpData.efficiency).toFixed(1) : '0.0'}
-                                </div>
-                                <div style={{ color: '#64748b', fontSize: '12px', textTransform: 'uppercase', fontWeight: '600', letterSpacing: '0.5px' }}>Overall</div>
+                                <div style={{ fontSize: '28px', fontWeight: '700', color: '#e2e8f0', marginBottom: '8px' }}>{safeNumber(mvpData.mvp_score ?? mvpData.overall_score, 2)}</div>
+                                <div style={{ color: '#64748b', fontSize: '12px', textTransform: 'uppercase', fontWeight: '600', letterSpacing: '0.5px' }}>MVP Total</div>
                               </div>
-                            </>
-                          )}
-                        </div>
+                              <div style={{ background: 'rgba(59, 130, 246, 0.1)', border: '1px solid #3b82f6', borderRadius: '8px', padding: '20px', textAlign: 'center' }}>
+                                <div style={{ fontSize: '28px', fontWeight: '700', color: '#e2e8f0', marginBottom: '8px' }}>{safeNumber(mvpData.kps, 2)}</div>
+                                <div style={{ color: '#64748b', fontSize: '12px', textTransform: 'uppercase', fontWeight: '600', letterSpacing: '0.5px' }}>KPS</div>
+                              </div>
+                              <div style={{ background: '#0f172a', border: '1px solid #2d3748', borderRadius: '8px', padding: '20px', textAlign: 'center' }}>
+                                <div style={{ fontSize: '28px', fontWeight: '700', color: '#e2e8f0', marginBottom: '8px' }}>{safeNumber(mvpData.aps, 2)}</div>
+                                <div style={{ color: '#64748b', fontSize: '12px', textTransform: 'uppercase', fontWeight: '600', letterSpacing: '0.5px' }}>APS</div>
+                              </div>
+                              <div style={{ background: '#0f172a', border: '1px solid #2d3748', borderRadius: '8px', padding: '20px', textAlign: 'center' }}>
+                                <div style={{ fontSize: '28px', fontWeight: '700', color: '#e2e8f0', marginBottom: '8px' }}>{safeNumber(mvpData.bps, 2)}</div>
+                                <div style={{ color: '#64748b', fontSize: '12px', textTransform: 'uppercase', fontWeight: '600', letterSpacing: '0.5px' }}>BPS</div>
+                              </div>
+                              <div style={{ background: '#0f172a', border: '1px solid #2d3748', borderRadius: '8px', padding: '20px', textAlign: 'center' }}>
+                                <div style={{ fontSize: '28px', fontWeight: '700', color: '#e2e8f0', marginBottom: '8px' }}>{safeNumber(mvpData.dps, 2)}</div>
+                                <div style={{ color: '#64748b', fontSize: '12px', textTransform: 'uppercase', fontWeight: '600', letterSpacing: '0.5px' }}>DPS</div>
+                              </div>
+                              <div style={{ background: '#0f172a', border: '1px solid #2d3748', borderRadius: '8px', padding: '20px', textAlign: 'center' }}>
+                                <div style={{ fontSize: '28px', fontWeight: '700', color: '#e2e8f0', marginBottom: '8px' }}>{safeNumber(mvpData.rps, 2)}</div>
+                                <div style={{ color: '#64748b', fontSize: '12px', textTransform: 'uppercase', fontWeight: '600', letterSpacing: '0.5px' }}>RPS</div>
+                              </div>
+                              <div style={{ background: '#0f172a', border: '1px solid #2d3748', borderRadius: '8px', padding: '20px', textAlign: 'center' }}>
+                                <div style={{ fontSize: '28px', fontWeight: '700', color: '#e2e8f0', marginBottom: '8px' }}>{safeNumber(mvpData.sas, 2)}</div>
+                                <div style={{ color: '#64748b', fontSize: '12px', textTransform: 'uppercase', fontWeight: '600', letterSpacing: '0.5px' }}>SAS</div>
+                              </div>
+                              <div style={{ background: '#0f172a', border: '1px solid #2d3748', borderRadius: '8px', padding: '20px', textAlign: 'center' }}>
+                                <div style={{ fontSize: '28px', fontWeight: '700', color: '#e2e8f0', marginBottom: '8px' }}>{safeNumber(mvpData.aes, 2)}</div>
+                                <div style={{ color: '#64748b', fontSize: '12px', textTransform: 'uppercase', fontWeight: '600', letterSpacing: '0.5px' }}>AES</div>
+                              </div>
+                              <div style={{ background: '#0f172a', border: '1px solid #2d3748', borderRadius: '8px', padding: '20px', textAlign: 'center' }}>
+                                <div style={{ fontSize: '28px', fontWeight: '700', color: '#e2e8f0', marginBottom: '8px' }}>{safeNumber(mvpData.ses, 2)}</div>
+                                <div style={{ color: '#64748b', fontSize: '12px', textTransform: 'uppercase', fontWeight: '600', letterSpacing: '0.5px' }}>SES</div>
+                              </div>
+                              <div style={{ background: '#0f172a', border: '1px solid #2d3748', borderRadius: '8px', padding: '20px', textAlign: 'center' }}>
+                                <div style={{ fontSize: '28px', fontWeight: '700', color: '#e2e8f0', marginBottom: '8px' }}>{safeNumber(mvpData.res, 2)}</div>
+                                <div style={{ color: '#64748b', fontSize: '12px', textTransform: 'uppercase', fontWeight: '600', letterSpacing: '0.5px' }}>RES</div>
+                              </div>
+                              <div style={{ background: '#0f172a', border: '1px solid #2d3748', borderRadius: '8px', padding: '20px', textAlign: 'center' }}>
+                                <div style={{ fontSize: '28px', fontWeight: '700', color: '#e2e8f0', marginBottom: '8px' }}>{safeNumber(mvpData.bhs, 2)}</div>
+                                <div style={{ color: '#64748b', fontSize: '12px', textTransform: 'uppercase', fontWeight: '600', letterSpacing: '0.5px' }}>BHS</div>
+                              </div>
+                              <div style={{ background: '#0f172a', border: '1px solid #2d3748', borderRadius: '8px', padding: '20px', textAlign: 'center' }}>
+                                <div style={{ fontSize: '28px', fontWeight: '700', color: '#e2e8f0', marginBottom: '8px' }}>{safeNumber(mvpData.asses, 2)}</div>
+                                <div style={{ color: '#64748b', fontSize: '12px', textTransform: 'uppercase', fontWeight: '600', letterSpacing: '0.5px' }}>ASSES</div>
+                              </div>
+                              <div style={{ background: '#0f172a', border: '1px solid #2d3748', borderRadius: '8px', padding: '20px', textAlign: 'center' }}>
+                                <div style={{ fontSize: '28px', fontWeight: '700', color: '#e2e8f0', marginBottom: '8px' }}>{safeNumber(mvpData.bes, 2)}</div>
+                                <div style={{ color: '#64748b', fontSize: '12px', textTransform: 'uppercase', fontWeight: '600', letterSpacing: '0.5px' }}>BES</div>
+                              </div>
+                              </>
+                            )}
+                          </div>
                       </div>
 
                       {/* Mythical 5 Section - Only for Basketball */}
