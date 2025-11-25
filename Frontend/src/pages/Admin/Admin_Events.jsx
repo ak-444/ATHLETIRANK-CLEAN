@@ -1556,6 +1556,13 @@ const closeEditTeamModal = () => {
     return <span className={`match-status status-${status}`}>{status}</span>;
   };
 
+  const volleyballErrorTotal = selectedBracket?.sport_type === "volleyball" && mvpData
+    ? ['aes', 'ses', 'res', 'bhs', 'asses', 'bes'].reduce(
+        (total, key) => total + Number(mvpData[key] ?? 0),
+        0
+      )
+    : 0;
+
   return (
     <div className="admin-dashboard">
       <div className={`dashboard-content ${sidebarOpen ? "sidebar-open" : ""}`}>
@@ -2546,29 +2553,9 @@ const closeEditTeamModal = () => {
                     <div className="awards_standings_stat_value">{safeNumber(mvpData.sas, 2)}</div>
                     <div className="awards_standings_stat_label">SAS</div>
                   </div>
-                  <div className="awards_standings_stat_card">
-                    <div className="awards_standings_stat_value">{safeNumber(mvpData.aes, 2)}</div>
-                    <div className="awards_standings_stat_label">AES</div>
-                  </div>
-                  <div className="awards_standings_stat_card">
-                    <div className="awards_standings_stat_value">{safeNumber(mvpData.ses, 2)}</div>
-                    <div className="awards_standings_stat_label">SES</div>
-                  </div>
-                  <div className="awards_standings_stat_card">
-                    <div className="awards_standings_stat_value">{safeNumber(mvpData.res, 2)}</div>
-                    <div className="awards_standings_stat_label">RES</div>
-                  </div>
-                  <div className="awards_standings_stat_card">
-                    <div className="awards_standings_stat_value">{safeNumber(mvpData.bhs, 2)}</div>
-                    <div className="awards_standings_stat_label">BHS</div>
-                  </div>
-                  <div className="awards_standings_stat_card">
-                    <div className="awards_standings_stat_value">{safeNumber(mvpData.asses, 2)}</div>
-                    <div className="awards_standings_stat_label">ASSES</div>
-                  </div>
-                  <div className="awards_standings_stat_card">
-                    <div className="awards_standings_stat_value">{safeNumber(mvpData.bes, 2)}</div>
-                    <div className="awards_standings_stat_label">BES</div>
+                  <div className="awards_standings_stat_card awards_standings_highlight">
+                    <div className="awards_standings_stat_value">{safeNumber(volleyballErrorTotal, 2)}</div>
+                    <div className="awards_standings_stat_label">Total Errors</div>
                   </div>
                 </>
               )}

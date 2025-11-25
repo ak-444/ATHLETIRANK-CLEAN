@@ -238,6 +238,13 @@ const UserAwardsStandings = () => {
   return awardsArray.filter(a => a.winner && a.winner !== 'Unknown');
 };
 
+  const volleyballErrorTotal = selectedBracket?.sport_type === "volleyball" && mvpData
+    ? ['aes', 'ses', 'res', 'bhs', 'asses', 'bes'].reduce(
+        (total, key) => total + Number(mvpData[key] ?? 0),
+        0
+      )
+    : 0;
+
   if (loading && !selectedEvent) {
     return (
       <div style={{ minHeight: '100vh', background: '#0a0f1c', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -522,29 +529,9 @@ const UserAwardsStandings = () => {
                                 <div style={{ fontSize: '28px', fontWeight: '700', color: '#e2e8f0', marginBottom: '8px' }}>{safeNumber(mvpData.sas, 2)}</div>
                                 <div style={{ color: '#64748b', fontSize: '12px', textTransform: 'uppercase', fontWeight: '600', letterSpacing: '0.5px' }}>SAS</div>
                               </div>
-                              <div style={{ background: '#0f172a', border: '1px solid #2d3748', borderRadius: '8px', padding: '20px', textAlign: 'center' }}>
-                                <div style={{ fontSize: '28px', fontWeight: '700', color: '#e2e8f0', marginBottom: '8px' }}>{safeNumber(mvpData.aes, 2)}</div>
-                                <div style={{ color: '#64748b', fontSize: '12px', textTransform: 'uppercase', fontWeight: '600', letterSpacing: '0.5px' }}>AES</div>
-                              </div>
-                              <div style={{ background: '#0f172a', border: '1px solid #2d3748', borderRadius: '8px', padding: '20px', textAlign: 'center' }}>
-                                <div style={{ fontSize: '28px', fontWeight: '700', color: '#e2e8f0', marginBottom: '8px' }}>{safeNumber(mvpData.ses, 2)}</div>
-                                <div style={{ color: '#64748b', fontSize: '12px', textTransform: 'uppercase', fontWeight: '600', letterSpacing: '0.5px' }}>SES</div>
-                              </div>
-                              <div style={{ background: '#0f172a', border: '1px solid #2d3748', borderRadius: '8px', padding: '20px', textAlign: 'center' }}>
-                                <div style={{ fontSize: '28px', fontWeight: '700', color: '#e2e8f0', marginBottom: '8px' }}>{safeNumber(mvpData.res, 2)}</div>
-                                <div style={{ color: '#64748b', fontSize: '12px', textTransform: 'uppercase', fontWeight: '600', letterSpacing: '0.5px' }}>RES</div>
-                              </div>
-                              <div style={{ background: '#0f172a', border: '1px solid #2d3748', borderRadius: '8px', padding: '20px', textAlign: 'center' }}>
-                                <div style={{ fontSize: '28px', fontWeight: '700', color: '#e2e8f0', marginBottom: '8px' }}>{safeNumber(mvpData.bhs, 2)}</div>
-                                <div style={{ color: '#64748b', fontSize: '12px', textTransform: 'uppercase', fontWeight: '600', letterSpacing: '0.5px' }}>BHS</div>
-                              </div>
-                              <div style={{ background: '#0f172a', border: '1px solid #2d3748', borderRadius: '8px', padding: '20px', textAlign: 'center' }}>
-                                <div style={{ fontSize: '28px', fontWeight: '700', color: '#e2e8f0', marginBottom: '8px' }}>{safeNumber(mvpData.asses, 2)}</div>
-                                <div style={{ color: '#64748b', fontSize: '12px', textTransform: 'uppercase', fontWeight: '600', letterSpacing: '0.5px' }}>ASSES</div>
-                              </div>
-                              <div style={{ background: '#0f172a', border: '1px solid #2d3748', borderRadius: '8px', padding: '20px', textAlign: 'center' }}>
-                                <div style={{ fontSize: '28px', fontWeight: '700', color: '#e2e8f0', marginBottom: '8px' }}>{safeNumber(mvpData.bes, 2)}</div>
-                                <div style={{ color: '#64748b', fontSize: '12px', textTransform: 'uppercase', fontWeight: '600', letterSpacing: '0.5px' }}>BES</div>
+                              <div style={{ background: 'rgba(59, 130, 246, 0.1)', border: '1px solid #3b82f6', borderRadius: '8px', padding: '20px', textAlign: 'center' }}>
+                                <div style={{ fontSize: '28px', fontWeight: '700', color: '#e2e8f0', marginBottom: '8px' }}>{safeNumber(volleyballErrorTotal, 2)}</div>
+                                <div style={{ color: '#64748b', fontSize: '12px', textTransform: 'uppercase', fontWeight: '600', letterSpacing: '0.5px' }}>Total Errors</div>
                               </div>
                               </>
                             )}
