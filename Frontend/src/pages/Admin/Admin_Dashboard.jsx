@@ -8,7 +8,6 @@ import {
   FaBasketballBall,
   FaVolleyballBall,
   FaArrowRight,
-  FaClock,
   FaFire,
   FaMedal
 } from "react-icons/fa";
@@ -32,6 +31,7 @@ const AdminDashboard = ({ sidebarOpen }) => {
     loading: true
   });
   const [seasonLeaders, setSeasonLeaders] = useState(initialSeasonLeaders);
+  const [hoveredAction, setHoveredAction] = useState(null);
 
   const fetchSeasonLeadersPreview = async (events, brackets) => {
     if (!events.length || !brackets.length) return initialSeasonLeaders;
@@ -170,6 +170,27 @@ const AdminDashboard = ({ sidebarOpen }) => {
       subtitle: `Across ${teams.length} teams`,
       icon: <FaChartBar />,
       color: "#ea4335"
+    }
+  ];
+
+  const quickActions = [
+    {
+      icon: "🏆",
+      label: "Create Tournament",
+      color: "#3b82f6",
+      action: () => navigate("/AdminDashboard/tournament-creator")
+    },
+    {
+      icon: "👥",
+      label: "Manage Teams",
+      color: "#10b981",
+      action: () => navigate("/AdminDashboard/teams")
+    },
+    {
+      icon: "📅",
+      label: "View All Events",
+      color: "#8b5cf6",
+      action: () => navigate("/AdminDashboard/events")
     }
   ];
 
@@ -422,27 +443,39 @@ const AdminDashboard = ({ sidebarOpen }) => {
               <div className="quick-actions">
                 <h2>Quick Actions</h2>
                 <div className="actions-grid">
-                  <button
-                    className="action-btn"
-                    onClick={() => navigate("/AdminDashboard/tournament-creator")}
-                  >
-                    <FaTrophy />
-                    <span>Create Tournament</span>
-                  </button>
-                  <button
-                    className="action-btn"
-                    onClick={() => navigate("/AdminDashboard/teams")}
-                  >
-                    <FaUsers />
-                    <span>Manage Teams</span>
-                  </button>
-                  <button
-                    className="action-btn"
-                    onClick={() => navigate("/AdminDashboard/events")}
-                  >
-                    <FaCalendarAlt />
-                    <span>View All Events</span>
-                  </button>
+                  {quickActions.map((action, index) => (
+                    <button
+                      key={action.label}
+                      className="action-btn"
+                      onClick={action.action}
+                      onMouseEnter={() => setHoveredAction(index)}
+                      onMouseLeave={() => setHoveredAction(null)}
+                      style={{
+                        background:
+                          hoveredAction === index
+                            ? `linear-gradient(135deg, ${action.color} 0%, ${action.color}dd 100%)`
+                            : "rgba(15, 23, 42, 0.6)",
+                        border: `2px solid ${
+                          hoveredAction === index ? action.color : "rgba(255, 255, 255, 0.08)"
+                        }`,
+                        transform: hoveredAction === index ? "translateY(-4px)" : "translateY(0)",
+                        boxShadow:
+                          hoveredAction === index
+                            ? `0 12px 24px ${action.color}40`
+                            : "0 6px 14px rgba(0, 0, 0, 0.25)"
+                      }}
+                    >
+                      <div
+                        className="action-icon"
+                        style={{
+                          transform: hoveredAction === index ? "scale(1.08) rotate(4deg)" : "scale(1)"
+                        }}
+                      >
+                        {action.icon}
+                      </div>
+                      <div className="action-label">{action.label}</div>
+                    </button>
+                  ))}
                 </div>
               </div>
             </>
