@@ -1062,8 +1062,9 @@ const loadRecentBracketData = async (event, bracket) => {
         eff: { high: 80, low: 30 },
         overall_score: { high: 25, low: 12 },
         kps: { high: 3.5, low: 1.0 },
-        aps: { high: 0.8, low: 0.2 },
-        asps: { high: 5.0, low: 1.5 },
+        sas: { high: 0.8, low: 0.2 },
+        aps: { high: 5.0, low: 1.5 },
+        rps: { high: 5.0, low: 2.0 },
         dps: { high: 4.0, low: 1.0 },
         bps: { high: 0.8, low: 0.2 }
       };
@@ -1087,28 +1088,42 @@ const loadRecentBracketData = async (event, bracket) => {
 
   };
 
+  const getVolleyballPerSetValue = (entity, key) => {
+    const setsPlayed = entity.total_sets_played || entity.sets_played || 0;
+    const safeDivide = (num, den) => den > 0 ? Number((num / den).toFixed(2)) : 0;
+    switch (key) {
+      case 'kps': return entity.kps ?? safeDivide(entity.kills || 0, setsPlayed);
+      case 'sas': return entity.aps ?? safeDivide(entity.service_aces || 0, setsPlayed);
+      case 'aps': return entity.asps ?? safeDivide(entity.assists || 0, setsPlayed);
+      case 'rps': return typeof entity.rps === 'number' ? entity.rps : safeDivide(entity.receptions || 0, setsPlayed);
+      case 'dps': return entity.dps ?? safeDivide(entity.digs || 0, setsPlayed);
+      case 'bps': return entity.bps ?? safeDivide(entity.blocks || 0, setsPlayed);
+      default: return entity[key] || 0;
+    }
+  };
+
+  const getSortValue = (entity, key) => {
+    const sportType = getCurrentSportType();
+    const perSetKeys = ['kps', 'sas', 'aps', 'rps', 'dps', 'bps'];
+    if (sportType !== 'basketball' && volleyballDisplayMode === 'averages' && perSetKeys.includes(key)) {
+      return getVolleyballPerSetValue(entity, key);
+    }
+    return entity[key] || 0;
+  };
+
 
 
   // Filter and sort players
 
   const sortedPlayers = [...allPlayersData].sort((a, b) => {
-
-    const aValue = a[sortConfig.key] || 0;
-
-    const bValue = b[sortConfig.key] || 0;
-
+    const aValue = getSortValue(a, sortConfig.key);
+    const bValue = getSortValue(b, sortConfig.key);
     
-
     if (sortConfig.direction === 'desc') {
-
       return bValue - aValue;
-
     } else {
-
       return aValue - bValue;
-
     }
-
   });
 
 
@@ -1128,23 +1143,14 @@ const loadRecentBracketData = async (event, bracket) => {
   // Filter and sort teams
 
   const sortedTeams = [...allTeamsData].sort((a, b) => {
-
-    const aValue = a[sortConfig.key] || 0;
-
-    const bValue = b[sortConfig.key] || 0;
-
+    const aValue = getSortValue(a, sortConfig.key);
+    const bValue = getSortValue(b, sortConfig.key);
     
-
     if (sortConfig.direction === 'desc') {
-
       return bValue - aValue;
-
     } else {
-
       return aValue - bValue;
-
     }
-
   });
 
 
@@ -1373,11 +1379,14 @@ const loadRecentBracketData = async (event, bracket) => {
         <th className="stats-sortable-header" onClick={() => handleSort('kps')}>
           KPS {sortConfig.key === 'kps' && (sortConfig.direction === 'desc' ? '?' : '?')}
         </th>
+        <th className="stats-sortable-header" onClick={() => handleSort('sas')}>
+          SAS {sortConfig.key === 'sas' && (sortConfig.direction === 'desc' ? '?' : '?')}
+        </th>
         <th className="stats-sortable-header" onClick={() => handleSort('aps')}>
           APS {sortConfig.key === 'aps' && (sortConfig.direction === 'desc' ? '?' : '?')}
         </th>
-        <th className="stats-sortable-header" onClick={() => handleSort('asps')}>
-          ASPS {sortConfig.key === 'asps' && (sortConfig.direction === 'desc' ? '?' : '?')}
+        <th className="stats-sortable-header" onClick={() => handleSort('rps')}>
+          RPS {sortConfig.key === 'rps' && (sortConfig.direction === 'desc' ? '?' : '?')}
         </th>
         <th className="stats-sortable-header" onClick={() => handleSort('dps')}>
           DPS {sortConfig.key === 'dps' && (sortConfig.direction === 'desc' ? '?' : '?')}
@@ -1437,11 +1446,14 @@ const loadRecentBracketData = async (event, bracket) => {
         <th className="stats-sortable-header" onClick={() => handleSort('kps')}>
           KPS {sortConfig.key === 'kps' && (sortConfig.direction === 'desc' ? '?' : '?')}
         </th>
+        <th className="stats-sortable-header" onClick={() => handleSort('sas')}>
+          SAS {sortConfig.key === 'sas' && (sortConfig.direction === 'desc' ? '?' : '?')}
+        </th>
         <th className="stats-sortable-header" onClick={() => handleSort('aps')}>
           APS {sortConfig.key === 'aps' && (sortConfig.direction === 'desc' ? '?' : '?')}
         </th>
-        <th className="stats-sortable-header" onClick={() => handleSort('asps')}>
-          ASPS {sortConfig.key === 'asps' && (sortConfig.direction === 'desc' ? '?' : '?')}
+        <th className="stats-sortable-header" onClick={() => handleSort('rps')}>
+          RPS {sortConfig.key === 'rps' && (sortConfig.direction === 'desc' ? '?' : '?')}
         </th>
         <th className="stats-sortable-header" onClick={() => handleSort('dps')}>
           DPS {sortConfig.key === 'dps' && (sortConfig.direction === 'desc' ? '?' : '?')}
@@ -1495,11 +1507,12 @@ const loadRecentBracketData = async (event, bracket) => {
       </>
     ) : (
       <>
-        <td className={getPerformanceColor(player.kps, 'kps')}>{player.kps || 0}</td>
-        <td className="stats-service-aces">{player.aps || 0}</td>
-        <td className={getPerformanceColor(player.asps, 'asps')}>{player.asps || 0}</td>
-        <td className={getPerformanceColor(player.dps, 'dps')}>{player.dps || 0}</td>
-        <td className="stats-blocks">{player.bps || 0}</td>
+        <td className={getPerformanceColor(getVolleyballPerSetValue(player, 'kps'), 'kps')}>{getVolleyballPerSetValue(player, 'kps')}</td>
+        <td className="stats-service-aces">{getVolleyballPerSetValue(player, 'sas')}</td>
+        <td className={getPerformanceColor(getVolleyballPerSetValue(player, 'aps'), 'aps')}>{getVolleyballPerSetValue(player, 'aps')}</td>
+        <td className={getPerformanceColor(getVolleyballPerSetValue(player, 'rps'), 'rps')}>{getVolleyballPerSetValue(player, 'rps')}</td>
+        <td className={getPerformanceColor(getVolleyballPerSetValue(player, 'dps'), 'dps')}>{getVolleyballPerSetValue(player, 'dps')}</td>
+        <td className="stats-blocks">{getVolleyballPerSetValue(player, 'bps')}</td>
       </>
     )
   );
@@ -1545,11 +1558,12 @@ const loadRecentBracketData = async (event, bracket) => {
       </>
     ) : (
       <>
-        <td className={getPerformanceColor(team.kps, 'kps')}>{team.kps || 0}</td>
-        <td className="stats-service-aces">{team.aps || 0}</td>
-        <td className={getPerformanceColor(team.asps, 'asps')}>{team.asps || 0}</td>
-        <td className={getPerformanceColor(team.dps, 'dps')}>{team.dps || 0}</td>
-        <td className="stats-blocks">{team.bps || 0}</td>
+        <td className={getPerformanceColor(getVolleyballPerSetValue(team, 'kps'), 'kps')}>{getVolleyballPerSetValue(team, 'kps')}</td>
+        <td className="stats-service-aces">{getVolleyballPerSetValue(team, 'sas')}</td>
+        <td className={getPerformanceColor(getVolleyballPerSetValue(team, 'aps'), 'aps')}>{getVolleyballPerSetValue(team, 'aps')}</td>
+        <td className={getPerformanceColor(getVolleyballPerSetValue(team, 'rps'), 'rps')}>{getVolleyballPerSetValue(team, 'rps')}</td>
+        <td className={getPerformanceColor(getVolleyballPerSetValue(team, 'dps'), 'dps')}>{getVolleyballPerSetValue(team, 'dps')}</td>
+        <td className="stats-blocks">{getVolleyballPerSetValue(team, 'bps')}</td>
       </>
     )
   );

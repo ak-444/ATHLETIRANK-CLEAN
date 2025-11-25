@@ -90,7 +90,15 @@ const TournamentScheduleList = ({ matches = [], eventId, bracketId, onRefresh, o
       const res = await fetch('http://localhost:5000/api/schedules');
       if (res.ok) {
         const data = await res.json();
-        const filteredSchedules = data.filter(s => s.bracketId === bracketId);
+        const normalizedEventId = eventId ? Number(eventId) : null;
+        const normalizedBracketId = bracketId ? Number(bracketId) : null;
+        const filteredSchedules = data.filter((s) => {
+          const scheduleEventId = s.eventId ?? s.event_id;
+          const scheduleBracketId = s.bracketId ?? s.bracket_id;
+          const matchesEvent = normalizedEventId === null || Number(scheduleEventId) === normalizedEventId;
+          const matchesBracket = normalizedBracketId === null || Number(scheduleBracketId) === normalizedBracketId;
+          return matchesEvent && matchesBracket;
+        });
         setSchedules(filteredSchedules);
       }
     } catch (err) {
@@ -163,6 +171,23 @@ const formatRoundDisplay = (match) => {
     const endDisplay = endTime ? `-${formatTime(endTime)}` : '';
     
     return `${dateStr} • ${startDisplay}${endDisplay}`;
+  };
+
+  const normalizeTimeString = (timeStr) => timeStr ? timeStr.slice(0, 5) : '';
+
+  const findScheduleConflict = (date, time, matchIdToIgnore = null) => {
+    const normalizedTime = normalizeTimeString(time);
+    if (!date || !normalizedTime) return null;
+
+    return schedules.find((s) => {
+      const scheduleTime = normalizeTimeString(s.time || s.startTime);
+      if (!scheduleTime) return false;
+      const scheduleMatchId = s.matchId ?? s.match_id;
+      const normalizedMatchId = Number(scheduleMatchId);
+      const normalizedIgnoreId = Number(matchIdToIgnore);
+      if (matchIdToIgnore != null && !Number.isNaN(normalizedMatchId) && normalizedMatchId === normalizedIgnoreId) return false;
+      return s.date === date && scheduleTime === normalizedTime;
+    });
   };
 
   const getScheduleForMatch = (matchId) => {
@@ -499,10 +524,27 @@ const sortedRounds = Object.keys(groupedMatches).sort((a, b) => {
     }
 
     const scheduleTimes = calculateBulkScheduleTimes();
-    
+
+    const seenSlots = new Set();
+    for (const { match, date, startTime } of scheduleTimes) {
+      const normalizedStart = normalizeTimeString(startTime);
+      const slotKey = `${date}|${normalizedStart}`;
+      if (seenSlots.has(slotKey)) {
+        alert('Two matches are using the same date and start time. Please adjust the schedule.');
+        return;
+      }
+      seenSlots.add(slotKey);
+
+      const conflict = findScheduleConflict(date, normalizedStart, match?.id);
+      if (conflict) {
+        alert(`Another match is already scheduled on ${date} at ${normalizedStart}. Please choose a different slot.`);
+        return;
+      }
+    }
+
     setLoading(true);
     try {
-      const promises = scheduleTimes.map(({ match, date, startTime, endTime }) => 
+      const promises = scheduleTimes.map(({ match, date, startTime, endTime }) =>
         fetch('http://localhost:5000/api/schedules', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -615,6 +657,13 @@ const sortedRounds = Object.keys(groupedMatches).sort((a, b) => {
       return;
     }
 
+    const startTime = normalizeTimeString(scheduleForm.startTime);
+    const conflict = findScheduleConflict(scheduleForm.date, startTime, selectedMatch?.id);
+    if (conflict) {
+      alert('Another match is already scheduled on this date and time. Please choose a different slot.');
+      return;
+    }
+
     setLoading(true);
     try {
       const existingSchedule = getScheduleForMatch(selectedMatch.id);
@@ -625,7 +674,7 @@ const sortedRounds = Object.keys(groupedMatches).sort((a, b) => {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             date: scheduleForm.date,
-            time: scheduleForm.startTime,
+            time: startTime,
             endTime: scheduleForm.endTime
           })
         });
@@ -640,7 +689,7 @@ const sortedRounds = Object.keys(groupedMatches).sort((a, b) => {
             bracketId: bracketId,
             matchId: selectedMatch.id,
             date: scheduleForm.date,
-            time: scheduleForm.startTime,
+            time: startTime,
             endTime: scheduleForm.endTime
           })
         });

@@ -128,6 +128,26 @@ const Admin_Schedules = ({ sidebarOpen }) => {
     setFilterDate("");
   };
 
+  const normalizeTimeString = (timeStr) => timeStr ? timeStr.slice(0, 5) : "";
+
+  const findScheduleConflict = (date, time, eventId) => {
+    const normalizedTime = normalizeTimeString(time);
+    if (!date || !normalizedTime) return null;
+
+    const normalizedEventId = Number.isFinite(Number(eventId)) ? Number(eventId) : null;
+
+    return schedules.find((schedule) => {
+      const scheduleEventId = Number(schedule.eventId ?? schedule.event_id);
+      const matchesEvent = normalizedEventId === null || scheduleEventId === normalizedEventId;
+      if (!matchesEvent) return false;
+
+      const scheduleTime = normalizeTimeString(schedule.time || schedule.startTime);
+      if (!scheduleTime) return false;
+
+      return schedule.date === date && scheduleTime === normalizedTime;
+    });
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
@@ -143,14 +163,23 @@ const Admin_Schedules = ({ sidebarOpen }) => {
         description: formData.description
       };
 
-      console.log('Submitting schedule data:', scheduleData);
+      const normalizedTime = normalizeTimeString(scheduleData.time);
+      const conflict = findScheduleConflict(scheduleData.date, normalizedTime, scheduleData.eventId);
+      if (conflict) {
+        setError("Another match is already scheduled on this date and time. Please choose a different slot.");
+        return;
+      }
+
+      const payload = { ...scheduleData, time: normalizedTime };
+
+      console.log('Submitting schedule data:', payload);
 
       const response = await fetch("http://localhost:5000/api/schedules", {
         method: "POST",
         headers: { 
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(scheduleData)
+        body: JSON.stringify(payload)
       });
 
       const result = await response.json();

@@ -463,10 +463,34 @@ const AdminStats = ({ sidebarOpen, preselectedEvent, preselectedBracket, embedde
     setSortConfig({ key, direction });
   };
 
+  // Volleyball helpers for derived per-set values and consistent sorting
+  const getVolleyballPerSetValue = (entity, key) => {
+    const setsPlayed = entity.total_sets_played || entity.sets_played || 0;
+    const safeDivide = (num, den) => den > 0 ? Number((num / den).toFixed(2)) : 0;
+    switch (key) {
+      case 'kps': return entity.kps ?? safeDivide(entity.kills || 0, setsPlayed);
+      case 'sas': return entity.aps ?? safeDivide(entity.service_aces || 0, setsPlayed);
+      case 'aps': return entity.asps ?? safeDivide(entity.assists || 0, setsPlayed);
+      case 'rps': return typeof entity.rps === 'number' ? entity.rps : safeDivide(entity.receptions || 0, setsPlayed);
+      case 'dps': return entity.dps ?? safeDivide(entity.digs || 0, setsPlayed);
+      case 'bps': return entity.bps ?? safeDivide(entity.blocks || 0, setsPlayed);
+      default: return entity[key] || 0;
+    }
+  };
+
+  const getSortValue = (entity, key) => {
+    const sportType = getCurrentSportType();
+    const perSetKeys = ['kps', 'sas', 'aps', 'rps', 'dps', 'bps'];
+    if (sportType !== 'basketball' && volleyballDisplayMode === 'averages' && perSetKeys.includes(key)) {
+      return getVolleyballPerSetValue(entity, key);
+    }
+    return entity[key] || 0;
+  };
+
   // Sort and filter all players data
   const sortedPlayers = [...allPlayersData].sort((a, b) => {
-    const aValue = a[sortConfig.key] || 0;
-    const bValue = b[sortConfig.key] || 0;
+    const aValue = getSortValue(a, sortConfig.key);
+    const bValue = getSortValue(b, sortConfig.key);
     
     if (sortConfig.direction === 'desc') {
       return bValue - aValue;
@@ -483,8 +507,8 @@ const AdminStats = ({ sidebarOpen, preselectedEvent, preselectedBracket, embedde
 
   // Sort and filter all teams data
   const sortedTeams = [...allTeamsData].sort((a, b) => {
-    const aValue = a[sortConfig.key] || 0;
-    const bValue = b[sortConfig.key] || 0;
+    const aValue = getSortValue(a, sortConfig.key);
+    const bValue = getSortValue(b, sortConfig.key);
     
     if (sortConfig.direction === 'desc') {
       return bValue - aValue;
@@ -535,8 +559,9 @@ const AdminStats = ({ sidebarOpen, preselectedEvent, preselectedBracket, embedde
         eff: { high: 80, low: 30 },
         overall_score: { high: 25, low: 12 },
         kps: { high: 3.5, low: 1.0 },
-        aps: { high: 0.8, low: 0.2 },
-        asps: { high: 5.0, low: 1.5 },
+        sas: { high: 0.8, low: 0.2 },
+        aps: { high: 5.0, low: 1.5 },
+        rps: { high: 5.0, low: 2.0 },
         dps: { high: 4.0, low: 1.0 },
         bps: { high: 0.8, low: 0.2 }
       };
@@ -625,8 +650,8 @@ const AdminStats = ({ sidebarOpen, preselectedEvent, preselectedBracket, embedde
           player.eff || 0
         ]);
       } else {
-        headers = ['Rank', 'Player', 'Team', 'Jersey', 'Sets Played', 'Overall Score', 
-                  'KPS', 'APS', 'ASPS', 'DPS', 'BPS', 'Efficiency'];
+        headers = ['Rank', 'Player', 'Team', 'Jersey', 'Sets Played', 'Overall Score',
+                  'KPS', 'SAS', 'APS', 'RPS', 'DPS', 'BPS', 'Efficiency'];
         rows = filteredPlayers.map((player, index) => [
           index + 1,
           player.name,
@@ -634,11 +659,12 @@ const AdminStats = ({ sidebarOpen, preselectedEvent, preselectedBracket, embedde
           player.jersey_number,
           player.total_sets_played || 0,
           player.overall_score || 0,
-          player.kps || 0,
-          player.aps || 0,
-          player.asps || 0,
-          player.dps || 0,
-          player.bps || 0,
+          getVolleyballPerSetValue(player, 'kps'),
+          getVolleyballPerSetValue(player, 'sas'),
+          getVolleyballPerSetValue(player, 'aps'),
+          getVolleyballPerSetValue(player, 'rps'),
+          getVolleyballPerSetValue(player, 'dps'),
+          getVolleyballPerSetValue(player, 'bps'),
           player.eff || 0
         ]);
       }
@@ -717,17 +743,18 @@ const AdminStats = ({ sidebarOpen, preselectedEvent, preselectedBracket, embedde
           team.eff || 0
         ]);
       } else {
-        headers = ['Rank', 'Team', 'Games Played', 'Overall Score', 'KPS', 'APS', 'ASPS', 'DPS', 'BPS', 'Efficiency'];
+        headers = ['Rank', 'Team', 'Games Played', 'Overall Score', 'KPS', 'SAS', 'APS', 'RPS', 'DPS', 'BPS', 'Efficiency'];
         rows = filteredTeams.map((team, index) => [
           index + 1,
           team.team_name,
           team.games_played,
           team.overall_score || 0,
-          team.kps || 0,
-          team.aps || 0,
-          team.asps || 0,
-          team.dps || 0,
-          team.bps || 0,
+          getVolleyballPerSetValue(team, 'kps'),
+          getVolleyballPerSetValue(team, 'sas'),
+          getVolleyballPerSetValue(team, 'aps'),
+          getVolleyballPerSetValue(team, 'rps'),
+          getVolleyballPerSetValue(team, 'dps'),
+          getVolleyballPerSetValue(team, 'bps'),
           team.eff || 0
         ]);
       }
@@ -953,11 +980,14 @@ const AdminStats = ({ sidebarOpen, preselectedEvent, preselectedBracket, embedde
           <th className="stats-sortable-header" onClick={() => handleSort('kps')}>
             KPS {sortConfig.key === 'kps' && (sortConfig.direction === 'desc' ? '↓' : '↑')}
           </th>
+          <th className="stats-sortable-header" onClick={() => handleSort('sas')}>
+            SAS {sortConfig.key === 'sas' && (sortConfig.direction === 'desc' ? '↓' : '↑')}
+          </th>
           <th className="stats-sortable-header" onClick={() => handleSort('aps')}>
             APS {sortConfig.key === 'aps' && (sortConfig.direction === 'desc' ? '↓' : '↑')}
           </th>
-          <th className="stats-sortable-header" onClick={() => handleSort('asps')}>
-            ASPS {sortConfig.key === 'asps' && (sortConfig.direction === 'desc' ? '↓' : '↑')}
+          <th className="stats-sortable-header" onClick={() => handleSort('rps')}>
+            RPS {sortConfig.key === 'rps' && (sortConfig.direction === 'desc' ? '↓' : '↑')}
           </th>
           <th className="stats-sortable-header" onClick={() => handleSort('dps')}>
             DPS {sortConfig.key === 'dps' && (sortConfig.direction === 'desc' ? '↓' : '↑')}
@@ -1085,11 +1115,12 @@ const AdminStats = ({ sidebarOpen, preselectedEvent, preselectedBracket, embedde
           <td className={getPerformanceColor(player.overall_score, 'overall_score')}>
             {player.overall_score || 0}
           </td>
-          <td className={getPerformanceColor(player.kps, 'kps')}>{player.kps || 0}</td>
-          <td className="stats-service-aces">{player.aps || 0}</td>
-          <td className={getPerformanceColor(player.asps, 'asps')}>{player.asps || 0}</td>
-          <td className={getPerformanceColor(player.dps, 'dps')}>{player.dps || 0}</td>
-          <td className="stats-blocks">{player.bps || 0}</td>
+          <td className={getPerformanceColor(getVolleyballPerSetValue(player, 'kps'), 'kps')}>{getVolleyballPerSetValue(player, 'kps')}</td>
+          <td className="stats-service-aces">{getVolleyballPerSetValue(player, 'sas')}</td>
+          <td className={getPerformanceColor(getVolleyballPerSetValue(player, 'aps'), 'aps')}>{getVolleyballPerSetValue(player, 'aps')}</td>
+          <td className={getPerformanceColor(getVolleyballPerSetValue(player, 'rps'), 'rps')}>{getVolleyballPerSetValue(player, 'rps')}</td>
+          <td className={getPerformanceColor(getVolleyballPerSetValue(player, 'dps'), 'dps')}>{getVolleyballPerSetValue(player, 'dps')}</td>
+          <td className="stats-blocks">{getVolleyballPerSetValue(player, 'bps')}</td>
         </tr>
       ));
     }
@@ -1235,11 +1266,14 @@ const AdminStats = ({ sidebarOpen, preselectedEvent, preselectedBracket, embedde
           <th className="stats-sortable-header" onClick={() => handleSort('kps')}>
             KPS {sortConfig.key === 'kps' && (sortConfig.direction === 'desc' ? '↓' : '↑')}
           </th>
+          <th className="stats-sortable-header" onClick={() => handleSort('sas')}>
+            SAS {sortConfig.key === 'sas' && (sortConfig.direction === 'desc' ? '↓' : '↑')}
+          </th>
           <th className="stats-sortable-header" onClick={() => handleSort('aps')}>
             APS {sortConfig.key === 'aps' && (sortConfig.direction === 'desc' ? '↓' : '↑')}
           </th>
-          <th className="stats-sortable-header" onClick={() => handleSort('asps')}>
-            ASPS {sortConfig.key === 'asps' && (sortConfig.direction === 'desc' ? '↓' : '↑')}
+          <th className="stats-sortable-header" onClick={() => handleSort('rps')}>
+            RPS {sortConfig.key === 'rps' && (sortConfig.direction === 'desc' ? '↓' : '↑')}
           </th>
           <th className="stats-sortable-header" onClick={() => handleSort('dps')}>
             DPS {sortConfig.key === 'dps' && (sortConfig.direction === 'desc' ? '↓' : '↑')}
@@ -1359,11 +1393,12 @@ const AdminStats = ({ sidebarOpen, preselectedEvent, preselectedBracket, embedde
           <td className={getPerformanceColor(team.overall_score, 'overall_score')}>
             {team.overall_score || 0}
           </td>
-          <td className={getPerformanceColor(team.kps, 'kps')}>{team.kps || 0}</td>
-          <td className="stats-service-aces">{team.aps || 0}</td>
-          <td className={getPerformanceColor(team.asps, 'asps')}>{team.asps || 0}</td>
-          <td className={getPerformanceColor(team.dps, 'dps')}>{team.dps || 0}</td>
-          <td className="stats-blocks">{team.bps || 0}</td>
+          <td className={getPerformanceColor(getVolleyballPerSetValue(team, 'kps'), 'kps')}>{getVolleyballPerSetValue(team, 'kps')}</td>
+          <td className="stats-service-aces">{getVolleyballPerSetValue(team, 'sas')}</td>
+          <td className={getPerformanceColor(getVolleyballPerSetValue(team, 'aps'), 'aps')}>{getVolleyballPerSetValue(team, 'aps')}</td>
+          <td className={getPerformanceColor(getVolleyballPerSetValue(team, 'rps'), 'rps')}>{getVolleyballPerSetValue(team, 'rps')}</td>
+          <td className={getPerformanceColor(getVolleyballPerSetValue(team, 'dps'), 'dps')}>{getVolleyballPerSetValue(team, 'dps')}</td>
+          <td className="stats-blocks">{getVolleyballPerSetValue(team, 'bps')}</td>
         </tr>
       ));
     }

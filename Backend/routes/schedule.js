@@ -59,7 +59,19 @@ router.post('/', async (req, res) => {
     if (existing.length > 0) {
       return res.status(400).json({ message: 'Schedule already exists for this match' });
     }
-    
+
+    // Prevent double-booking the same date/time for the same event
+    const [timeConflict] = await db.pool.query(
+      eventId
+        ? 'SELECT id FROM schedules WHERE date = ? AND time = ? AND eventId = ?'
+        : 'SELECT id FROM schedules WHERE date = ? AND time = ?',
+      eventId ? [date, time, eventId] : [date, time]
+    );
+
+    if (timeConflict.length > 0) {
+      return res.status(400).json({ message: 'Another match is already scheduled at this date and time' });
+    }
+
     const query = `
       INSERT INTO schedules (eventId, bracketId, matchId, date, time, endTime)
       VALUES (?, ?, ?, ?, ?, ?)
@@ -121,7 +133,26 @@ router.put('/:id', async (req, res) => {
     const { date, time, endTime } = req.body;
     
     console.log('Updating schedule:', id, req.body);
-    
+
+    // Fetch schedule to validate and to update match scheduled_at afterwards
+    const [schedule] = await db.pool.query('SELECT matchId, eventId FROM schedules WHERE id = ?', [id]);
+
+    if (schedule.length === 0) {
+      return res.status(404).json({ message: 'Schedule not found' });
+    }
+
+    // Prevent double-booking the same date/time for the same event (ignoring this record)
+    const [timeConflict] = await db.pool.query(
+      schedule[0].eventId
+        ? 'SELECT id FROM schedules WHERE date = ? AND time = ? AND eventId = ? AND id <> ?'
+        : 'SELECT id FROM schedules WHERE date = ? AND time = ? AND id <> ?',
+      schedule[0].eventId ? [date, time, schedule[0].eventId, id] : [date, time, id]
+    );
+
+    if (timeConflict.length > 0) {
+      return res.status(400).json({ message: 'Another match is already scheduled at this date and time' });
+    }
+
     // Update schedule
     const query = `
       UPDATE schedules 
@@ -131,16 +162,11 @@ router.put('/:id', async (req, res) => {
     
     await db.pool.query(query, [date, time, endTime || null, id]);
     
-    // Get matchId to update match scheduled_at
-    const [schedule] = await db.pool.query('SELECT matchId FROM schedules WHERE id = ?', [id]);
-    
-    if (schedule.length > 0) {
-      const scheduledAt = `${date} ${time}:00`;
-      await db.pool.query(
-        'UPDATE matches SET scheduled_at = ? WHERE id = ?',
-        [scheduledAt, schedule[0].matchId]
-      );
-    }
+    const scheduledAt = `${date} ${time}:00`;
+    await db.pool.query(
+      'UPDATE matches SET scheduled_at = ? WHERE id = ?',
+      [scheduledAt, schedule[0].matchId]
+    );
     
     // Fetch updated schedule with all related data
     const [updatedSchedule] = await db.pool.query(`
