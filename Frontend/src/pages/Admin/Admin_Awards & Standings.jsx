@@ -25,6 +25,35 @@ const AdminAwardsStandings = ({ sidebarOpen }) => {
     return isNaN(num) ? 0 : Number(num.toFixed(decimals));
   };
 
+  // Ensure champion remains in the first slot regardless of API ordering
+  const orderStandingsWithChampionFirst = (standingsList, championName) => {
+    if (!Array.isArray(standingsList) || standingsList.length === 0) return [];
+
+    const normalizedChampion = championName?.trim().toLowerCase();
+    const sorted = [...standingsList].sort((a, b) => {
+      const posA = Number(a.position) || Number.MAX_SAFE_INTEGER;
+      const posB = Number(b.position) || Number.MAX_SAFE_INTEGER;
+      return posA - posB;
+    });
+
+    if (!normalizedChampion) {
+      return sorted.map((team, idx) => ({ ...team, position: idx + 1 }));
+    }
+
+    const championIndex = sorted.findIndex(
+      team => team.team?.trim().toLowerCase() === normalizedChampion
+    );
+
+    if (championIndex <= 0) {
+      return sorted.map((team, idx) => ({ ...team, position: idx + 1 }));
+    }
+
+    const championTeam = sorted.splice(championIndex, 1)[0];
+    const reordered = [championTeam, ...sorted];
+
+    return reordered.map((team, idx) => ({ ...team, position: idx + 1 }));
+  };
+
   useEffect(() => {
     fetchCompletedEvents();
   }, []);
@@ -101,7 +130,11 @@ const AdminAwardsStandings = ({ sidebarOpen }) => {
     try {
       const standingsRes = await fetch(`http://localhost:5000/api/awards/brackets/${bracket.id}/standings`);
       const standingsData = await standingsRes.json();
-      setStandings(standingsData.standings || []);
+      const standingsWithChampionFirst = orderStandingsWithChampionFirst(
+        standingsData.standings || [],
+        bracket.winner_team_name
+      );
+      setStandings(standingsWithChampionFirst);
 
       const awardsRes = await fetch(`http://localhost:5000/api/awards/brackets/${bracket.id}/mvp-awards`);
       const awardsData = await awardsRes.json();

@@ -111,6 +111,35 @@ const [editTeamModal, setEditTeamModal] = useState({
   return Number(num.toFixed(decimals));
 };
 
+  // Keep champion at the top of standings regardless of API order
+  const orderStandingsWithChampionFirst = (standingsList, championName) => {
+    if (!Array.isArray(standingsList) || standingsList.length === 0) return [];
+
+    const normalizedChampion = championName?.trim().toLowerCase();
+    const sorted = [...standingsList].sort((a, b) => {
+      const posA = Number(a.position) || Number.MAX_SAFE_INTEGER;
+      const posB = Number(b.position) || Number.MAX_SAFE_INTEGER;
+      return posA - posB;
+    });
+
+    if (!normalizedChampion) {
+      return sorted.map((team, idx) => ({ ...team, position: idx + 1 }));
+    }
+
+    const championIndex = sorted.findIndex(
+      team => team.team?.trim().toLowerCase() === normalizedChampion
+    );
+
+    if (championIndex <= 0) {
+      return sorted.map((team, idx) => ({ ...team, position: idx + 1 }));
+    }
+
+    const championTeam = sorted.splice(championIndex, 1)[0];
+    const reordered = [championTeam, ...sorted];
+
+    return reordered.map((team, idx) => ({ ...team, position: idx + 1 }));
+  };
+
   // Sport position mappings
   const sportPositions = {
     basketball: [
@@ -544,7 +573,11 @@ useEffect(() => {
           // Load standings for ALL bracket types (single, double, round_robin, round_robin_knockout)
           const standingsRes = await fetch(`http://localhost:5000/api/awards/brackets/${selectedBracket.id}/standings`);
           const standingsData = await standingsRes.json();
-          setStandings(standingsData.standings || []);
+          const standingsWithChampionFirst = orderStandingsWithChampionFirst(
+            standingsData.standings || [],
+            selectedBracket.winner_team_name
+          );
+          setStandings(standingsWithChampionFirst);
 
           const awardsRes = await fetch(`http://localhost:5000/api/awards/brackets/${selectedBracket.id}/mvp-awards`);
           const awardsData = await awardsRes.json();
