@@ -918,6 +918,14 @@
 }
 
 /* Tournament Period Display */
+.stats-period-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
 .stats-period-display {
   display: flex;
   align-items: center;
@@ -926,6 +934,10 @@
   background: var(--background-secondary);
   border: 2px solid var(--border-color);
   border-radius: var(--border-radius);
+  flex: 1;
+  min-width: 240px;
+  height: 48px;
+  box-sizing: border-box;
 }
 
 .stats-period-date {
@@ -938,6 +950,39 @@
   color: var(--primary-color);
   font-weight: bold;
   font-size: 1.2rem;
+}
+
+.stats-bracket-view-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.75rem 1rem;
+  height: 48px;
+  background: var(--primary-color);
+  color: #fff;
+  border: none;
+  border-radius: var(--border-radius);
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  cursor: pointer;
+  transition: var(--transition);
+  white-space: nowrap;
+  box-shadow: var(--shadow-light);
+}
+
+.stats-bracket-view-btn:hover {
+  background: var(--primary-hover);
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-medium);
+}
+
+.stats-bracket-view-btn:disabled {
+  background: var(--background-secondary);
+  color: var(--text-secondary);
+  border: 1px dashed var(--border-color);
+  cursor: not-allowed;
+  box-shadow: none;
+  transform: none;
 }
 
 /* Compact Match Card Styles */
@@ -1078,6 +1123,15 @@
   
   .stats-period-separator {
     transform: rotate(90deg);
+  }
+
+  .stats-period-actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .stats-bracket-view-btn {
+    width: 100%;
   }
 
   .stats-bracket-section {

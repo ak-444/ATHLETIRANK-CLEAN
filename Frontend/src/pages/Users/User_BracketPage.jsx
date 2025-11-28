@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import React, { useState, useEffect, useRef } from "react";
+import { useNavigate, useLocation } from "react-router-dom";
 import CustomBracket from "../../components/CustomBracket";
 import DoubleEliminationBracket from "../../components/DoubleEliminationBracket"; // Import the double elimination component
 import "../../style/User_BracketPage.css";
@@ -7,6 +7,8 @@ import { RiTrophyFill } from "react-icons/ri";
 
 const User_BracketPage = ({ sidebarOpen }) => {
   const navigate = useNavigate();
+  const location = useLocation();
+  const preselectAppliedRef = useRef(false);
   const [activeTab, setActiveTab] = useState("view");
   const [brackets, setBrackets] = useState([]);
   const [selectedBracket, setSelectedBracket] = useState(null);
@@ -16,6 +18,8 @@ const User_BracketPage = ({ sidebarOpen }) => {
   const [searchTerm, setSearchTerm] = useState("");
   const [filterSport, setFilterSport] = useState("");
   const [filterEvent, setFilterEvent] = useState("");
+  const preselectBracketId = location.state?.preselectBracketId;
+  const preselectEventId = location.state?.preselectEventId;
 
   // Handle back to homepage
   const handleBackToHome = () => {
@@ -75,10 +79,29 @@ const User_BracketPage = ({ sidebarOpen }) => {
   };
 
   const handleBackToBrackets = () => {
-    setSelectedBracket(null);
-    setBracketMatches([]);
-    setActiveTab("view");
+    navigate("/schedules");
   };
+
+  useEffect(() => {
+    if (preselectAppliedRef.current) return;
+    if (!brackets.length || !preselectBracketId) return;
+
+    const targetBracket = brackets.find(
+      b => b.id === Number(preselectBracketId) || b.id === preselectBracketId
+    );
+
+    if (!targetBracket) return;
+
+    const applyPreselect = async () => {
+      preselectAppliedRef.current = true;
+      if (preselectEventId) {
+        setFilterEvent(String(preselectEventId));
+      }
+      await handleViewBracket(targetBracket);
+    };
+
+    applyPreselect();
+  }, [brackets, preselectBracketId, preselectEventId]);
 
   // Filter brackets based on search and filters
   const filteredBrackets = brackets.filter(bracket => {
@@ -139,24 +162,6 @@ const User_BracketPage = ({ sidebarOpen }) => {
       <div className={`user_bracket_page_dashboard_content ${sidebarOpen ? "user_bracket_page_sidebar_open" : ""}`}>
         <div className="user_bracket_page_dashboard_main">
           <div className="user_bracket_page_bracket_content">
-            {/* Tabs */}
-            <div className="user_bracket_page_bracket_tabs">
-              <button 
-                className={`user_bracket_page_bracket_tab_button ${activeTab === "view" ? "user_bracket_page_bracket_tab_active" : ""}`} 
-                onClick={() => setActiveTab("view")}
-              >
-                All Brackets ({filteredBrackets.length})
-              </button>
-              {selectedBracket && (
-                <button 
-                  className={`user_bracket_page_bracket_tab_button ${activeTab === "bracket" ? "user_bracket_page_bracket_tab_active" : ""}`} 
-                  onClick={() => setActiveTab("bracket")}
-                >
-                  {selectedBracket.name}
-                </button>
-              )}
-            </div>
-
             {/* View Brackets */}
             {activeTab === "view" && (
               <div className="user_bracket_page_bracket_view_section">
@@ -303,19 +308,14 @@ const User_BracketPage = ({ sidebarOpen }) => {
             {activeTab === "bracket" && selectedBracket && (
               <div className="user_bracket_page_bracket_visualization_section">
                 <div className="user_bracket_page_bracket_header_controls">
+                  <h2>{selectedBracket.name}</h2>
                   <button 
                     className="user_bracket_page_bracket_back_btn"
                     onClick={handleBackToBrackets}
                   >
-                    ← Back to Brackets
+                    Back to Match Schedule
                   </button>
-                  <h2>{selectedBracket.name}</h2>
-                  {/* Add elimination type indicator */}
-                  <span className={`user_bracket_page_elimination_indicator elimination_${selectedBracket.elimination_type}`}>
-                    {selectedBracket.elimination_type === 'double' ? 'Double Elimination' : 'Single Elimination'}
-                  </span>
                 </div>
-                
                 <div className="user_bracket_page_bracket_info">
                   <p><strong>Event:</strong> {events.find(e => e.id === selectedBracket.event_id)?.name || `Event ${selectedBracket.event_id}`}</p>
                   <p><strong>Sport:</strong> {capitalize(selectedBracket.sport_type)}</p>

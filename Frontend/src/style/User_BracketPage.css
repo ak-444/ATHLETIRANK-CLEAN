@@ -528,7 +528,7 @@
 .user_bracket_page_bracket_header_controls {
   display: flex;
   align-items: center;
-  justify-content: flex-start;
+  justify-content: space-between;
   margin-bottom: 20px;
   flex-wrap: wrap;
   gap: 15px;
