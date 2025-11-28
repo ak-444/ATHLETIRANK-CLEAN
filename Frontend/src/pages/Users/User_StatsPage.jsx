@@ -1774,7 +1774,7 @@ const loadRecentBracketData = async (event, bracket) => {
 
       </span>
 
-      <span className="stats-period-separator" style={{ color: 'var(--primary-color)', fontWeight: 'bold', fontSize: '1.2rem' }}>?</span>
+      <span className="stats-period-separator" style={{ color: 'var(--primary-color)', fontWeight: 'bold', fontSize: '1.2rem' }}>to</span>
 
       <span className="stats-period-date" style={{ fontSize: '0.95rem', fontWeight: '600', color: 'var(--text-primary)' }}>
 
@@ -2000,13 +2000,7 @@ const loadRecentBracketData = async (event, bracket) => {
 
                 }`}>
 
-                  {team.position === 1 && <span className="awards_standings_medal">??</span>}
-
-                  {team.position === 2 && <span className="awards_standings_medal">??</span>}
-
-                  {team.position === 3 && <span className="awards_standings_medal">??</span>}
-
-                  {team.position > 3 && team.position}
+                  <span className="stats-rank-number">{team.position || index + 1}</span>
 
                 </div>
 
@@ -2851,13 +2845,7 @@ const loadRecentBracketData = async (event, bracket) => {
 
                                           }`}>
 
-                                            {team.position === 1 && <span className="awards_standings_medal">??</span>}
-
-                                            {team.position === 2 && <span className="awards_standings_medal">??</span>}
-
-                                            {team.position === 3 && <span className="awards_standings_medal">??</span>}
-
-                                            {team.position > 3 && (team.position || index + 1)}
+                                            <span className="stats-rank-number">{team.position || index + 1}</span>
 
                                           </div>
 
