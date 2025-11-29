@@ -104,6 +104,23 @@ function createDoubleEliminationStructure(totalTeams) {
       actualTeams: 9
     };
   }
+
+  // Special handling for 10 teams
+  if (totalTeams === 10) {
+    return {
+      winnerRounds: 4,
+      loserStructure: [
+        { round: 1, matches: 1, description: "LB Round 1" },
+        { round: 2, matches: 2, description: "LB Round 2" },
+        { round: 3, matches: 1, description: "LB Round 3" },
+        { round: 4, matches: 2, description: "LB Round 4" },
+        { round: 5, matches: 1, description: "LB Round 5" },
+        { round: 6, matches: 1, description: "LB Final" }
+      ],
+      totalTeams: 10,
+      actualTeams: 10
+    };
+  }
   
   // Existing logic for 16-32 teams
   const nextPowerOfTwo = Math.pow(2, Math.ceil(Math.log2(totalTeams)));
@@ -287,7 +304,8 @@ function getExpectedMatchCounts(teams) {
     6: { winner: 5, loser: 4, championship: 2, total: 11 },
     7: { winner: 6, loser: 5, championship: 2, total: 13 },  // ✅ FIXED!
     8: { winner: 7, loser: 6, championship: 2, total: 15 },
-    9: { winner: 8, loser: 7, championship: 2, total: 17 }
+    9: { winner: 8, loser: 7, championship: 2, total: 17 },
+    10: { winner: 9, loser: 8, championship: 2, total: 19 }
   };
   
   return expectations[teams] || { winner: teams - 1, loser: teams - 2, championship: 2, total: (teams * 2) - 1 };
@@ -724,6 +742,122 @@ router.post("/:id/generate", async (req, res) => {
         finalMatch.id = finalResult.insertId;
         allMatches.push(finalMatch);
         winnerMatches.push({ ...finalMatch, roundIndex: 3, matchIndex: 0 });
+
+      } else if (totalTeams === 10) {
+        const round1Matches = [
+          { team1: paddedTeams[6], team2: paddedTeams[9], matchOrder: 0 }, // M1
+          { team1: paddedTeams[7], team2: paddedTeams[8], matchOrder: 1 }  // M2
+        ];
+
+        for (const { team1, team2, matchOrder } of round1Matches) {
+          const matchData = {
+            bracket_id: bracketId,
+            round_number: 1,
+            bracket_type: 'winner',
+            team1_id: team1?.id || null,
+            team2_id: team2?.id || null,
+            winner_id: null,
+            status: "scheduled",
+            match_order: matchOrder
+          };
+
+          const [result] = await db.pool.query(
+            `INSERT INTO matches (bracket_id, round_number, bracket_type, team1_id, team2_id, winner_id, status, match_order) 
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+            [matchData.bracket_id, matchData.round_number, matchData.bracket_type,
+             matchData.team1_id, matchData.team2_id, matchData.winner_id,
+             matchData.status, matchData.match_order]
+          );
+
+          matchData.id = result.insertId;
+          allMatches.push(matchData);
+          winnerMatches.push({ ...matchData, roundIndex: 1, matchIndex: matchOrder });
+        }
+
+        const round2Matches = [
+          { team1: paddedTeams[0], team2: null, matchOrder: 0 }, // M3
+          { team1: paddedTeams[3], team2: paddedTeams[4], matchOrder: 1 }, // M4
+          { team1: paddedTeams[1], team2: null, matchOrder: 2 }, // M5
+          { team1: paddedTeams[2], team2: paddedTeams[5], matchOrder: 3 }  // M6
+        ];
+
+        for (const { team1, team2, matchOrder } of round2Matches) {
+          const matchData = {
+            bracket_id: bracketId,
+            round_number: 2,
+            bracket_type: 'winner',
+            team1_id: team1?.id || null,
+            team2_id: team2?.id || null,
+            winner_id: null,
+            status: "scheduled",
+            match_order: matchOrder
+          };
+
+          const [result] = await db.pool.query(
+            `INSERT INTO matches (bracket_id, round_number, bracket_type, team1_id, team2_id, winner_id, status, match_order) 
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+            [matchData.bracket_id, matchData.round_number, matchData.bracket_type,
+             matchData.team1_id, matchData.team2_id, matchData.winner_id,
+             matchData.status, matchData.match_order]
+          );
+
+          matchData.id = result.insertId;
+          allMatches.push(matchData);
+          winnerMatches.push({ ...matchData, roundIndex: 2, matchIndex: matchOrder });
+        }
+
+        const round3Matches = [
+          { matchOrder: 0 }, // M7
+          { matchOrder: 1 }  // M8
+        ];
+
+        for (const { matchOrder } of round3Matches) {
+          const matchData = {
+            bracket_id: bracketId,
+            round_number: 3,
+            bracket_type: 'winner',
+            team1_id: null,
+            team2_id: null,
+            winner_id: null,
+            status: "scheduled",
+            match_order: matchOrder
+          };
+
+          const [result] = await db.pool.query(
+            `INSERT INTO matches (bracket_id, round_number, bracket_type, team1_id, team2_id, winner_id, status, match_order) 
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+            [matchData.bracket_id, matchData.round_number, matchData.bracket_type,
+             matchData.team1_id, matchData.team2_id, matchData.winner_id,
+             matchData.status, matchData.match_order]
+          );
+
+          matchData.id = result.insertId;
+          allMatches.push(matchData);
+          winnerMatches.push({ ...matchData, roundIndex: 3, matchIndex: matchOrder });
+        }
+
+        const finalMatch = {
+          bracket_id: bracketId,
+          round_number: 4,
+          bracket_type: 'winner',
+          team1_id: null,
+          team2_id: null,
+          winner_id: null,
+          status: "scheduled",
+          match_order: 0
+        };
+
+        const [finalResult] = await db.pool.query(
+          `INSERT INTO matches (bracket_id, round_number, bracket_type, team1_id, team2_id, winner_id, status, match_order) 
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+          [finalMatch.bracket_id, finalMatch.round_number, finalMatch.bracket_type,
+           finalMatch.team1_id, finalMatch.team2_id, finalMatch.winner_id,
+           finalMatch.status, finalMatch.match_order]
+        );
+
+        finalMatch.id = finalResult.insertId;
+        allMatches.push(finalMatch);
+        winnerMatches.push({ ...finalMatch, roundIndex: 4, matchIndex: 0 });
 
       } else {
         // Original generation for other team counts
@@ -1433,6 +1567,71 @@ router.post("/matches/:id/complete", async (req, res) => {
               }
             }
           }
+        } else if (totalTeams === 10) {
+          const key = `${match.round_number}_${match.match_order}`;
+          const winnerTargets = {
+            '1_0': { round_number: 2, match_order: 0, field: 'team2_id' },
+            '1_1': { round_number: 2, match_order: 2, field: 'team2_id' },
+            '2_0': { round_number: 3, match_order: 0, field: 'team1_id' },
+            '2_1': { round_number: 3, match_order: 0, field: 'team2_id' },
+            '2_2': { round_number: 3, match_order: 1, field: 'team1_id' },
+            '2_3': { round_number: 3, match_order: 1, field: 'team2_id' },
+            '3_0': { round_number: 4, match_order: 0, field: 'team1_id' },
+            '3_1': { round_number: 4, match_order: 0, field: 'team2_id' },
+            '4_0': { round_number: 200, match_order: 0, field: 'team1_id' }
+          };
+          const loserTargets = {
+            '1_0': { round_number: 101, match_order: 0, field: 'team1_id' },
+            '1_1': { round_number: 101, match_order: 0, field: 'team2_id' },
+            '2_0': { round_number: 102, match_order: 0, field: 'team2_id' },
+            '2_1': { round_number: 102, match_order: 1, field: 'team1_id' },
+            '2_2': { round_number: 102, match_order: 1, field: 'team2_id' },
+            '2_3': { round_number: 103, match_order: 0, field: 'team2_id' },
+            '3_0': { round_number: 104, match_order: 0, field: 'team2_id' },
+            '3_1': { round_number: 104, match_order: 1, field: 'team2_id' },
+            '4_0': { round_number: 106, match_order: 0, field: 'team2_id' }
+          };
+
+          if (winner_id) {
+            const target = winnerTargets[key];
+            if (target) {
+              const bracketType = target.round_number >= 200 ? 'championship' : 'winner';
+              const [nextMatches] = await db.pool.query(
+                `SELECT * FROM matches 
+                 WHERE bracket_id = ? AND bracket_type = ? 
+                 AND round_number = ? AND match_order = ?`,
+                [match.bracket_id, bracketType, target.round_number, target.match_order]
+              );
+
+              if (nextMatches.length > 0 && nextMatches[0][target.field] === null) {
+                await db.pool.query(
+                  `UPDATE matches SET ${target.field} = ? WHERE id = ?`,
+                  [winner_id, nextMatches[0].id]
+                );
+                winnerAdvanced = true;
+              }
+            }
+          }
+
+          if (loser_id) {
+            const target = loserTargets[key];
+            if (target) {
+              const [nextMatches] = await db.pool.query(
+                `SELECT * FROM matches 
+                 WHERE bracket_id = ? AND bracket_type = 'loser' 
+                 AND round_number = ? AND match_order = ?`,
+                [match.bracket_id, target.round_number, target.match_order]
+              );
+
+              if (nextMatches.length > 0 && nextMatches[0][target.field] === null) {
+                await db.pool.query(
+                  `UPDATE matches SET ${target.field} = ? WHERE id = ?`,
+                  [loser_id, nextMatches[0].id]
+                );
+                loserAdvanced = true;
+              }
+            }
+          }
         } else {
           // Generic winner bracket logic for other team counts
           const nextRound = match.round_number + 1;
@@ -1655,6 +1854,37 @@ router.post("/matches/:id/complete", async (req, res) => {
             '103_1': { round_number: 104, match_order: 0, field: 'team2_id' },
             '104_0': { round_number: 105, match_order: 0, field: 'team1_id' },
             '105_0': { round_number: 200, match_order: 0, field: 'team2_id' }
+          };
+
+          const target = transitions[key];
+          if (target) {
+            const bracketType = target.round_number === 200 ? 'championship' : 'loser';
+            const [nextMatches] = await db.pool.query(
+              `SELECT * FROM matches 
+               WHERE bracket_id = ? AND bracket_type = ? 
+               AND round_number = ? AND match_order = ?`,
+              [match.bracket_id, bracketType, target.round_number, target.match_order]
+            );
+
+            if (nextMatches.length > 0 && nextMatches[0][target.field] === null) {
+              await db.pool.query(
+                `UPDATE matches SET ${target.field} = ? WHERE id = ?`,
+                [winner_id, nextMatches[0].id]
+              );
+              winnerAdvanced = true;
+            }
+          }
+        } else if (totalTeams === 10) {
+          const key = `${match.round_number}_${match.match_order}`;
+          const transitions = {
+            '101_0': { round_number: 102, match_order: 0, field: 'team1_id' },
+            '102_0': { round_number: 104, match_order: 0, field: 'team1_id' },
+            '102_1': { round_number: 103, match_order: 0, field: 'team1_id' },
+            '103_0': { round_number: 104, match_order: 1, field: 'team1_id' },
+            '104_0': { round_number: 105, match_order: 0, field: 'team1_id' },
+            '104_1': { round_number: 105, match_order: 0, field: 'team2_id' },
+            '105_0': { round_number: 106, match_order: 0, field: 'team1_id' },
+            '106_0': { round_number: 200, match_order: 0, field: 'team2_id' }
           };
 
           const target = transitions[key];
