@@ -111,6 +111,13 @@ const [editTeamModal, setEditTeamModal] = useState({
   return Number(num.toFixed(decimals));
 };
 
+  const parseWinPercentageValue = (value) => {
+  if (value === null || value === undefined) return 0;
+  const normalized = typeof value === "string" ? value.replace("%", "") : value;
+  const numeric = Number(normalized);
+  return isNaN(numeric) ? 0 : numeric;
+};
+
   // Keep champion at the top of standings regardless of API order
   const orderStandingsWithChampionFirst = (standingsList, championName) => {
     if (!Array.isArray(standingsList) || standingsList.length === 0) return [];
@@ -201,8 +208,24 @@ const [editTeamModal, setEditTeamModal] = useState({
     ? matches 
     : matches.filter(match => match.round_number === parseInt(roundFilter));
 
+  const standingsWithDisplayPosition = [...(standings || [])]
+    .sort((a, b) => {
+      const winA = parseWinPercentageValue(a.win_percentage);
+      const winB = parseWinPercentageValue(b.win_percentage);
+
+      if (winB !== winA) return winB - winA;
+
+      const posA = Number(a.position) || Number.MAX_SAFE_INTEGER;
+      const posB = Number(b.position) || Number.MAX_SAFE_INTEGER;
+      return posA - posB;
+    })
+    .map((team, index) => ({
+      ...team,
+      display_position: index + 1
+    }));
+
   // Filter standings by search term
-  const filteredStandings = standings.filter(team =>
+  const filteredStandings = standingsWithDisplayPosition.filter(team =>
     team.team.toLowerCase().includes(searchTermStandings.toLowerCase())
   );
 
@@ -600,17 +623,18 @@ useEffect(() => {
   const exportStandings = () => {
     if (standings.length === 0 || !selectedBracket) return;
     
+    const exportList = standingsWithDisplayPosition;
     let csvContent = "data:text/csv;charset=utf-8,";
     
     if (selectedBracket.sport_type === "basketball") {
       csvContent += "Position,Team,Wins,Losses,Points For,Points Against,Point Diff,Win%\n";
-      standings.forEach(team => {
-        csvContent += `${team.position},${team.team},${team.wins},${team.losses},${team.points_for},${team.points_against},${team.point_diff},${team.win_percentage}\n`;
+      exportList.forEach(team => {
+        csvContent += `${team.display_position},${team.team},${team.wins},${team.losses},${team.points_for},${team.points_against},${team.point_diff},${team.win_percentage}\n`;
       });
     } else {
       csvContent += "Position,Team,Wins,Losses,Sets For,Sets Against,Set Ratio,Win%\n";
-      standings.forEach(team => {
-        csvContent += `${team.position},${team.team},${team.wins},${team.losses},${team.sets_for},${team.sets_against},${team.set_ratio},${team.win_percentage}\n`;
+      exportList.forEach(team => {
+        csvContent += `${team.display_position},${team.team},${team.wins},${team.losses},${team.sets_for},${team.sets_against},${team.set_ratio},${team.win_percentage}\n`;
       });
     }
     
@@ -1590,10 +1614,14 @@ const closeEditTeamModal = () => {
   };
 
   const volleyballErrorTotal = selectedBracket?.sport_type === "volleyball" && mvpData
-    ? ['aes', 'ses', 'res', 'bhs', 'asses', 'bes'].reduce(
+    ? ['aes', 'ses', 'res'].reduce(
         (total, key) => total + Number(mvpData[key] ?? 0),
         0
       )
+    : 0;
+
+  const mvpTotalValue = mvpData
+    ? (mvpData.mvp_total ?? mvpData.mvp_score ?? mvpData.overall_score ?? 0)
     : 0;
 
   return (
@@ -2454,15 +2482,17 @@ const closeEditTeamModal = () => {
                                       </tr>
                                     </thead>
                                     <tbody>
-                                      {filteredStandings.map((team, index) => (
-                                        <tr key={index} className={team.position <= 3 ? `awards_standings_podium_${team.position}` : ""}>
+                                      {filteredStandings.map((team, index) => {
+                                      const displayPosition = team.display_position || team.position;
+                                      return (
+                                        <tr key={index} className={displayPosition <= 3 ? `awards_standings_podium_${displayPosition}` : ""}>
                                           <td className="awards_standings_rank">
-                                            {team.position <= 3 && (
+                                            {displayPosition <= 3 && (
                                               <span className="awards_standings_medal">
-                                                {team.position === 1 ? "🥇" : team.position === 2 ? "🥈" : "🥉"}
+                                                {displayPosition === 1 ? "🥇" : displayPosition === 2 ? "🥈" : "🥉"}
                                               </span>
                                             )}
-                                            {team.position}
+                                            {displayPosition}
                                           </td>
                                           <td className="awards_standings_team_name">
                                             <strong>{team.team}</strong>
@@ -2486,7 +2516,8 @@ const closeEditTeamModal = () => {
                                           )}
                                           <td>{team.win_percentage}</td>
                                         </tr>
-                                      ))}
+                                      );
+                                    })}
                                     </tbody>
                                   </table>
                                 </div>
@@ -2547,8 +2578,8 @@ const closeEditTeamModal = () => {
                     <div className="awards_standings_stat_label">BPG</div>
                   </div>
                   <div className="awards_standings_stat_card awards_standings_highlight">
-                    <div className="awards_standings_stat_value">{safeNumber(mvpData.mvp_score, 2)}</div>
-                    <div className="awards_standings_stat_label">Overall</div>
+                    <div className="awards_standings_stat_value">{safeNumber(mvpTotalValue, 2)}</div>
+                    <div className="awards_standings_stat_label">MVP Total</div>
                   </div>
                 </>
               ) : (
@@ -2559,7 +2590,7 @@ const closeEditTeamModal = () => {
                     <div className="awards_standings_stat_label">Sets Played</div>
                   </div>
                   <div className="awards_standings_stat_card awards_standings_highlight">
-                    <div className="awards_standings_stat_value">{safeNumber(mvpData.mvp_score ?? mvpData.overall_score, 2)}</div>
+                    <div className="awards_standings_stat_value">{safeNumber(mvpTotalValue, 2)}</div>
                     <div className="awards_standings_stat_label">MVP Total</div>
                   </div>
                   <div className="awards_standings_stat_card awards_standings_highlight">
@@ -2624,7 +2655,7 @@ const closeEditTeamModal = () => {
             <th style={{ textAlign: 'center' }}>APG</th>
             <th style={{ textAlign: 'center' }}>SPG</th>
             <th style={{ textAlign: 'center' }}>BPG</th>
-            <th style={{ textAlign: 'center', background: 'rgba(59, 130, 246, 0.1)' }}>OVERALL</th>
+            <th style={{ textAlign: 'center', background: 'rgba(59, 130, 246, 0.1)' }}>MVP Total</th>
           </tr>
         </thead>
         <tbody>
@@ -2658,7 +2689,7 @@ const closeEditTeamModal = () => {
                 color: '#3b82f6',
                 background: 'rgba(59, 130, 246, 0.1)'
               }}>
-                {safeNumber(player.mvp_score, 1)}
+                {safeNumber(player.mvp_total ?? player.mvp_score, 1)}
               </td>
             </tr>
           ))}

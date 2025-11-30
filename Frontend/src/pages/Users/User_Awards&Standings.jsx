@@ -239,10 +239,14 @@ const UserAwardsStandings = () => {
 };
 
   const volleyballErrorTotal = selectedBracket?.sport_type === "volleyball" && mvpData
-    ? ['aes', 'ses', 'res', 'bhs', 'asses', 'bes'].reduce(
+    ? ['aes', 'ses', 'res'].reduce(
         (total, key) => total + Number(mvpData[key] ?? 0),
         0
       )
+    : 0;
+
+  const mvpTotalValue = mvpData
+    ? (mvpData.mvp_total ?? mvpData.mvp_score ?? mvpData.overall_score ?? 0)
     : 0;
 
   if (loading && !selectedEvent) {
@@ -491,8 +495,8 @@ const UserAwardsStandings = () => {
                                 <div style={{ color: '#64748b', fontSize: '12px', textTransform: 'uppercase', fontWeight: '600', letterSpacing: '0.5px' }}>BPG</div>
                               </div>
                               <div style={{ background: 'rgba(59, 130, 246, 0.1)', border: '1px solid #3b82f6', borderRadius: '8px', padding: '20px', textAlign: 'center' }}>
-                                <div style={{ fontSize: '28px', fontWeight: '700', color: '#e2e8f0', marginBottom: '8px' }}>{safeNumber(mvpData.mvp_score, 2)}</div>
-                                <div style={{ color: '#64748b', fontSize: '12px', textTransform: 'uppercase', fontWeight: '600', letterSpacing: '0.5px' }}>Overall</div>
+                                <div style={{ fontSize: '28px', fontWeight: '700', color: '#e2e8f0', marginBottom: '8px' }}>{safeNumber(mvpTotalValue, 2)}</div>
+                                <div style={{ color: '#64748b', fontSize: '12px', textTransform: 'uppercase', fontWeight: '600', letterSpacing: '0.5px' }}>MVP Total</div>
                               </div>
                             </>
                             ) : (
@@ -502,7 +506,7 @@ const UserAwardsStandings = () => {
                                 <div style={{ color: '#64748b', fontSize: '12px', textTransform: 'uppercase', fontWeight: '600', letterSpacing: '0.5px' }}>Sets Played</div>
                               </div>
                               <div style={{ background: 'rgba(59, 130, 246, 0.1)', border: '1px solid #3b82f6', borderRadius: '8px', padding: '20px', textAlign: 'center' }}>
-                                <div style={{ fontSize: '28px', fontWeight: '700', color: '#e2e8f0', marginBottom: '8px' }}>{safeNumber(mvpData.mvp_score ?? mvpData.overall_score, 2)}</div>
+                                <div style={{ fontSize: '28px', fontWeight: '700', color: '#e2e8f0', marginBottom: '8px' }}>{safeNumber(mvpTotalValue, 2)}</div>
                                 <div style={{ color: '#64748b', fontSize: '12px', textTransform: 'uppercase', fontWeight: '600', letterSpacing: '0.5px' }}>MVP Total</div>
                               </div>
                               <div style={{ background: 'rgba(59, 130, 246, 0.1)', border: '1px solid #3b82f6', borderRadius: '8px', padding: '20px', textAlign: 'center' }}>
@@ -559,7 +563,7 @@ const UserAwardsStandings = () => {
                                   <th style={{ textAlign: 'center', padding: '15px', color: '#e2e8f0', fontWeight: '600' }}>APG</th>
                                   <th style={{ textAlign: 'center', padding: '15px', color: '#e2e8f0', fontWeight: '600' }}>SPG</th>
                                   <th style={{ textAlign: 'center', padding: '15px', color: '#e2e8f0', fontWeight: '600' }}>BPG</th>
-                                  <th style={{ textAlign: 'center', padding: '15px', background: 'rgba(59, 130, 246, 0.1)', color: '#e2e8f0', fontWeight: '600' }}>OVERALL</th>
+                                  <th style={{ textAlign: 'center', padding: '15px', background: 'rgba(59, 130, 246, 0.1)', color: '#e2e8f0', fontWeight: '600' }}>MVP Total</th>
                                 </tr>
                               </thead>
                               <tbody>
@@ -585,7 +589,7 @@ const UserAwardsStandings = () => {
                                     <td style={{ textAlign: 'center', padding: '15px', color: '#94a3b8' }}>{safeNumber(player.spg)}</td>
                                     <td style={{ textAlign: 'center', padding: '15px', color: '#94a3b8' }}>{safeNumber(player.bpg)}</td>
                                     <td style={{ textAlign: 'center', fontWeight: '700', fontSize: '16px', color: '#3b82f6', background: 'rgba(59, 130, 246, 0.1)', padding: '15px' }}>
-                                      {safeNumber(player.mvp_score, 1)}
+                                      {safeNumber(player.mvp_total ?? player.mvp_score, 1)}
                                     </td>
                                   </tr>
                                 ))}

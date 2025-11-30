@@ -2,41 +2,40 @@ const express = require("express");
 const router = express.Router();
 const db = require("../config/database");
 
-// Helper function to calculate basketball MVP score
-// Formula: MVP Score = (PPG + RPG + APG + SPG + BPG) - TOV
-function calculateBasketballMVPScore(stats, gamesPlayed) {
-  const ppg = stats.total_points / gamesPlayed;
-  const apg = stats.total_assists / gamesPlayed;
-  const rpg = stats.total_rebounds / gamesPlayed;
-  const spg = stats.total_steals / gamesPlayed;
-  const bpg = stats.total_blocks / gamesPlayed;
-  const tpg = stats.total_turnovers / gamesPlayed;
-  
-  // MVP Score = PPG + RPG + APG + SPG + BPG - TOV
-  return ppg + rpg + apg + spg + bpg - tpg;
+function normalizeStatValue(value) {
+  const num = Number(value);
+  return Number.isFinite(num) ? num : 0;
 }
 
-// Helper function to calculate volleyball MVP score
-// Formula: MVP = (Kills + Blocks + Aces + Digs + Assists + Receptions) - (All Errors)
+// Helper function to calculate basketball MVP total
+// MVP Totals = (Total Points + Total Rebounds + Total Assists + Total Steals + Total Blocks) - (Total Turnovers)
+function calculateBasketballMVPScore(stats) {
+  const points = normalizeStatValue(stats.total_points);
+  const assists = normalizeStatValue(stats.total_assists);
+  const rebounds = normalizeStatValue(stats.total_rebounds);
+  const steals = normalizeStatValue(stats.total_steals);
+  const blocks = normalizeStatValue(stats.total_blocks);
+  const turnovers = normalizeStatValue(stats.total_turnovers);
+
+  return (points + rebounds + assists + steals + blocks) - turnovers;
+}
+
+// Helper function to calculate volleyball MVP total
+// MVP Totals = (Total Ace + Total Kills + Total Assist + Total Blocks + Total Digs + Total Receives) 
+//              – (Total Attack Errors + Total Service Errors + Total Receive Errors)
 function calculateVolleyballMVPScore(stats) {
-  const K = stats.total_kills || 0;          
-  const B = stats.total_blocks || 0;         
-  const A = stats.total_aces || 0;           
-  const VA = stats.total_assists || 0;       
-  const D = stats.total_digs || 0;
-  const R = stats.total_receptions || 0;
-  
-  const AE = stats.total_attack_errors || 0; 
-  const SE = stats.total_serve_errors || 0;  
-  const RE = stats.total_reception_errors || 0;
-  const AER = stats.total_assist_errors || 0;
-  const BE = stats.total_blocking_errors || 0;
-  const BHE = stats.total_ball_handling_errors || 0;
-  
-  // MVP Score = (K + B + A + D + VA + R) - (SE + AE + RE + AER + BE + BHE)
-  const mvpScore = (K + B + A + D + VA + R) - (SE + AE + RE + AER + BE + BHE);
-  
-  return mvpScore;
+  const A = normalizeStatValue(stats.total_aces);
+  const K = normalizeStatValue(stats.total_kills);
+  const VA = normalizeStatValue(stats.total_assists);
+  const B = normalizeStatValue(stats.total_blocks);
+  const D = normalizeStatValue(stats.total_digs);
+  const R = normalizeStatValue(stats.total_receptions);
+
+  const AE = normalizeStatValue(stats.total_attack_errors);
+  const SE = normalizeStatValue(stats.total_serve_errors);
+  const RE = normalizeStatValue(stats.total_reception_errors);
+
+  return (A + K + VA + B + D + R) - (AE + SE + RE);
 }
 
 // GET tournament champion and winner team
@@ -242,13 +241,18 @@ router.get("/brackets/:bracketId/mvp-awards", async (req, res) => {
     let playerStatsResponse = allPlayerStats;
     
     if (sportType === 'basketball') {
-      // Basketball: Calculate MVP score using (PPG + RPG + APG + SPG + BPG) - TOV
-      const playersWithScores = allPlayerStats.map(player => ({
-        ...player,
-        mvp_score: calculateBasketballMVPScore(player, player.games_played)
-      }));
+      // Basketball: Calculate MVP totals using summed stats
+      const playersWithScores = allPlayerStats.map(player => {
+        const totalScore = calculateBasketballMVPScore(player);
+        const roundedScore = Number(totalScore.toFixed(1));
+        return {
+          ...player,
+          mvp_score: roundedScore,
+          mvp_total: roundedScore
+        };
+      });
       
-      // Sort by MVP score descending
+      // Sort by MVP total descending
       playersWithScores.sort((a, b) => b.mvp_score - a.mvp_score);
       
       // MVP is the top player
@@ -282,7 +286,8 @@ router.get("/brackets/:bracketId/mvp-awards", async (req, res) => {
         const asses = perSet(player.total_assist_errors || 0); // Assist Error Per Set
         const bes = perSet(player.total_blocking_errors || 0); // Blocking Error Per Set
 
-        const mvpScore = (sas + kps + aps + bps + dps + rps) - (aes + ses + res + bhs + asses + bes);
+        const totalMVPScore = calculateVolleyballMVPScore(player);
+        const roundedMVPScore = Number(totalMVPScore.toFixed(1));
 
         return {
           ...player,
@@ -299,7 +304,8 @@ router.get("/brackets/:bracketId/mvp-awards", async (req, res) => {
           bhs,
           asses,
           bes,
-          mvp_score: Number(mvpScore.toFixed(3))
+          mvp_score: roundedMVPScore,
+          mvp_total: roundedMVPScore
         };
       });
 

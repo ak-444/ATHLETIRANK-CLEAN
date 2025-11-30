@@ -1,7 +1,17 @@
 import "../../style/Admin_Dashboard.css";
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { FaTrophy, FaCalendarAlt, FaChartBar, FaBasketballBall, FaVolleyballBall, FaArrowRight, FaClock, FaFire } from "react-icons/fa";
+import {
+  FaBasketballBall,
+  FaVolleyballBall,
+  FaArrowRight,
+  FaClock,
+  FaFire,
+  FaCalendarAlt,
+  FaTrophy,
+  FaChartBar
+} from "react-icons/fa";
+import "../../style/Admin_Dashboard.css";
 
 const StaffDashboard = ({ sidebarOpen }) => {
   const navigate = useNavigate();
@@ -72,45 +82,41 @@ const StaffDashboard = ({ sidebarOpen }) => {
 
   // Calculate statistics
   const ongoingEvents = events.filter(e => e.status === "ongoing").length;
-  const upcomingMatchesCount = upcomingMatches.length;
-  const completedMatches = recentMatches.length;
-  const activeBrackets = brackets.filter(b => {
+  const completedEvents = events.filter(e => e.status === "completed").length;
+  const activeBracketsCount = brackets.filter(b => {
     const event = events.find(e => e.id === b.event_id);
     return event?.status === "ongoing";
   }).length;
-
+  const upcomingMatchesCount = upcomingMatches.length;
+  const completedMatches = recentMatches.length;
   const statsCards = [
     {
       title: "Active Events",
       value: ongoingEvents,
       subtitle: `${events.length} total events`,
       icon: <FaCalendarAlt />,
-      color: "var(--primary-color)",
-      link: "/StaffDashboard/events"
+      color: "var(--primary-color)"
     },
     {
       title: "Upcoming Matches",
       value: upcomingMatchesCount,
       subtitle: `Pending matches to score`,
       icon: <FaClock />,
-      color: "#34a853",
-      link: "/StaffDashboard/events"
+      color: "#34a853"
     },
     {
       title: "Active Brackets",
-      value: activeBrackets,
+      value: activeBracketsCount,
       subtitle: `${brackets.length} total brackets`,
       icon: <FaTrophy />,
-      color: "#fbbc04",
-      link: "/StaffDashboard/events"
+      color: "#fbbc04"
     },
     {
-      title: "Completed Matches",
+      title: "Recent Matches",
       value: completedMatches,
-      subtitle: `Recent statistics recorded`,
+      subtitle: `Completed recently`,
       icon: <FaChartBar />,
-      color: "#ea4335",
-      link: "/StaffDashboard/events"
+      color: "#ea4335"
     }
   ];
 
@@ -164,13 +170,11 @@ const StaffDashboard = ({ sidebarOpen }) => {
             </div>
           ) : (
             <>
-              {/* Stats Cards */}
               <div className="stats-grid">
                 {statsCards.map((card, index) => (
                   <div
                     key={index}
-                    className="stat-card"
-                    onClick={() => navigate(card.link)}
+                    className="stat-card stat-card-no-hover"
                     style={{ borderTop: `3px solid ${card.color}` }}
                   >
                     <div className="stat-icon" style={{ color: card.color }}>
@@ -185,58 +189,25 @@ const StaffDashboard = ({ sidebarOpen }) => {
                 ))}
               </div>
 
-              {/* Recent Activity & Quick Actions */}
-              <div className="dashboard-grid">
-                {/* Active Events */}
-                <div className="dashboard-section">
-                  <div className="section-header">
-                    <h2>Active Events</h2>
-                    <button
-                      className="view-all-btn"
-                      onClick={() => navigate("/StaffDashboard/events")}
-                    >
-                      View All <FaArrowRight />
-                    </button>
-                  </div>
-                  <div className="section-content">
-                    {events.filter(e => e.status === "ongoing").length === 0 ? (
-                      <div className="empty-state">
-                        <p>No active events at the moment</p>
-                        <button
-                          className="create-btn"
-                          onClick={() => navigate("/StaffDashboard/events")}
-                        >
-                          View All Events
-                        </button>
-                      </div>
-                    ) : (
-                      <div className="events-list">
-                        {events.filter(e => e.status === "ongoing").slice(0, 3).map(event => (
-                          <div
-                            key={event.id}
-                            className="event-item no-hover"
-                          >
-                            <div className="event-info">
-                              <div className="event-name">{event.name}</div>
-                              <div className="event-dates">
-                                <FaClock /> {new Date(event.start_date).toLocaleDateString()} - {new Date(event.end_date).toLocaleDateString()}
-                              </div>
-                            </div>
-                            <div className={`event-status status-${event.status}`}>
-                              <FaFire />
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                </div>
-
-                {/* Recent Matches */}
+              <div className="dashboard-grid dashboard-grid-three">
                 <div className="dashboard-section">
                   <div className="section-header">
                     <h2>Recent Match Results</h2>
-                    
+                    <button
+                      className="view-all-btn"
+                      onClick={() => {
+                        sessionStorage.setItem(
+                          'staffEventsContext',
+                          JSON.stringify({
+                            contentTab: 'matches',
+                            bracketViewType: 'list'
+                          })
+                        );
+                        navigate("/StaffDashboard/events");
+                      }}
+                    >
+                      View All <FaArrowRight />
+                    </button>
                   </div>
                   <div className="section-content">
                     {recentMatches.length === 0 ? (
@@ -255,7 +226,6 @@ const StaffDashboard = ({ sidebarOpen }) => {
                               className="match-item"
                               onClick={() => {
                                 if (matchEvent && matchBracket) {
-                                  // Navigate to the specific match in list view
                                   sessionStorage.setItem('staffEventsContext', JSON.stringify({
                                     selectedEvent: matchEvent,
                                     selectedBracket: matchBracket,
@@ -292,15 +262,25 @@ const StaffDashboard = ({ sidebarOpen }) => {
                     )}
                   </div>
                 </div>
-              </div>
 
-              {/* Schedules & Brackets Overview */}
-              <div className="dashboard-grid">
-                {/* Upcoming Matches */}
                 <div className="dashboard-section">
                   <div className="section-header">
                     <h2>Upcoming Matches</h2>
-                    
+                    <button
+                      className="view-all-btn"
+                      onClick={() => {
+                        sessionStorage.setItem(
+                          'staffEventsContext',
+                          JSON.stringify({
+                            contentTab: 'stats',
+                            bracketViewType: 'list'
+                          })
+                        );
+                        navigate("/StaffDashboard/events");
+                      }}
+                    >
+                      View All <FaArrowRight />
+                    </button>
                   </div>
                   <div className="section-content">
                     {upcomingMatches.length === 0 ? (
@@ -325,7 +305,6 @@ const StaffDashboard = ({ sidebarOpen }) => {
                               className="bracket-item hover-enabled"
                               onClick={() => {
                                 if (matchEvent && matchBracket) {
-                                  // Navigate to stats page to record statistics
                                   sessionStorage.setItem('selectedMatchData', JSON.stringify({
                                     matchId: match.id,
                                     eventId: matchEvent.id,
@@ -344,7 +323,7 @@ const StaffDashboard = ({ sidebarOpen }) => {
                                     : match.bracket_name || "Match"}
                                 </div>
                                 <div className="bracket-meta">
-                                  {match.bracket_name} • {formatRoundDisplay(match)}
+                                  {match.bracket_name} - {formatRoundDisplay(match)}
                                 </div>
                               </div>
                               
@@ -356,11 +335,15 @@ const StaffDashboard = ({ sidebarOpen }) => {
                   </div>
                 </div>
 
-                {/* Active Brackets */}
                 <div className="dashboard-section">
                   <div className="section-header">
                     <h2>Active Brackets</h2>
-                    
+                    <button
+                      className="view-all-btn"
+                      onClick={() => navigate("/StaffDashboard/events")}
+                    >
+                      View All <FaArrowRight />
+                    </button>
                   </div>
                   <div className="section-content">
                     {brackets.filter(b => {
@@ -391,7 +374,6 @@ const StaffDashboard = ({ sidebarOpen }) => {
                                 key={bracket.id} 
                                 className="bracket-item hover-enabled"
                                 onClick={() => {
-                                  // Navigate to events page and show this bracket
                                   sessionStorage.setItem('staffEventsContext', JSON.stringify({
                                     selectedEvent: event,
                                     selectedBracket: bracket,
@@ -404,7 +386,7 @@ const StaffDashboard = ({ sidebarOpen }) => {
                                 <div className="bracket-info">
                                   <div className="bracket-name">{bracket.name}</div>
                                   <div className="bracket-meta">
-                                    {capitalize(bracket.sport_type)} • {bracket.elimination_type === "single" ? "Single" : bracket.elimination_type === "double" ? "Double" : "Round Robin"} Elimination
+                                    {capitalize(bracket.sport_type)} - {bracket.elimination_type === "single" ? "Single" : bracket.elimination_type === "double" ? "Double" : "Round Robin"} Elimination
                                   </div>
                                 </div>
                                
@@ -417,21 +399,6 @@ const StaffDashboard = ({ sidebarOpen }) => {
                 </div>
               </div>
 
-              {/* Quick Actions */}
-              <div className="quick-actions">
-                <h2>Quick Actions</h2>
-                <div className="actions-grid">
-                  <button
-                    className="action-btn"
-                    onClick={() => navigate("/StaffDashboard/events")}
-                  >
-                    <FaCalendarAlt />
-                    <span>View Events & Brackets</span>
-                  </button>
-                  
-                  
-                </div>
-              </div>
             </>
           )}
         </div>
