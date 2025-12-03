@@ -207,6 +207,8 @@ router.get("/matches/:matchId/stats", async (req, res) => {
       SELECT 
         ps.*,
         p.name as player_name,
+        p.jersey_number as jersey_number,
+        p.jersey_number as jerseyNumber,
         p.position as player_position,
         t.name as team_name,
         COALESCE(ps.overtime_periods, 0) as overtime_periods,
