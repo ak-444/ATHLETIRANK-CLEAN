@@ -1030,216 +1030,30 @@
 /* Player Statistics */
 .stats-player-header {
   margin-bottom: 32px;
-  text-align: left;
+  text-align: center;
 }
 
-.stats-match-card {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 24px;
-  width: 100%;
-  padding: 24px 32px;
-  border-radius: var(--stats-radius-lg);
-  border: 1px solid var(--stats-border-color);
-  background: var(--stats-background-secondary);
-  box-shadow: var(--stats-shadow-medium);
-  flex-wrap: wrap;
-}
-
-.stats-match-card-info {
-  flex: 1;
-  min-width: 0;
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-  min-height: 110px;
-  align-items: flex-end;
-  text-align: right;
-}
-
-/* Keep the match title flush-left inside the detailed stats header */
-.stats-player-header .stats-section-title {
-  text-align: left;
+.stats-match-info h2 {
   margin-bottom: 8px;
 }
 
-.stats-match-card-info .stats-section-title {
-  margin-bottom: 8px;
-  font-size: 2rem;
-  line-height: 1.1;
-  width: 100%;
-}
-
-.stats-match-card-meta {
-  margin-top: auto;
-  width: 100%;
-  text-align: right;
-}
-
-.stats-match-card .stats-match-details {
+.stats-match-details {
   color: var(--stats-text-primary);
-  font-size: 1.05rem;
+  font-size: 1.1rem;
   font-weight: 600;
   margin: 8px 0;
-  text-align: left;
+  text-align: center;
 }
 
-.stats-match-card .stats-bracket-details {
+.stats-bracket-details {
   color: var(--stats-text-secondary);
-  font-size: 0.95rem;
+  font-size: 0.9rem;
   margin: 0;
-  text-align: left;
-}
-
-.stats-match-card .stats-export-btn {
-  flex-shrink: 0;
-  min-width: 150px;
-  margin-left: auto;
-  margin-right: 16px;
-  margin-top: 12px;
-  align-self: flex-end;
-}
-
-@media (max-width: 720px) {
-  .stats-match-card {
-    flex-direction: column;
-    align-items: flex-start;
-  }
-
-  .stats-match-card .stats-export-btn {
-    width: 100%;
-  }
-}
-
-.stats-modal-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.85);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 9999;
-  padding: 20px;
-}
-
-.stats-modal-content {
-  background: #0f172a;
-  border: 1px solid var(--stats-border-color);
-  border-radius: 12px;
-  width: 100%;
-  max-width: 1400px;
-  max-height: 90vh;
-  overflow: hidden;
-  display: flex;
-  flex-direction: column;
-}
-
-.stats-modal-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  gap: 24px;
-  padding: 24px 32px;
-  border-bottom: 1px solid var(--stats-border-color);
-  background: #1a2332;
-}
-
-.stats-modal-header > div:first-child {
-  flex: 1;
-  min-width: 0;
-}
-
-.stats-modal-title {
-  font-size: 1.75rem;
-  font-weight: 700;
-  color: var(--stats-text-primary);
-  margin: 0 0 12px 0;
-  line-height: 1.2;
-  text-align: left;
-}
-
-.stats-modal-meta {
-  display: flex;
-  gap: 16px;
-  align-items: center;
-  flex-wrap: wrap;
-}
-
-.stats-modal-round,
-.stats-modal-bracket,
-.stats-modal-type {
-  padding: 6px 12px;
-  border-radius: 6px;
-  font-size: 0.875rem;
-  font-weight: 500;
-}
-
-.stats-modal-round {
-  background: rgba(59, 130, 246, 0.2);
-  border: 1px solid rgba(59, 130, 246, 0.3);
-  color: #93c5fd;
-}
-
-.stats-modal-bracket {
-  background: rgba(139, 92, 246, 0.2);
-  border: 1px solid rgba(139, 92, 246, 0.3);
-  color: #d8b4fe;
-}
-
-.stats-modal-type {
-  background: rgba(16, 185, 129, 0.2);
-  border: 1px solid rgba(16, 185, 129, 0.3);
-  color: #86efac;
-}
-
-.stats-modal-close {
-  background: rgba(59, 130, 246, 0.2);
-  color: #93c5fd;
-  border: 1px solid rgba(59, 130, 246, 0.3);
-  border-radius: 8px;
-  width: 36px;
-  height: 36px;
-  font-size: 24px;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  flex-shrink: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.stats-modal-close:hover {
-  background: rgba(59, 130, 246, 0.3);
-}
-
-.stats-modal-body {
-  padding: 32px;
-  overflow-y: auto;
-  flex: 1;
-}
-
-.stats-modal-controls {
-  display: flex;
-  justify-content: flex-end;
-  margin-bottom: 24px;
-  padding-right: 16px;
-}
-
-.stats-modal-controls .stats-export-btn {
-  margin-right: 16px;
-}
-
-.stats-modal-body .stats-export-btn {
-  margin: 0;
-  margin-right: 0;
+  text-align: center;
 }
 
 .stats-modal-body .stats-table-wrapper {
-  border-radius: 8px;
+  border-radius: 0;
 }
 
 .stats-modal-body .stats-table th:first-child {

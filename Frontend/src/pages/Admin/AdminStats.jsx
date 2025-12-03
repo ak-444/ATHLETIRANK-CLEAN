@@ -1802,6 +1802,12 @@ const AdminStats = ({ sidebarOpen, preselectedEvent, preselectedBracket, embedde
     
     return (
       <div className="stats-table-container">
+        <div className="stats-table-controls" style={{ justifyContent: 'flex-end' }}>
+          <button className="stats-export-btn" onClick={exportToCSV}>
+            <FaDownload /> Export CSV
+          </button>
+        </div>
+        
         <div className="stats-table-wrapper">
           <table className="stats-table">
             <thead>
@@ -2378,50 +2384,29 @@ const AdminStats = ({ sidebarOpen, preselectedEvent, preselectedBracket, embedde
 
               {/* Match Statistics View */}
               {statsViewMode === "matches" && activeTab === "statistics" && (
-              <div className="stats-player-section">
-                <div className="stats-player-header">
-                  {selectedMatch && (
-                    <div className="stats-match-card">
-                      <div
-                        className="stats-match-card-info"
-                        style={{ alignItems: "flex-end", textAlign: "right" }}
-                      >
-                        <h2
-                          className="stats-section-title"
-                          style={{ width: "100%", textAlign: "right" }}
-                        >
-                          {selectedMatch.team1_name} vs {selectedMatch.team2_name}
-                        </h2>
-                        <div className="stats-match-card-meta">
-                          <p className="stats-match-details">
-                            {selectedEvent?.name} - {formatRoundDisplay(selectedMatch)}
-                          </p>
-                          <p className="stats-bracket-details">
-                            <strong>Bracket:</strong> {selectedBracket?.name || selectedMatch.bracket_name} | 
-                            <strong> Type:</strong> {selectedBracket?.elimination_type === 'double' ? 'Double Elimination' : 'Single Elimination'} |
-                            <strong> Sport:</strong> {getCurrentSportType()}
-                          </p>
-                        </div>
+                <div className="stats-player-section">
+                  <div className="stats-player-header">
+                    {selectedMatch && (
+                      <div className="stats-match-info">
+                        <h2 className="stats-section-title">{selectedMatch.team1_name} vs {selectedMatch.team2_name}</h2>
+                        <p className="stats-match-details">
+                          {selectedEvent?.name} - {formatRoundDisplay(selectedMatch)}
+                        </p>
+                        <p className="stats-bracket-details">
+                          <strong>Bracket:</strong> {selectedBracket?.name || selectedMatch.bracket_name} | 
+                          <strong> Type:</strong> {selectedBracket?.elimination_type === 'double' ? 'Double Elimination' : 'Single Elimination'} |
+                          <strong> Sport:</strong> {getCurrentSportType()}
+                        </p>
                       </div>
-                      <button
-                        className="stats-export-btn"
-                        style={{ marginTop: "12px" }}
-                        onClick={exportToCSV}
-                        disabled={!playerStats.length}
-                        title="Export match statistics"
-                      >
-                        <FaDownload /> Export CSV
-                      </button>
-                    </div>
+                    )}
+                  </div>
+
+                  {loading ? (
+                    <p className="stats-loading-text">Loading statistics...</p>
+                  ) : (
+                    renderMatchStatsTable()
                   )}
                 </div>
-
-                {loading ? (
-                  <p className="stats-loading-text">Loading statistics...</p>
-                ) : (
-                  renderMatchStatsTable()
-                )}
-              </div>
               )}
             </div>
           </div>
@@ -2433,29 +2418,25 @@ const AdminStats = ({ sidebarOpen, preselectedEvent, preselectedBracket, embedde
         <div className="stats-modal-overlay" onClick={handleCloseModal}>
           <div className="stats-modal-content" onClick={(e) => e.stopPropagation()}>
             <div className="stats-modal-header">
-              <div>
-                <h2 className="stats-modal-title">
-                  {selectedMatchForModal.team1_name} VS {selectedMatchForModal.team2_name}
-                </h2>
-                <div className="stats-modal-meta">
-                  <span className="stats-modal-round">{formatRoundDisplay(selectedMatchForModal)}</span>
-                  <span className="stats-modal-bracket">
-                    {selectedBracket?.name || selectedMatchForModal.bracket_name}
-                  </span>
-                  <span className="stats-modal-type">
-                    {selectedBracket?.elimination_type === 'double' ? 'Double Elimination' : 'Single Elimination'}
-                  </span>
-                </div>
-              </div>
-              <button className="stats-modal-close" onClick={handleCloseModal}>×</button>
+              <h2 className="stats-modal-title">
+                {selectedMatchForModal.team1_name} vs {selectedMatchForModal.team2_name}
+              </h2>
+              <button className="stats-modal-close" onClick={handleCloseModal}>
+                &times;
+              </button>
             </div>
             <div className="stats-modal-body">
-              <div className="stats-modal-controls">
-                <button className="stats-export-btn" onClick={exportToCSV} disabled={!playerStats.length}>
-                  <FaDownload /> Export CSV
-                </button>
+              <div className="stats-match-details" style={{ marginBottom: '20px', padding: '0 20px' }}>
+                <p style={{ color: '#94a3b8', marginBottom: '8px' }}>
+                  {selectedEvent?.name} - {formatRoundDisplay(selectedMatchForModal)}
+                </p>
+                <p style={{ color: '#64748b', fontSize: '0.875rem' }}>
+                  <strong>Bracket:</strong> {selectedBracket?.name || selectedMatchForModal.bracket_name} | 
+                  <strong> Type:</strong> {selectedBracket?.elimination_type === 'double' ? 'Double Elimination' : 'Single Elimination'} |
+                  <strong> Sport:</strong> {getCurrentSportType()}
+                </p>
               </div>
-
+              
               {loading ? (
                 <p className="stats-loading-text">Loading statistics...</p>
               ) : (
