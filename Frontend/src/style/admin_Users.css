@@ -759,3 +759,156 @@
 .user-management-header {
   display: none;
 }
+
+
+/* Edit Input Styles */
+.edit-input {
+  width: 100%;
+  padding: 8px 12px;
+  border: 2px solid var(--border-color);
+  border-radius: var(--border-radius);
+  background: var(--background-secondary);
+  color: var(--text-primary);
+  font-size: 14px;
+  transition: var(--transition);
+  box-sizing: border-box;
+}
+
+.edit-input:focus {
+  outline: none;
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.edit-form-mobile {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.edit-form-mobile .edit-input {
+  width: 100%;
+}
+
+/* Edit Action Buttons */
+.bracket-edit-btn {
+  padding: 8px 16px;
+  background: rgba(59, 130, 246, 0.1);
+  border: 1px solid rgba(59, 130, 246, 0.3);
+  border-radius: var(--border-radius);
+  color: var(--primary-color);
+  cursor: pointer;
+  transition: var(--transition);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.bracket-edit-btn:hover {
+  background: rgba(59, 130, 246, 0.2);
+  border-color: var(--primary-color);
+}
+
+.bracket-save-btn {
+  padding: 8px 16px;
+  background: rgba(34, 197, 94, 0.1);
+  border: 1px solid rgba(34, 197, 94, 0.3);
+  border-radius: var(--border-radius);
+  color: #22c55e;
+  cursor: pointer;
+  transition: var(--transition);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  font-weight: 600;
+  min-width: 60px;
+}
+
+.bracket-save-btn:hover:not(:disabled) {
+  background: rgba(34, 197, 94, 0.2);
+  border-color: #22c55e;
+}
+
+.bracket-save-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.bracket-cancel-btn {
+  padding: 8px 16px;
+  background: rgba(148, 163, 184, 0.1);
+  border: 1px solid rgba(148, 163, 184, 0.3);
+  border-radius: var(--border-radius);
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: var(--transition);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.bracket-cancel-btn:hover {
+  background: rgba(148, 163, 184, 0.2);
+  border-color: var(--text-secondary);
+}
+
+/* Small Spinner for Edit Button */
+.small-spinner {
+  width: 16px;
+  height: 16px;
+  border: 2px solid transparent;
+  border-top: 2px solid currentColor;
+  border-radius: 50%;
+  animation: bracket-spin 1s linear infinite;
+}
+
+/* Table specific styles for edit mode */
+.users-table td input.edit-input {
+  width: 100%;
+  padding: 8px 12px;
+  font-size: 14px;
+}
+
+/* Mobile card edit mode */
+.user-card.editing {
+  background: rgba(59, 130, 246, 0.05);
+  border-color: rgba(59, 130, 246, 0.3);
+}
+
+/* Action buttons container for inline editing */
+.bracket-card-actions {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+/* For mobile cards */
+.bracket-card .bracket-card-actions {
+  margin-top: 16px;
+}
+
+/* Table action buttons */
+.users-table .bracket-card-actions {
+  justify-content: center;
+}
+
+/* Responsive adjustments for edit inputs */
+@media (max-width: 768px) {
+  .edit-form-mobile {
+    margin-bottom: 16px;
+  }
+  
+  .bracket-card-actions {
+    flex-wrap: nowrap;
+  }
+  
+  .edit-input {
+    padding: 10px 14px;
+  }
+}

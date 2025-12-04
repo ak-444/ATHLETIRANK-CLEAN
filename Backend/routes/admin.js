@@ -463,6 +463,110 @@ router.delete('/users/:userId', verifyAdminToken, async (req, res) => {
     }
 });
 
+
+// Update user (admin only)
+router.put('/users/:userId', verifyAdminToken, async (req, res) => {
+    try {
+        const { userId } = req.params;
+        const { username, email } = req.body;
+
+        // Validation
+        if (!username || !username.trim()) {
+            return res.status(400).json({ 
+                success: false,
+                message: 'Username is required' 
+            });
+        }
+
+        if (!email || !email.trim()) {
+            return res.status(400).json({ 
+                success: false,
+                message: 'Email is required' 
+            });
+        }
+
+        // Email validation
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(email)) {
+            return res.status(400).json({ 
+                success: false,
+                message: 'Invalid email format' 
+            });
+        }
+
+        // Check if user exists
+        const [existingUsers] = await pool.execute(
+            'SELECT id, username, email FROM users WHERE id = ?',
+            [userId]
+        );
+
+        if (existingUsers.length === 0) {
+            return res.status(404).json({ 
+                success: false,
+                message: 'User not found' 
+            });
+        }
+
+        const user = existingUsers[0];
+
+        // Check if email is being changed to an existing email (excluding current user)
+        if (email !== user.email) {
+            const [emailExists] = await pool.execute(
+                'SELECT id FROM users WHERE email = ? AND id != ?',
+                [email, userId]
+            );
+
+            if (emailExists.length > 0) {
+                return res.status(400).json({ 
+                    success: false,
+                    message: 'Email already exists' 
+                });
+            }
+        }
+
+        // Check if username is being changed to an existing username (excluding current user)
+        if (username !== user.username) {
+            const [usernameExists] = await pool.execute(
+                'SELECT id FROM users WHERE username = ? AND id != ?',
+                [username, userId]
+            );
+
+            if (usernameExists.length > 0) {
+                return res.status(400).json({ 
+                    success: false,
+                    message: 'Username already exists' 
+                });
+            }
+        }
+
+        // Update user
+        await pool.execute(
+            'UPDATE users SET username = ?, email = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?',
+            [username.trim(), email.trim(), userId]
+        );
+
+        console.log(`User ${user.username} updated by admin ${req.user.username}. New name: ${username}, New email: ${email}`);
+
+        res.json({ 
+            success: true,
+            message: 'User updated successfully',
+            updatedUser: {
+                id: userId,
+                username: username.trim(),
+                email: email.trim()
+            }
+        });
+    } catch (error) {
+        console.error('Error updating user:', error);
+        res.status(500).json({ 
+            success: false,
+            message: 'Failed to update user',
+            error: error.message 
+        });
+    }
+});
+
+
 // Get user statistics (admin only) - Updated to remove approval stats
 router.get('/stats', verifyAdminToken, async (req, res) => {
     try {

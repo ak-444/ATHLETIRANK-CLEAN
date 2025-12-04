@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import API from '../../services/api';
 import '../../style/admin_Users.css';
-import { FaTrash, FaSearch, FaUserPlus } from 'react-icons/fa';
+import { FaTrash, FaSearch, FaUserPlus, FaEdit, FaSave, FaTimes } from 'react-icons/fa';
 
 const AdminUsers = ({ sidebarOpen }) => {
   const { user } = useAuth();
@@ -16,6 +16,14 @@ const AdminUsers = ({ sidebarOpen }) => {
   const [showSearch, setShowSearch] = useState(false);
   const [showCreateUser, setShowCreateUser] = useState(false);
   const [createUserLoading, setCreateUserLoading] = useState(false);
+  
+  // Editing state
+  const [editingUser, setEditingUser] = useState(null);
+  const [editFormData, setEditFormData] = useState({
+    username: '',
+    email: ''
+  });
+  const [editLoading, setEditLoading] = useState(false);
 
   // Create user form state
   const [createUserData, setCreateUserData] = useState({
@@ -63,6 +71,72 @@ const AdminUsers = ({ sidebarOpen }) => {
       setLoading(false);
       console.error('Error fetching users:', error);
     }
+  };
+
+  // Start editing a user
+  const handleEditClick = (user) => {
+    setEditingUser(user.id);
+    setEditFormData({
+      username: user.username,
+      email: user.email
+    });
+  };
+
+  // Handle edit form changes
+  const handleEditChange = (e) => {
+    const { name, value } = e.target;
+    setEditFormData({
+      ...editFormData,
+      [name]: value
+    });
+  };
+
+  // Cancel editing
+  const handleCancelEdit = () => {
+    setEditingUser(null);
+    setEditFormData({ username: '', email: '' });
+  };
+
+  // Save edited user
+  const handleSaveEdit = async (userId) => {
+    if (!editFormData.username.trim() || !editFormData.email.trim()) {
+      setError('Name and email are required');
+      return;
+    }
+
+    if (!validateEmail(editFormData.email)) {
+      setError('Please enter a valid email address');
+      return;
+    }
+
+    setEditLoading(true);
+    setError('');
+    setSuccess('');
+
+    try {
+      await API.put(`/admin/users/${userId}`, editFormData);
+      setSuccess('User updated successfully!');
+      
+      // Update local state
+      setUsers(users.map(user => 
+        user.id === userId 
+          ? { ...user, ...editFormData }
+          : user
+      ));
+      
+      setEditingUser(null);
+      setTimeout(() => setSuccess(''), 3000);
+    } catch (error) {
+      setError(error.response?.data?.message || 'Failed to update user');
+    } finally {
+      setEditLoading(false);
+    }
+  };
+
+  // Email validation
+  const validateEmail = (email) => {
+    const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return re.test(email);
   };
 
   // Validate password strength
@@ -301,22 +375,80 @@ const AdminUsers = ({ sidebarOpen }) => {
                         filteredUsers.map(user => (
                           <div key={user.id} className="bracket-card user-card">
                             <div className="bracket-card-header">
-                              <h3>{user.username}</h3>
-                              <span className={`bracket-sport-badge ${user.role}`}>
-                                {formatRole(user.role)}
-                              </span>
+                              {editingUser === user.id ? (
+                                <div className="edit-form-mobile">
+                                  <input
+                                    type="text"
+                                    name="username"
+                                    value={editFormData.username}
+                                    onChange={handleEditChange}
+                                    className="edit-input"
+                                    placeholder="Name"
+                                  />
+                                  <input
+                                    type="email"
+                                    name="email"
+                                    value={editFormData.email}
+                                    onChange={handleEditChange}
+                                    className="edit-input"
+                                    placeholder="Email"
+                                  />
+                                </div>
+                              ) : (
+                                <>
+                                  <h3>{user.username}</h3>
+                                  <span className={`bracket-sport-badge ${user.role}`}>
+                                    {formatRole(user.role)}
+                                  </span>
+                                </>
+                              )}
                             </div>
                             <div className="bracket-card-info">
-                              <div className="user-email">{user.email}</div>
+                              {editingUser === user.id ? null : (
+                                <div className="user-email">{user.email}</div>
+                              )}
                             </div>
                             <div className="bracket-card-actions">
-                              <button 
-                                onClick={() => deleteUser(user.id)}
-                                className="bracket-delete-btn"
-                                title="Delete"
-                              >
-                                <FaTrash />
-                              </button>
+                              {editingUser === user.id ? (
+                                <>
+                                  <button 
+                                    onClick={() => handleSaveEdit(user.id)}
+                                    className="bracket-save-btn"
+                                    disabled={editLoading}
+                                    title="Save"
+                                  >
+                                    {editLoading ? (
+                                      <div className="small-spinner"></div>
+                                    ) : (
+                                      <FaSave />
+                                    )}
+                                  </button>
+                                  <button 
+                                    onClick={handleCancelEdit}
+                                    className="bracket-cancel-btn"
+                                    title="Cancel"
+                                  >
+                                    <FaTimes />
+                                  </button>
+                                </>
+                              ) : (
+                                <>
+                                  <button 
+                                    onClick={() => handleEditClick(user)}
+                                    className="bracket-edit-btn"
+                                    title="Edit"
+                                  >
+                                    <FaEdit />
+                                  </button>
+                                  <button 
+                                    onClick={() => deleteUser(user.id)}
+                                    className="bracket-delete-btn"
+                                    title="Delete"
+                                  >
+                                    <FaTrash />
+                                  </button>
+                                </>
+                              )}
                             </div>
                           </div>
                         ))
@@ -340,8 +472,34 @@ const AdminUsers = ({ sidebarOpen }) => {
                         {filteredUsers.length > 0 ? (
                           filteredUsers.map(user => (
                             <tr key={user.id}>
-                              <td>{user.username}</td>
-                              <td>{user.email}</td>
+                              <td>
+                                {editingUser === user.id ? (
+                                  <input
+                                    type="text"
+                                    name="username"
+                                    value={editFormData.username}
+                                    onChange={handleEditChange}
+                                    className="edit-input"
+                                    placeholder="Name"
+                                  />
+                                ) : (
+                                  user.username
+                                )}
+                              </td>
+                              <td>
+                                {editingUser === user.id ? (
+                                  <input
+                                    type="email"
+                                    name="email"
+                                    value={editFormData.email}
+                                    onChange={handleEditChange}
+                                    className="edit-input"
+                                    placeholder="Email"
+                                  />
+                                ) : (
+                                  user.email
+                                )}
+                              </td>
                               <td>
                                 <span className={`bracket-sport-badge ${user.role}`}>
                                   {formatRole(user.role)}
@@ -349,13 +507,46 @@ const AdminUsers = ({ sidebarOpen }) => {
                               </td>
                               <td>
                                 <div className="bracket-card-actions">
-                                  <button 
-                                    onClick={() => deleteUser(user.id)}
-                                    className="bracket-delete-btn"
-                                    title="Delete"
-                                  >
-                                    <FaTrash />
-                                  </button>
+                                  {editingUser === user.id ? (
+                                    <>
+                                      <button 
+                                        onClick={() => handleSaveEdit(user.id)}
+                                        className="bracket-save-btn"
+                                        disabled={editLoading}
+                                        title="Save"
+                                      >
+                                        {editLoading ? (
+                                          <div className="small-spinner"></div>
+                                        ) : (
+                                          <FaSave />
+                                        )}
+                                      </button>
+                                      <button 
+                                        onClick={handleCancelEdit}
+                                        className="bracket-cancel-btn"
+                                        title="Cancel"
+                                      >
+                                        <FaTimes />
+                                      </button>
+                                    </>
+                                  ) : (
+                                    <>
+                                      <button 
+                                        onClick={() => handleEditClick(user)}
+                                        className="bracket-edit-btn"
+                                        title="Edit"
+                                      >
+                                        <FaEdit />
+                                      </button>
+                                      <button 
+                                        onClick={() => deleteUser(user.id)}
+                                        className="bracket-delete-btn"
+                                        title="Delete"
+                                      >
+                                        <FaTrash />
+                                      </button>
+                                    </>
+                                  )}
                                 </div>
                               </td>
                             </tr>

@@ -476,3 +476,333 @@
     align-items: flex-start;
   }
 }
+
+/* ===== MOBILE RESPONSIVE MEDIA QUERIES ===== */
+
+/* Tablet and below (768px) */
+@media (max-width: 768px) {
+  /* Sidebar adjustment */
+  .dashboard-content.sidebar-open {
+    margin-left: 0;
+  }
+
+  /* Dashboard Header */
+  .dashboard-header {
+    padding: 20px 16px;
+  }
+
+  .dashboard-header h1 {
+    font-size: 24px;
+  }
+
+  .dashboard-header p {
+    font-size: 14px;
+  }
+
+  /* Main Content */
+  .dashboard-main {
+    padding: 16px;
+  }
+
+  /* Breadcrumb */
+  .bracket-breadcrumb {
+    padding: 14px 16px;
+    gap: 10px;
+  }
+
+  .breadcrumb-item {
+    font-size: 15px;
+  }
+
+  /* Bracket View Section */
+  .bracket-view-section {
+    padding: 24px 16px;
+  }
+
+  .bracket-view-section h2 {
+    font-size: 22px;
+  }
+
+  /* Search and Filter Container */
+  .bracket-view-section > div[style*="display: flex"][style*="justify-content: space-between"]:first-of-type {
+    flex-direction: column !important;
+    align-items: stretch !important;
+  }
+
+  .bracket-view-section > div[style*="display: flex"][style*="justify-content: space-between"]:first-of-type > div {
+    width: 100% !important;
+    min-width: 100% !important;
+  }
+
+  .bracket-view-section input[type="text"] {
+    width: 100% !important;
+    min-width: 100% !important;
+  }
+
+  .bracket-view-section select {
+    width: 100% !important;
+    min-width: 150px !important;
+  }
+
+  /* Results Info & Items Per Page Row */
+  .bracket-view-section > div[style*="display: flex"][style*="justify-content: space-between"]:nth-of-type(2) {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: 12px !important;
+  }
+
+  .bracket-view-section > div[style*="display: flex"][style*="justify-content: space-between"]:nth-of-type(2) > div:last-child {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  /* Event Group Container */
+  .event-group-container {
+    margin-bottom: 16px;
+  }
+
+  /* Event Group Header */
+  .event-group-header {
+    padding: 16px;
+    flex-wrap: wrap;
+  }
+
+  .event-header-left {
+    flex: 1;
+    min-width: 100%;
+  }
+
+  .event-header-info h3 {
+    font-size: 17px !important;
+  }
+
+  .event-header-actions {
+    min-width: 100%;
+    margin-top: 8px;
+    justify-content: flex-start;
+  }
+
+  /* Brackets Table Container */
+  .event-brackets-table-container {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    margin: 0 -16px;
+    padding: 0 16px;
+  }
+
+  .awards_standings_table {
+    width: 100%;
+    min-width: 700px;
+  }
+
+  .awards_standings_table th,
+  .awards_standings_table td {
+    white-space: nowrap;
+  }
+
+  /* Pagination Controls */
+  .bracket-view-section > div[style*="display: flex"][style*="justify-content: space-between"]:last-of-type {
+    flex-direction: column !important;
+    align-items: center !important;
+    gap: 16px !important;
+  }
+
+  .bracket-view-section > div[style*="display: flex"][style*="justify-content: space-between"]:last-of-type > div:first-child {
+    width: 100%;
+    text-align: center;
+  }
+
+  .bracket-view-section > div[style*="display: flex"][style*="justify-content: space-between"]:last-of-type > div:last-child {
+    width: 100%;
+    flex-wrap: wrap;
+    justify-content: center !important;
+  }
+
+  /* Event Details Section */
+  .event-details-header h2 {
+    font-size: 22px;
+  }
+
+  .event-details-info {
+    display: grid !important;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+  }
+
+  .event-details-info span {
+    font-size: 14px;
+  }
+
+  /* Tabs */
+  .awards_standings_tabs {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .awards_standings_tab_button {
+    white-space: nowrap;
+  }
+
+  /* View Type Selector */
+  .awards_standings_tab_content > div[style*="display: flex"]:first-child {
+    flex-direction: column !important;
+    align-items: stretch !important;
+  }
+
+  .awards_standings_tab_content > div[style*="display: flex"]:first-child > div {
+    width: 100% !important;
+  }
+
+  .awards_standings_tab_content > div[style*="display: flex"]:first-child button {
+    flex: 1;
+  }
+
+  /* Quick Selectors */
+  .quick-selectors {
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .selector-group {
+    min-width: 100%;
+  }
+
+  /* Selected Context */
+  .selected-context {
+    flex-direction: column;
+    min-width: 100%;
+    gap: 12px;
+  }
+
+  .context-divider {
+    display: none;
+  }
+
+  /* Matches Grid */
+  .matches-grid {
+    grid-template-columns: 1fr;
+  }
+
+  /* Match Actions */
+  .match-actions {
+    flex-direction: column;
+  }
+
+  .match-actions button {
+    width: 100%;
+  }
+
+  /* Bracket Info */
+  .bracket-info {
+    gap: 16px;
+  }
+
+  /* Bracket Visualization Header */
+  .bracket-visualization-header {
+    flex-wrap: wrap;
+  }
+
+  .back-button {
+    width: 100%;
+    justify-content: center;
+  }
+}
+
+/* Mobile Phones (480px and below) */
+@media (max-width: 480px) {
+  /* Dashboard Header */
+  .dashboard-header h1 {
+    font-size: 20px;
+  }
+
+  .dashboard-header p {
+    font-size: 13px;
+  }
+
+  /* Main Content */
+  .dashboard-main {
+    padding: 12px;
+  }
+
+  /* Breadcrumb */
+  .bracket-breadcrumb {
+    padding: 12px;
+  }
+
+  .breadcrumb-item {
+    font-size: 14px;
+  }
+
+  .breadcrumb-separator {
+    font-size: 24px !important;
+  }
+
+  /* Bracket View Section */
+  .bracket-view-section {
+    padding: 20px 12px;
+  }
+
+  .bracket-view-section h2 {
+    font-size: 20px;
+  }
+
+  /* Event Group Header */
+  .event-group-header {
+    padding: 14px;
+  }
+
+  .event-header-info h3 {
+    font-size: 16px !important;
+  }
+
+  .event-header-info > div:last-child {
+    font-size: 12px !important;
+  }
+
+  /* Table Container */
+  .event-brackets-table-container {
+    margin: 0 -12px;
+    padding: 0 12px;
+  }
+
+  .awards_standings_table {
+    min-width: 650px;
+    font-size: 13px;
+  }
+
+  .awards_standings_table th,
+  .awards_standings_table td {
+    padding: 10px !important;
+    font-size: 13px !important;
+  }
+
+  /* Badges */
+  .bracket-sport-badge {
+    font-size: 11px !important;
+    padding: 5px 10px !important;
+  }
+
+  /* Event Details */
+  .event-details-header h2 {
+    font-size: 20px;
+  }
+
+  .event-details-info {
+    grid-template-columns: 1fr !important;
+  }
+
+  /* Match Cards */
+  .match-card {
+    padding: 16px;
+  }
+
+  .match-teams h4 {
+    font-size: 16px;
+  }
+
+  /* Pagination */
+  .bracket-view-section > div[style*="display: flex"][style*="justify-content: space-between"]:last-of-type button {
+    padding: 10px 14px !important;
+    font-size: 14px !important;
+  }
+}
