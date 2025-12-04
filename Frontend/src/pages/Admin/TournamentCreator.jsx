@@ -107,7 +107,7 @@ const fileInputRef = React.useRef(null);
   // Position options with limits
   const positions = {
     Basketball: ["Point Guard", "Shooting Guard", "Small Forward", "Power Forward", "Center"],
-    Volleyball: ["Setter", "Outside Hitter", "Middle Blocker", "Opposite Hitter", "Libero", "Defensive Specialist"],
+    Volleyball: ["Setter", "Outside Hitter", "Middle Blocker", "Opposite Hitter", "Libero"],
   };
 
   // NEW: Position limits based on team size
@@ -145,11 +145,23 @@ const getPositionLimits = (teamSize, sport) => {
     });
 
     // Filter positions that haven't reached their limit
-    return positions[currentTeam.sport].filter(position => {
+    const availablePositions = positions[currentTeam.sport].filter(position => {
       const currentCount = positionCounts[position] || 0;
       const maxAllowed = positionLimits[position] || 0;
       return currentCount < maxAllowed;
     });
+
+    const currentPlayer = currentTeam.players[currentIndex] || {};
+    const currentPosition = currentPlayer.position;
+    if (
+      currentPosition &&
+      positions[currentTeam.sport].includes(currentPosition) &&
+      !availablePositions.includes(currentPosition)
+    ) {
+      return [currentPosition, ...availablePositions];
+    }
+
+    return availablePositions;
   };
 
   // NEW: Check if a position is available
@@ -507,9 +519,22 @@ Jane Smith,12,${currentTeam.sport === 'Basketball' ? 'Shooting Guard' : 'Outside
   const validateTeam = () => {
   if (!currentTeam.teamName.trim()) return "Please enter a team name";
   if (!currentTeam.sport) return "Please select a sport";
+
+  const players = currentTeam.players || [];
+  const hasPartialPlayer = players.some(player => {
+    const hasName = (player.name || "").trim().length > 0;
+    const hasPosition = Boolean(player.position);
+    const hasJersey = (player.jerseyNumber || "").trim().length > 0;
+    const filledCount = [hasName, hasPosition, hasJersey].filter(Boolean).length;
+    return filledCount > 0 && filledCount < 3;
+  });
+
+  if (hasPartialPlayer) {
+    return "Please complete name, jersey number, and position for every player row before submitting.";
+  }
   
   // Check if we have between 12-15 players with complete information
-  const validPlayers = currentTeam.players.filter(p => 
+  const validPlayers = players.filter(p => 
     p.name.trim() && p.position && p.jerseyNumber.trim()
   );
   

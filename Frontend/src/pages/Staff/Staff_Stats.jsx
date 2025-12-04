@@ -2765,7 +2765,16 @@ const handleNextMatch = async () => {
           <FaArrowLeft />
         </button>
         
-        <div className="stats-period-display">
+       <div
+  className="stats-period-display"
+  style={{
+    minWidth: '50px',
+    maxWidth: '120px',
+    padding: '6px 12px',
+    fontSize: '1.1em',
+    fontWeight: '700'
+  }}
+>
           {isOvertime ? (
             <div className="overtime-period-display">
               <FaClock className="overtime-icon" />
