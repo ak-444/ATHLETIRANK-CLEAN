@@ -440,12 +440,15 @@
 }
 
 .stats-period-display {
-  font-size: 24px;
-  font-weight: bold;
-  min-width: 150px;
+  padding: 8px 16px;
+  min-width: 80px;
+  display: inline-flex;
+  justify-content: center;
+  align-items: center;
   text-align: center;
+  white-space: nowrap;
+  font-weight: 600;
 }
-
 /* Stats Scores */
 .stats-scores {
   display: flex;
@@ -1371,9 +1374,9 @@
   font-size: 1.3em;
   font-weight: 700;
   color: var(--text-primary);
-  min-width: 150px;
+  min-width: 20px;  /* Changed from 150px to 100px */
   text-align: center;
-  padding: 10px 20px;
+  padding: 8px 16px;  /* Changed from 10px 20px to 8px 16px */
   background: var(--background-secondary);
   border-radius: var(--border-radius);
   border: 2px solid var(--border-color);
@@ -1954,6 +1957,8 @@
   display: inline-block;
   min-width: 30px;
 }
+
+
 
 /* Control Bar Styles */
 .control-bar {

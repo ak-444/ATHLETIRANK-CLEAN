@@ -1614,7 +1614,14 @@ const closeEditTeamModal = () => {
   };
 
   const volleyballErrorTotal = selectedBracket?.sport_type === "volleyball" && mvpData
-    ? ['aes', 'ses', 'res'].reduce(
+    ? [
+        'total_attack_errors',
+        'total_serve_errors',
+        'total_reception_errors',
+        'total_blocking_errors',
+        'total_ball_handling_errors',
+        'total_assist_errors'
+      ].reduce(
         (total, key) => total + Number(mvpData[key] ?? 0),
         0
       )
@@ -2556,26 +2563,25 @@ const closeEditTeamModal = () => {
 
               {selectedBracket.sport_type === "basketball" ? (
                 <>
-                  {/* BASKETBALL - Show per-game averages */}
-                  <div className="awards_standings_stat_card awards_standings_highlight">
-                    <div className="awards_standings_stat_value">{safeNumber(mvpData.ppg)}</div>
-                    <div className="awards_standings_stat_label">PPG</div>
+                  <div className="awards_standings_stat_card">
+                    <div className="awards_standings_stat_value">{safeNumber(mvpData.total_points, 0)}</div>
+                    <div className="awards_standings_stat_label">Points</div>
                   </div>
                   <div className="awards_standings_stat_card">
-                    <div className="awards_standings_stat_value">{safeNumber(mvpData.apg)}</div>
-                    <div className="awards_standings_stat_label">APG</div>
+                    <div className="awards_standings_stat_value">{safeNumber(mvpData.total_assists, 0)}</div>
+                    <div className="awards_standings_stat_label">Assists</div>
                   </div>
                   <div className="awards_standings_stat_card">
-                    <div className="awards_standings_stat_value">{safeNumber(mvpData.rpg)}</div>
-                    <div className="awards_standings_stat_label">RPG</div>
+                    <div className="awards_standings_stat_value">{safeNumber(mvpData.total_rebounds, 0)}</div>
+                    <div className="awards_standings_stat_label">Rebounds</div>
                   </div>
                   <div className="awards_standings_stat_card">
-                    <div className="awards_standings_stat_value">{safeNumber(mvpData.spg)}</div>
-                    <div className="awards_standings_stat_label">SPG</div>
+                    <div className="awards_standings_stat_value">{safeNumber(mvpData.total_steals, 0)}</div>
+                    <div className="awards_standings_stat_label">Steals</div>
                   </div>
                   <div className="awards_standings_stat_card">
-                    <div className="awards_standings_stat_value">{safeNumber(mvpData.bpg)}</div>
-                    <div className="awards_standings_stat_label">BPG</div>
+                    <div className="awards_standings_stat_value">{safeNumber(mvpData.total_blocks, 0)}</div>
+                    <div className="awards_standings_stat_label">Blocks</div>
                   </div>
                   <div className="awards_standings_stat_card awards_standings_highlight">
                     <div className="awards_standings_stat_value">{safeNumber(mvpTotalValue, 2)}</div>
@@ -2584,42 +2590,41 @@ const closeEditTeamModal = () => {
                 </>
               ) : (
                 <>
-                  {/* VOLLEYBALL - Per-set metrics and MVP total */}
                   <div className="awards_standings_stat_card">
                     <div className="awards_standings_stat_value">{safeNumber(mvpData.sets_played || mvpData.total_sets_played || 0, 0)}</div>
                     <div className="awards_standings_stat_label">Sets Played</div>
                   </div>
+                  <div className="awards_standings_stat_card">
+                    <div className="awards_standings_stat_value">{safeNumber(mvpData.total_aces, 0)}</div>
+                    <div className="awards_standings_stat_label">Aces</div>
+                  </div>
+                  <div className="awards_standings_stat_card">
+                    <div className="awards_standings_stat_value">{safeNumber(mvpData.total_kills, 0)}</div>
+                    <div className="awards_standings_stat_label">Kills</div>
+                  </div>
+                  <div className="awards_standings_stat_card">
+                    <div className="awards_standings_stat_value">{safeNumber(mvpData.total_assists, 0)}</div>
+                    <div className="awards_standings_stat_label">Assists</div>
+                  </div>
+                  <div className="awards_standings_stat_card">
+                    <div className="awards_standings_stat_value">{safeNumber(mvpData.total_blocks, 0)}</div>
+                    <div className="awards_standings_stat_label">Blocks</div>
+                  </div>
+                  <div className="awards_standings_stat_card">
+                    <div className="awards_standings_stat_value">{safeNumber(mvpData.total_digs, 0)}</div>
+                    <div className="awards_standings_stat_label">Digs</div>
+                  </div>
+                  <div className="awards_standings_stat_card">
+                    <div className="awards_standings_stat_value">{safeNumber(mvpData.total_receptions, 0)}</div>
+                    <div className="awards_standings_stat_label">Receptions</div>
+                  </div>
+                  <div className="awards_standings_stat_card">
+                    <div className="awards_standings_stat_value">{safeNumber(volleyballErrorTotal, 0)}</div>
+                    <div className="awards_standings_stat_label">Errors</div>
+                  </div>
                   <div className="awards_standings_stat_card awards_standings_highlight">
                     <div className="awards_standings_stat_value">{safeNumber(mvpTotalValue, 2)}</div>
                     <div className="awards_standings_stat_label">MVP Total</div>
-                  </div>
-                  <div className="awards_standings_stat_card awards_standings_highlight">
-                    <div className="awards_standings_stat_value">{safeNumber(mvpData.kps, 2)}</div>
-                    <div className="awards_standings_stat_label">KPS</div>
-                  </div>
-                  <div className="awards_standings_stat_card">
-                    <div className="awards_standings_stat_value">{safeNumber(mvpData.aps, 2)}</div>
-                    <div className="awards_standings_stat_label">APS</div>
-                  </div>
-                  <div className="awards_standings_stat_card">
-                    <div className="awards_standings_stat_value">{safeNumber(mvpData.bps, 2)}</div>
-                    <div className="awards_standings_stat_label">BPS</div>
-                  </div>
-                  <div className="awards_standings_stat_card">
-                    <div className="awards_standings_stat_value">{safeNumber(mvpData.dps, 2)}</div>
-                    <div className="awards_standings_stat_label">DPS</div>
-                  </div>
-                  <div className="awards_standings_stat_card">
-                    <div className="awards_standings_stat_value">{safeNumber(mvpData.rps, 2)}</div>
-                    <div className="awards_standings_stat_label">RPS</div>
-                  </div>
-                  <div className="awards_standings_stat_card">
-                    <div className="awards_standings_stat_value">{safeNumber(mvpData.sas, 2)}</div>
-                    <div className="awards_standings_stat_label">SAS</div>
-                  </div>
-                  <div className="awards_standings_stat_card awards_standings_highlight">
-                    <div className="awards_standings_stat_value">{safeNumber(volleyballErrorTotal, 2)}</div>
-                    <div className="awards_standings_stat_label">Total Errors</div>
                   </div>
                 </>
               )}
@@ -2649,12 +2654,12 @@ const closeEditTeamModal = () => {
             <th style={{ width: '60px', textAlign: 'center' }}>RANK</th>
             <th>PLAYER</th>
             <th>TEAM</th>
-            <th style={{ textAlign: 'center' }}>G</th>
-            <th style={{ textAlign: 'center' }}>PPG</th>
-            <th style={{ textAlign: 'center' }}>RPG</th>
-            <th style={{ textAlign: 'center' }}>APG</th>
-            <th style={{ textAlign: 'center' }}>SPG</th>
-            <th style={{ textAlign: 'center' }}>BPG</th>
+          <th style={{ textAlign: 'center' }}>G</th>
+          <th style={{ textAlign: 'center' }}>PTS</th>
+          <th style={{ textAlign: 'center' }}>REB</th>
+          <th style={{ textAlign: 'center' }}>AST</th>
+          <th style={{ textAlign: 'center' }}>STL</th>
+          <th style={{ textAlign: 'center' }}>BLK</th>
             <th style={{ textAlign: 'center', background: 'rgba(59, 130, 246, 0.1)' }}>MVP Total</th>
           </tr>
         </thead>
@@ -2677,11 +2682,11 @@ const closeEditTeamModal = () => {
               </td>
               <td style={{ fontWeight: '600' }}>{player.team_name || 'Unknown'}</td>
               <td style={{ textAlign: 'center' }}>{player.games_played || 0}</td>
-              <td style={{ textAlign: 'center', fontWeight: '600' }}>{safeNumber(player.ppg)}</td>
-              <td style={{ textAlign: 'center' }}>{safeNumber(player.rpg)}</td>
-              <td style={{ textAlign: 'center' }}>{safeNumber(player.apg)}</td>
-              <td style={{ textAlign: 'center' }}>{safeNumber(player.spg)}</td>
-              <td style={{ textAlign: 'center' }}>{safeNumber(player.bpg)}</td>
+            <td style={{ textAlign: 'center', fontWeight: '600' }}>{safeNumber(player.total_points, 0)}</td>
+            <td style={{ textAlign: 'center' }}>{safeNumber(player.total_rebounds, 0)}</td>
+            <td style={{ textAlign: 'center' }}>{safeNumber(player.total_assists, 0)}</td>
+            <td style={{ textAlign: 'center' }}>{safeNumber(player.total_steals, 0)}</td>
+            <td style={{ textAlign: 'center' }}>{safeNumber(player.total_blocks, 0)}</td>
               <td style={{ 
                 textAlign: 'center', 
                 fontWeight: '700', 

@@ -2,6 +2,8 @@ import React, { useState, useEffect, useRef } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import CustomBracket from "../../components/CustomBracket";
 import DoubleEliminationBracket from "../../components/DoubleEliminationBracket"; // Import the double elimination component
+import RoundRobinBracketDisplay from "../../components/RoundRobin";
+import RoundRobinKnockoutBracket from "../../components/RoundRobinKnockoutBracket";
 import "../../style/User_BracketPage.css";
 import { RiTrophyFill } from "react-icons/ri";
 
@@ -18,6 +20,7 @@ const User_BracketPage = ({ sidebarOpen }) => {
   const [searchTerm, setSearchTerm] = useState("");
   const [filterSport, setFilterSport] = useState("");
   const [filterEvent, setFilterEvent] = useState("");
+  const [selectedBracketEvent, setSelectedBracketEvent] = useState(null);
   const preselectBracketId = location.state?.preselectBracketId;
   const preselectEventId = location.state?.preselectEventId;
 
@@ -73,11 +76,24 @@ const User_BracketPage = ({ sidebarOpen }) => {
   const capitalize = (s) => s ? s.charAt(0).toUpperCase() + s.slice(1) : "";
 
   const handleViewBracket = async (bracket) => {
+    const eventForBracket = events.find(e => e.id === bracket.event_id) || null;
+    setSelectedBracketEvent(eventForBracket);
     setSelectedBracket(bracket);
     await fetchBracketMatches(bracket.id);
     setActiveTab("bracket");
   };
 
+  useEffect(() => {
+    if (!selectedBracket) {
+      setSelectedBracketEvent(null);
+      return;
+    }
+
+    const eventForBracket = events.find(e => e.id === selectedBracket.event_id) || null;
+    if (eventForBracket?.id !== selectedBracketEvent?.id) {
+      setSelectedBracketEvent(eventForBracket);
+    }
+  }, [selectedBracket, events, selectedBracketEvent]);
   const handleBackToBrackets = () => {
     navigate("/schedules");
   };
@@ -121,7 +137,6 @@ const User_BracketPage = ({ sidebarOpen }) => {
   const renderBracketVisualization = () => {
     if (!selectedBracket || !bracketMatches) return null;
 
-    // Check if it's double elimination
     if (selectedBracket.elimination_type === 'double') {
       return (
         <DoubleEliminationBracket 
@@ -129,15 +144,35 @@ const User_BracketPage = ({ sidebarOpen }) => {
           eliminationType="double" 
         />
       );
-    } else {
-      // Single elimination - use your existing CustomBracket component
+    }
+
+    if (selectedBracket.elimination_type === 'round_robin') {
       return (
-        <CustomBracket 
-          matches={bracketMatches} 
-          eliminationType="single"
+        <RoundRobinBracketDisplay 
+          matches={bracketMatches}
+          selectedEvent={selectedBracketEvent}
+          selectedBracket={selectedBracket}
         />
       );
     }
+
+    if (selectedBracket.elimination_type === 'round_robin_knockout') {
+      return (
+        <RoundRobinKnockoutBracket 
+          matches={bracketMatches}
+          standings={[]}
+          selectedEvent={selectedBracketEvent}
+          selectedBracket={selectedBracket}
+        />
+      );
+    }
+
+    return (
+      <CustomBracket 
+        matches={bracketMatches} 
+        eliminationType="single"
+      />
+    );
   };
 
   return (
