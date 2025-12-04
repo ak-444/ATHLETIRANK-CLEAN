@@ -2233,3 +2233,945 @@
     font-size: 16px;
   }
 }
+
+
+/* ============================================
+   MOBILE RESPONSIVE MEDIA QUERIES
+   ============================================ */
+
+/* Tablet and Small Desktop (768px - 1024px) */
+@media (max-width: 1024px) {
+  .stats-game-grid {
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  }
+  
+  .quick-score-players-grid {
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  }
+  
+  .quick-score-stats-grid {
+    grid-template-columns: repeat(auto-fit, minmax(90px, 1fr));
+  }
+}
+
+/* Tablet Portrait (768px and below) */
+@media (max-width: 768px) {
+  /* Dashboard Main */
+  .dashboard-main {
+    padding: 12px;
+  }
+  
+  .dashboard-content.sidebar-open {
+    margin-left: 0;
+  }
+  
+  /* Quick Selectors */
+  .quick-selectors {
+    flex-direction: column;
+    padding: 16px;
+    gap: 16px;
+  }
+  
+  .selector-group {
+    min-width: 100%;
+  }
+  
+  .selector-dropdown {
+    padding: 10px;
+    font-size: 13px;
+  }
+  
+  /* Selected Context */
+  .selected-context {
+    flex-direction: column;
+    align-items: stretch;
+    min-width: 100%;
+    gap: 10px;
+    padding: 12px 16px;
+  }
+  
+  .context-divider {
+    width: 100%;
+    height: 1px;
+  }
+  
+  .context-label {
+    font-size: 11px;
+  }
+  
+  .context-value {
+    font-size: 13px;
+  }
+  
+  /* Stats Game Grid */
+  .stats-game-grid {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+  
+  /* Match Card */
+  .match-card {
+    padding: 16px;
+  }
+  
+  .match-teams h4 {
+    font-size: 16px;
+  }
+  
+  .match-info {
+    font-size: 13px;
+  }
+  
+  .match-score {
+    font-size: 20px;
+  }
+  
+  /* Stats Round */
+  .stats-round-header {
+    padding: 16px;
+  }
+  
+  .stats-round-title h3 {
+    font-size: 18px;
+  }
+  
+  .stats-round-progress {
+    font-size: 13px;
+  }
+  
+  /* Stats Game Info */
+  .stats-game-info-box {
+    padding: 16px;
+  }
+  
+  .stats-game-info-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+  
+  .stats-game-info-header h2 {
+    font-size: 18px;
+  }
+  
+  .stats-game-info-header > div {
+    width: 100%;
+    display: flex;
+    gap: 8px;
+  }
+  
+  .stats-back-button,
+  .stats-edit-button {
+    flex: 1;
+    padding: 8px 12px !important;
+    font-size: 13px !important;
+    justify-content: center;
+  }
+  
+  .stats-game-meta {
+    flex-direction: column;
+    gap: 8px;
+    font-size: 13px;
+  }
+  
+  /* Stats Period Navigation */
+  .stats-period-nav {
+    gap: 12px;
+    padding: 12px;
+  }
+  
+  .stats-period-button {
+    padding: 8px 12px;
+    font-size: 13px;
+  }
+  
+  .stats-period-display {
+    font-size: 18px;
+    min-width: 120px;
+    padding: 8px 16px;
+  }
+  
+  /* Stats Scores */
+  .stats-scores {
+    flex-direction: column;
+    gap: 16px;
+  }
+  
+  .stats-score-box {
+    max-width: 100%;
+    width: 100%;
+    padding: 16px;
+  }
+  
+  .stats-score-box h3 {
+    font-size: 16px;
+  }
+  
+  .stats-score-value {
+    font-size: 40px;
+  }
+  
+  .stats-total-score {
+    font-size: 13px;
+  }
+  
+  .stats-score-separator {
+    font-size: 28px;
+    transform: rotate(90deg);
+  }
+  
+  /* Stats Actions */
+  .stats-actions {
+    flex-direction: column;
+    gap: 12px;
+  }
+  
+  .stats-action-button {
+    width: 100%;
+    justify-content: center;
+    padding: 12px 20px;
+    font-size: 15px;
+  }
+  
+  /* Overtime Controls */
+  .stats-overtime-controls {
+    flex-direction: column;
+    gap: 12px;
+    padding: 12px;
+  }
+  
+  .stats-overtime-button {
+    width: 100%;
+    justify-content: center;
+  }
+  
+  .overtime-period-selector {
+    width: 100%;
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+  
+  .overtime-period-tab {
+    padding: 6px 12px;
+    font-size: 13px;
+  }
+  
+  .overtime-remove-button {
+    width: 20px;
+    height: 20px;
+    font-size: 10px;
+  }
+  
+  .stats-regulation-button {
+    width: 100%;
+  }
+  
+  /* Control Bar */
+  .control-bar {
+    flex-direction: column;
+    gap: 12px;
+    padding: 12px;
+  }
+  
+  .control-bar-button {
+    width: 100%;
+    justify-content: center;
+    padding: 10px 16px;
+  }
+  
+  .current-view-display {
+    width: 100%;
+    text-align: center;
+  }
+  
+  .control-bar-checkbox {
+    width: 100%;
+    justify-content: center;
+  }
+  
+  /* QuickScore Bar */
+  .quick-score-header {
+    padding: 12px;
+  }
+  
+  .quick-score-title h2 {
+    font-size: 18px;
+  }
+  
+  .quick-score-subtitle {
+    font-size: 12px;
+    display: block;
+    margin-top: 4px;
+  }
+  
+  .quick-score-content {
+    padding: 12px;
+  }
+  
+  .quick-score-players-grid {
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 10px;
+  }
+  
+  .quick-score-player-card {
+    padding: 12px;
+  }
+  
+  .quick-score-player-number {
+    font-size: 28px;
+  }
+  
+  .quick-score-player-name {
+    font-size: 14px;
+  }
+  
+  .quick-score-player-position {
+    font-size: 11px;
+  }
+  
+  .quick-score-player-team {
+    font-size: 11px;
+  }
+  
+  .quick-score-player-points {
+    font-size: 20px;
+  }
+  
+  .quick-score-player-points-label {
+    font-size: 10px;
+  }
+  
+  .quick-score-stats {
+    padding: 12px;
+  }
+  
+  .quick-score-stats-header h3 {
+    font-size: 16px;
+  }
+  
+  .quick-score-stats-grid {
+    grid-template-columns: repeat(auto-fit, minmax(85px, 1fr));
+    gap: 6px;
+  }
+  
+  .quick-score-stat-button {
+    padding: 12px 6px;
+    font-size: 12px;
+  }
+  
+  .quick-score-stat-count {
+    font-size: 16px;
+  }
+  
+  /* Stats Team Table */
+  .stats-team-table {
+    padding: 16px;
+    margin-bottom: 20px;
+  }
+  
+  .stats-team-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+  }
+  
+  .stats-team-header h3 {
+    font-size: 16px;
+  }
+  
+  .stats-team-hint {
+    font-size: 11px;
+  }
+  
+  .stats-show-bench-button {
+    align-self: flex-end;
+    padding: 6px 10px;
+    font-size: 13px;
+  }
+  
+  /* Stats Table */
+  .stats-table {
+    font-size: 12px;
+    display: block;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  
+  .stats-table thead,
+  .stats-table tbody,
+  .stats-table tr {
+    display: table;
+    width: 100%;
+    table-layout: fixed;
+  }
+  
+  .stats-table th,
+  .stats-table td {
+    padding: 8px 4px;
+  }
+  
+  .col-start {
+    width: 50px;
+  }
+  
+  .col-player {
+    min-width: 120px;
+    max-width: 150px;
+  }
+  
+  .col-number {
+    width: 60px;
+  }
+  
+  .col-position {
+    width: 80px;
+    font-size: 11px;
+  }
+  
+  .col-status {
+    width: 80px;
+  }
+  
+  .col-score {
+    width: 70px;
+  }
+  
+  .col-stat {
+    width: 70px;
+    min-width: 70px;
+  }
+  
+  .stats-player-status {
+    padding: 3px 6px;
+    font-size: 10px;
+  }
+  
+  .stats-controls {
+    gap: 4px;
+  }
+  
+  .stats-control-button {
+    padding: 5px 8px;
+    font-size: 11px;
+    min-width: 24px;
+    height: 24px;
+  }
+  
+  .stats-value {
+    min-width: 25px;
+    font-size: 13px;
+  }
+  
+  .stats-current-score {
+    font-size: 14px;
+  }
+  
+  .stats-fouled-out {
+    font-size: 9px;
+    padding: 2px 4px;
+  }
+  
+  /* Overtime Badge */
+  .overtime-badge {
+    font-size: 10px;
+    padding: 3px 6px;
+    margin-left: 5px;
+  }
+  
+  /* Connection Status */
+  .connection-status-container {
+    top: 10px;
+    right: 10px;
+    left: 10px;
+  }
+  
+  .connection-notification {
+    padding: 10px 16px;
+    font-size: 13px;
+  }
+  
+  .pending-syncs-badge {
+    padding: 10px 16px;
+    font-size: 13px;
+  }
+  
+  .sync-now-button {
+    padding: 5px 10px;
+    font-size: 12px;
+  }
+  
+  /* Toast Notifications */
+  .toast-container {
+    top: 70px;
+    right: 10px;
+    left: 10px;
+  }
+  
+  .toast {
+    min-width: auto;
+    width: 100%;
+  }
+  
+  .toast-player {
+    font-size: 12px;
+  }
+  
+  .toast-message {
+    font-size: 16px;
+  }
+  
+  .toast-admin-success .toast-message {
+    font-size: 18px;
+  }
+  
+  /* Success Page */
+  .bracket-create-section {
+    padding: 16px;
+  }
+  
+  .bracket-form-container {
+    padding: 20px;
+  }
+  
+  .tournament-summary {
+    padding: 16px;
+  }
+  
+  .summary-item {
+    font-size: 14px !important;
+  }
+  
+  .bracket-form-actions {
+    flex-direction: column;
+    gap: 12px !important;
+  }
+  
+  .bracket-form-actions button {
+    width: 100% !important;
+    font-size: 15px !important;
+  }
+}
+
+
+
+/* Mobile Landscape and Small Phones (480px and below) */
+@media (max-width: 480px) {
+  /* Dashboard Main */
+  .dashboard-main {
+    padding: 8px;
+  }
+  
+  /* Quick Selectors */
+  .quick-selectors {
+    padding: 12px;
+    gap: 12px;
+  }
+  
+  .selector-dropdown {
+    padding: 8px;
+    font-size: 12px;
+  }
+  
+  /* Match Card */
+  .match-card {
+    padding: 12px;
+  }
+  
+  .match-teams h4 {
+    font-size: 14px;
+  }
+  
+  .match-badges {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  
+  .round-badge,
+  .bracket-type-badge {
+    font-size: 10px;
+    padding: 3px 8px;
+  }
+  
+  .match-info {
+    font-size: 12px;
+  }
+  
+  .match-score {
+    font-size: 18px;
+  }
+  
+  .btn-input-stats {
+    padding: 10px;
+    font-size: 13px;
+  }
+  
+  /* Stats Game Info */
+  .stats-game-info-box {
+    padding: 12px;
+  }
+  
+  .stats-game-info-header h2 {
+    font-size: 16px;
+  }
+  
+  .stats-back-button,
+  .stats-edit-button {
+    padding: 6px 10px !important;
+    font-size: 12px !important;
+  }
+  
+  .reset-final-badge,
+  .overtime-badge {
+    font-size: 9px;
+    padding: 2px 6px;
+  }
+  
+  .stats-game-meta {
+    font-size: 12px;
+  }
+  
+  /* Stats Period Navigation */
+  .stats-period-nav {
+    gap: 8px;
+    padding: 10px;
+  }
+  
+  .stats-period-button {
+    padding: 6px 10px;
+    font-size: 12px;
+  }
+  
+  .stats-period-display {
+    font-size: 16px;
+    min-width: 100px;
+    padding: 6px 12px;
+  }
+  
+  /* Stats Scores */
+  .stats-score-box {
+    padding: 12px;
+  }
+  
+  .stats-score-box h3 {
+    font-size: 14px;
+  }
+  
+  .stats-score-value {
+    font-size: 32px;
+  }
+  
+  .stats-total-score {
+    font-size: 12px;
+  }
+  
+  /* Stats Actions */
+  .stats-action-button {
+    padding: 10px 16px;
+    font-size: 14px;
+  }
+  
+  /* Overtime Controls */
+  .stats-overtime-button {
+    padding: 8px 16px;
+    font-size: 13px;
+  }
+  
+  .overtime-period-selector span {
+    font-size: 12px;
+  }
+  
+  .overtime-period-tab {
+    padding: 5px 10px;
+    font-size: 12px;
+  }
+  
+  .stats-regulation-button {
+    padding: 6px 12px;
+    font-size: 13px;
+  }
+  
+  /* Control Bar */
+  .control-bar {
+    padding: 10px;
+  }
+  
+  .control-bar-button {
+    padding: 8px 12px;
+    font-size: 13px;
+  }
+  
+  .current-view-display {
+    font-size: 13px;
+  }
+  
+  .control-bar-checkbox {
+    font-size: 13px;
+  }
+  
+  /* QuickScore Bar */
+  .quick-score-header {
+    padding: 10px;
+  }
+  
+  .quick-score-icon {
+    font-size: 20px;
+  }
+  
+  .quick-score-title h2 {
+    font-size: 16px;
+  }
+  
+  .quick-score-subtitle {
+    font-size: 11px;
+  }
+  
+  .quick-score-content {
+    padding: 10px;
+  }
+  
+  .quick-score-players-grid {
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+    gap: 8px;
+  }
+  
+  .quick-score-player-card {
+    padding: 10px;
+  }
+  
+  .quick-score-player-number {
+    font-size: 24px;
+  }
+  
+  .quick-score-player-name {
+    font-size: 13px;
+  }
+  
+  .quick-score-player-position {
+    font-size: 10px;
+  }
+  
+  .quick-score-player-team {
+    font-size: 10px;
+  }
+  
+  .quick-score-player-points {
+    font-size: 18px;
+  }
+  
+  .quick-score-player-points-label {
+    font-size: 9px;
+  }
+  
+  .quick-score-stats {
+    padding: 10px;
+  }
+  
+  .quick-score-stats-header h3 {
+    font-size: 14px;
+  }
+  
+  .quick-score-stats-grid {
+    grid-template-columns: repeat(auto-fit, minmax(75px, 1fr));
+    gap: 5px;
+  }
+  
+  .quick-score-stat-button {
+    padding: 10px 5px;
+    font-size: 11px;
+  }
+  
+  .quick-score-stat-count {
+    font-size: 14px;
+  }
+  
+  /* Stats Team Table */
+  .stats-team-table {
+    padding: 12px;
+  }
+  
+  .stats-team-header h3 {
+    font-size: 14px;
+  }
+  
+  .stats-team-hint {
+    font-size: 10px;
+  }
+  
+  .stats-show-bench-button {
+    padding: 5px 8px;
+    font-size: 12px;
+  }
+  
+  /* Stats Table */
+  .stats-table {
+    font-size: 11px;
+  }
+  
+  .stats-table th,
+  .stats-table td {
+    padding: 6px 3px;
+  }
+  
+  .col-start {
+    width: 40px;
+  }
+  
+  .col-player {
+    min-width: 100px;
+    max-width: 120px;
+    font-size: 11px;
+  }
+  
+  .col-number {
+    width: 50px;
+  }
+  
+  .col-position {
+    width: 70px;
+    font-size: 10px;
+  }
+  
+  .col-status {
+    width: 70px;
+  }
+  
+  .col-score {
+    width: 60px;
+  }
+  
+  .col-stat {
+    width: 60px;
+    min-width: 60px;
+  }
+  
+  .stats-player-status {
+    padding: 2px 4px;
+    font-size: 9px;
+  }
+  
+  .stats-controls {
+    gap: 3px;
+  }
+  
+  .stats-control-button {
+    padding: 4px 6px;
+    font-size: 10px;
+    min-width: 20px;
+    height: 20px;
+  }
+  
+  .stats-value {
+    min-width: 20px;
+    font-size: 12px;
+  }
+  
+  .stats-current-score {
+    font-size: 13px;
+  }
+  
+  .stats-fouled-out {
+    font-size: 8px;
+    padding: 1px 3px;
+  }
+  
+  /* Connection Status */
+  .connection-notification {
+    padding: 8px 12px;
+    font-size: 12px;
+  }
+  
+  .pending-syncs-badge {
+    padding: 8px 12px;
+    font-size: 12px;
+  }
+  
+  /* Toast Notifications */
+  .toast {
+    padding: 12px 16px;
+  }
+  
+  .toast-player {
+    font-size: 11px;
+  }
+  
+  .toast-message {
+    font-size: 14px;
+  }
+  
+  .toast-admin-success {
+    padding: 16px 20px;
+  }
+  
+  .toast-admin-success .toast-message {
+    font-size: 16px;
+  }
+  
+  .toast-admin-success .toast-message::before {
+    font-size: 20px;
+  }
+  
+  /* Success Page */
+  .success-icon svg {
+    width: 60px !important;
+    height: 60px !important;
+  }
+  
+  .bracket-form-container h2 {
+    font-size: 20px;
+  }
+  
+  .step-description {
+    font-size: 13px;
+  }
+  
+  .tournament-summary h3 {
+    font-size: 16px;
+  }
+  
+  .summary-item {
+    font-size: 13px !important;
+    padding: 8px 0;
+  }
+  
+  .bracket-form-actions button {
+    font-size: 14px !important;
+    padding: 10px 16px !important;
+  }
+}
+
+/* Extra Small Devices (360px and below) */
+@media (max-width: 360px) {
+  .stats-table {
+    font-size: 10px;
+  }
+  
+  .col-player {
+    min-width: 80px;
+    max-width: 100px;
+  }
+  
+  .col-stat {
+    width: 50px;
+    min-width: 50px;
+  }
+  
+  .stats-control-button {
+    padding: 3px 5px;
+    min-width: 18px;
+    height: 18px;
+    font-size: 9px;
+  }
+  
+  .stats-value {
+    min-width: 18px;
+    font-size: 11px;
+  }
+  
+  .quick-score-players-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .quick-score-stats-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}

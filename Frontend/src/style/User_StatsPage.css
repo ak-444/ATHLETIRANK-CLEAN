@@ -1466,3 +1466,471 @@
     transform: rotate(90deg);
   }
 }
+
+/* Mobile Responsive Design - Enhanced */
+@media (max-width: 768px) {
+  /* Header Adjustments */
+  .teams-header {
+    padding: 2rem 0 1rem;
+  }
+
+  .teams-header h1 {
+    font-size: 1.75rem;
+    margin-bottom: 0.5rem;
+    flex-direction: column;
+    gap: 0.25rem;
+  }
+
+  .teams-header p {
+    font-size: 0.9rem;
+    padding: 0 1rem;
+  }
+
+  .header-content {
+    padding: 0 1rem;
+  }
+
+  .header-top {
+    position: relative;
+    left: 0;
+    margin-bottom: 1rem;
+    align-self: stretch;
+  }
+
+  .back-btn {
+    padding: 0.6rem 1rem;
+    font-size: 0.85rem;
+    width: 100%;
+    justify-content: center;
+  }
+  
+  .back-arrow {
+    font-size: 1rem;
+  }
+
+  /* Container Adjustments */
+  .teams-container {
+    padding: 1rem 0.5rem;
+  }
+
+  /* Stats Filter Container - CRITICAL FIX */
+  .stats-filter-matches-container {
+    margin: 0 -0.5rem 1rem -0.5rem;
+    border-radius: 0;
+  }
+
+  .stats-filter-matches-header {
+    padding: 0.75rem 1rem;
+  }
+
+  .stats-filter-matches-title {
+    font-size: 0.8rem;
+  }
+
+  .stats-filter-matches-content {
+    padding: 1rem;
+    gap: 1rem;
+  }
+
+  /* Fix for Tournament/Bracket Row - CRITICAL */
+  .stats-filter-matches-row {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 1rem !important;
+    align-items: stretch !important;
+  }
+
+  .stats-filter-matches-group {
+    flex: none !important;
+    width: 100% !important;
+    min-width: 100% !important;
+    max-width: 100% !important;
+  }
+
+  .stats-filter-matches-select {
+    width: 100%;
+    font-size: 0.9rem;
+    padding: 0.7rem 2.5rem 0.7rem 0.75rem;
+  }
+
+  /* Tournament Period Fix */
+  .stats-period-display {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: 0.5rem !important;
+    padding: 0.75rem !important;
+    height: auto !important;
+  }
+
+  .stats-period-date {
+    font-size: 0.85rem !important;
+    width: 100%;
+  }
+
+  .stats-period-separator {
+    transform: none !important;
+    align-self: center;
+    font-size: 1rem !important;
+  }
+
+  /* Date Range Inputs */
+  .stats-date-range-inputs {
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+
+  .stats-date-input {
+    width: 100% !important;
+    min-width: 100% !important;
+    font-size: 0.9rem;
+    padding: 0.7rem 0.75rem;
+  }
+
+  .stats-date-separator {
+    text-align: center;
+    width: 100%;
+  }
+
+  .stats-date-apply-btn,
+  .stats-date-clear-btn {
+    width: 100%;
+    padding: 0.7rem 1rem;
+    font-size: 0.9rem;
+  }
+
+  .stats-filter-status {
+    padding: 0.7rem;
+    font-size: 0.85rem;
+    flex-wrap: wrap;
+  }
+
+  /* Recent Tournament Section */
+  .recent-tournament-section h2 {
+    font-size: 1.3rem;
+    padding: 0 1rem;
+  }
+
+  /* Stats Containers */
+  .recent-container {
+    margin: 0 -0.5rem 1rem -0.5rem;
+    border-radius: 0;
+  }
+
+  .container-header {
+    padding: 0.75rem 1rem;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+  }
+
+  .container-header h3 {
+    font-size: 1rem;
+    width: 100%;
+  }
+
+  .stats-mode-toggle {
+    width: 100%;
+  }
+
+  .stats-toggle-btn {
+    width: 100%;
+    justify-content: center;
+    padding: 0.7rem 1rem !important;
+    font-size: 0.85rem !important;
+  }
+
+  .container-content {
+    padding: 0;
+  }
+
+  /* Tables */
+  .stats-table-container {
+    max-height: 350px;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .stats-table {
+    font-size: 0.75rem;
+    min-width: 100%;
+  }
+
+  .stats-table th,
+  .stats-table td {
+    padding: 0.5rem 0.4rem !important;
+    font-size: 0.75rem !important;
+    white-space: nowrap;
+  }
+
+  .stats-table th {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+  }
+
+  /* Rank Badges */
+  .stats-rank-badge {
+    width: 32px !important;
+    height: 32px !important;
+    font-size: 0.75rem;
+  }
+
+  /* Team and Player Names */
+  .stats-team-name,
+  .stats-player-name {
+    max-width: 120px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .stats-team-name strong {
+    font-size: 0.75rem !important;
+  }
+
+  /* Stats Cards Grid */
+  .stats-cards-grid {
+    grid-template-columns: 1fr !important;
+    gap: 0.75rem !important;
+    padding: 0 1rem !important;
+    margin-bottom: 1rem !important;
+  }
+
+  .stats-card {
+    padding: 1rem;
+  }
+
+  .stats-card-value {
+    font-size: 1.75rem;
+  }
+
+  /* View Section */
+  .view-section {
+    margin: 0 -0.5rem;
+    border-radius: 0;
+    padding: 1rem;
+  }
+
+  .section-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.75rem;
+  }
+
+  .section-header h2 {
+    font-size: 1.25rem;
+  }
+
+  /* Stats Section Header */
+  .stats-section-header {
+    padding: 0 1rem;
+  }
+
+  .stats-section-title {
+    font-size: 1.25rem;
+  }
+
+  .stats-section-subtitle {
+    font-size: 0.85rem;
+  }
+
+  /* Table Controls */
+  .stats-table-controls {
+    flex-direction: column;
+    gap: 0.75rem;
+    padding: 1rem;
+  }
+
+  .stats-search-container {
+    width: 100%;
+  }
+
+  .stats-search-input {
+    width: 100%;
+    font-size: 0.9rem;
+    padding: 0.7rem 0.75rem 0.7rem 2.5rem;
+  }
+
+  /* Results Info */
+  .stats-results-info {
+    flex-direction: column;
+    gap: 0.75rem;
+    padding: 0.75rem 1rem;
+    font-size: 0.85rem;
+  }
+
+  .stats-results-count {
+    width: 100%;
+    text-align: center;
+  }
+
+  .stats-items-per-page {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .stats-items-per-page-select {
+    font-size: 0.9rem;
+    padding: 0.5rem;
+  }
+
+  /* Pagination */
+  .stats-pagination-container {
+    flex-direction: column;
+    gap: 0.75rem;
+    padding: 1rem;
+  }
+
+  .stats-pagination-info {
+    text-align: center;
+    font-size: 0.85rem;
+  }
+
+  .stats-pagination-controls {
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+
+  .stats-pagination-numbers {
+    order: -1;
+    justify-content: center;
+  }
+
+  .stats-pagination-btn {
+    width: 100%;
+    padding: 0.7rem;
+    font-size: 0.9rem;
+  }
+
+  .stats-pagination-number {
+    min-width: 36px;
+    height: 36px;
+    font-size: 0.85rem;
+  }
+
+  /* Table Footer */
+  .stats-table-footer {
+    padding: 0.75rem 1rem;
+    font-size: 0.75rem;
+  }
+
+  /* Tabs */
+  .tabs {
+    flex-direction: column;
+    padding: 0 1rem;
+  }
+
+  .tab-button {
+    width: 100%;
+    justify-content: center;
+  }
+
+  /* Team Details */
+  .team-info-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .team-details {
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  /* Teams Grid */
+  .teams-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .team-card-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+  }
+
+  /* Empty State */
+  .empty-state {
+    padding: 2rem 1rem;
+  }
+
+  .empty-icon {
+    font-size: 3rem;
+  }
+
+  /* Sport Filter */
+  .sport-filter {
+    width: 100%;
+  }
+
+  .sport-filter select {
+    width: 100%;
+  }
+}
+
+/* Extra Small Devices (iPhone SE, small phones) */
+@media (max-width: 375px) {
+  .teams-header h1 {
+    font-size: 1.5rem;
+  }
+
+  .stats-filter-matches-content {
+    padding: 0.75rem;
+  }
+
+  .stats-period-display {
+    padding: 0.5rem !important;
+  }
+
+  .stats-period-date {
+    font-size: 0.8rem !important;
+  }
+
+  .stats-table {
+    font-size: 0.7rem;
+  }
+
+  .stats-table th,
+  .stats-table td {
+    padding: 0.4rem 0.3rem !important;
+    font-size: 0.7rem !important;
+  }
+
+  .stats-rank-badge {
+    width: 28px !important;
+    height: 28px !important;
+    font-size: 0.7rem;
+  }
+
+  .stats-team-name,
+  .stats-player-name {
+    max-width: 100px;
+  }
+
+  .stats-card-value {
+    font-size: 1.5rem;
+  }
+
+  .back-btn {
+    padding: 0.5rem 0.75rem;
+    font-size: 0.8rem;
+  }
+}
+
+/* Landscape Mode for Mobile */
+@media (max-width: 768px) and (orientation: landscape) {
+  .teams-header {
+    padding: 1.5rem 0 1rem;
+  }
+
+  .stats-filter-matches-row {
+    display: grid !important;
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 1rem !important;
+  }
+
+  .stats-cards-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+  }
+
+  .stats-table-container {
+    max-height: 250px;
+  }
+}

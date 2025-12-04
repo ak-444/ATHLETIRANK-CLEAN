@@ -806,3 +806,847 @@
     font-size: 14px !important;
   }
 }
+
+
+
+
+/* ============================================
+   MOBILE RESPONSIVE MEDIA QUERIES
+   ============================================ */
+
+/* Tablet and Small Desktop (1024px and below) */
+@media (max-width: 1024px) {
+  .matches-grid {
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  }
+  
+  .event-details-info {
+    gap: 16px;
+  }
+}
+
+/* Tablet Portrait (768px and below) */
+@media (max-width: 768px) {
+  /* Dashboard Content */
+  .dashboard-content.sidebar-open {
+    margin-left: 0;
+  }
+  
+  /* Dashboard Header */
+  .dashboard-header {
+    padding: 20px 16px;
+  }
+  
+  .dashboard-header h1 {
+    font-size: 24px;
+  }
+  
+  .dashboard-header p {
+    font-size: 14px;
+  }
+  
+  /* Main Content */
+  .dashboard-main {
+    padding: 16px;
+  }
+  
+  /* Breadcrumb */
+  .bracket-breadcrumb {
+    padding: 14px 16px;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+  
+  .breadcrumb-item {
+    font-size: 15px;
+  }
+  
+  .breadcrumb-separator {
+    font-size: 24px !important;
+  }
+  
+  /* Bracket View Section */
+  .bracket-view-section {
+    padding: 24px 16px;
+  }
+  
+  .bracket-view-section h2 {
+    font-size: 22px;
+    margin-bottom: 20px;
+  }
+  
+  /* Search and Filter Container - Force Mobile Layout */
+  .bracket-view-section > div:first-child {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    margin-bottom: 24px !important;
+  }
+  
+  .bracket-view-section > div:first-child > div:first-child {
+    width: 100% !important;
+    min-width: 100% !important;
+    flex-direction: column !important;
+  }
+  
+  .bracket-view-section input[type="text"] {
+    width: 100% !important;
+    padding: 10px 14px;
+    font-size: 14px;
+  }
+  
+  .bracket-view-section select {
+    width: 100% !important;
+    padding: 10px 14px;
+    font-size: 14px;
+  }
+  
+  /* Results Info Row */
+  .bracket-view-section > div:nth-child(2) {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: 12px !important;
+    margin-bottom: 20px !important;
+  }
+  
+  .bracket-view-section > div:nth-child(2) > div:first-child {
+    width: 100%;
+    text-align: left;
+  }
+  
+  .bracket-view-section > div:nth-child(2) > div:last-child {
+    width: 100%;
+    justify-content: space-between;
+  }
+  
+  /* Events List Container */
+  .events-list-container {
+    width: 100%;
+  }
+  
+  /* Event Group Container */
+  .event-group-container {
+    margin-bottom: 16px;
+    border-radius: 8px;
+    overflow: hidden;
+  }
+  
+  /* Event Group Header */
+  .event-group-header {
+    padding: 16px;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+  
+  .event-header-left {
+    flex: 1;
+    width: 100%;
+    min-width: 100%;
+  }
+  
+  .event-expand-button {
+    padding: 6px !important;
+    font-size: 16px !important;
+  }
+  
+  .event-header-info {
+    flex: 1;
+  }
+  
+  .event-header-info h3 {
+    font-size: 17px !important;
+    margin: 0 !important;
+  }
+  
+  .event-header-info > div {
+    flex-wrap: wrap;
+    gap: 8px !important;
+  }
+  
+  .event-header-info > div:last-child {
+    font-size: 12px !important;
+    margin-top: 6px !important;
+  }
+  
+  .event-header-actions {
+    width: 100%;
+    justify-content: flex-start;
+    margin-top: 8px;
+  }
+  
+  .event-header-actions span {
+    font-size: 13px !important;
+  }
+  
+  /* Brackets Table Container */
+  .event-brackets-table-container {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    margin: 0 -16px;
+    padding: 0 16px;
+  }
+  
+  .awards_standings_table {
+    width: 100%;
+    min-width: 700px;
+  }
+  
+  .awards_standings_table th,
+  .awards_standings_table td {
+    white-space: nowrap;
+    font-size: 13px;
+  }
+  
+  .awards_standings_table th {
+    padding: 10px 16px !important;
+  }
+  
+  .awards_standings_table td {
+    padding: 10px 16px !important;
+  }
+  
+  .awards_standings_table td:last-child {
+    position: sticky;
+    right: 0;
+    background: var(--background-card);
+    box-shadow: -2px 0 4px rgba(0, 0, 0, 0.1);
+  }
+  
+  .bracket-sport-badge {
+    font-size: 11px !important;
+    padding: 5px 10px !important;
+  }
+  
+  .bracket-view-btn {
+    padding: 6px 10px !important;
+    font-size: 12px !important;
+    min-width: 40px !important;
+  }
+  
+  /* Pagination Controls */
+  .bracket-view-section > div:last-child[style*="marginTop"] {
+    flex-direction: column !important;
+    align-items: center !important;
+    gap: 16px !important;
+    padding: 16px !important;
+  }
+  
+  .bracket-view-section > div:last-child[style*="marginTop"] > div:first-child {
+    width: 100%;
+    text-align: center;
+  }
+  
+  .bracket-view-section > div:last-child[style*="marginTop"] > div:last-child {
+    width: 100%;
+    flex-wrap: wrap;
+    justify-content: center !important;
+  }
+  
+  .bracket-view-section > div:last-child[style*="marginTop"] button {
+    padding: 10px 14px !important;
+    font-size: 14px !important;
+  }
+  
+  /* Event Details Section */
+  .bracket-visualization-section {
+    padding: 0;
+  }
+  
+  .event-details-header {
+    padding: 20px 16px;
+  }
+  
+  .event-details-header h2 {
+    font-size: 22px;
+    margin-bottom: 16px;
+  }
+  
+  .event-details-info {
+    display: grid !important;
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 12px !important;
+  }
+  
+  .event-details-info span {
+    font-size: 13px !important;
+    display: block;
+  }
+  
+  /* Tabs */
+  .awards_standings_tabs {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    white-space: nowrap;
+    padding: 0 16px;
+  }
+  
+  .awards_standings_tab_button {
+    white-space: nowrap;
+    font-size: 14px;
+    padding: 12px 20px;
+  }
+  
+  /* Tab Content */
+  .awards_standings_tab_content {
+    padding: 20px 16px;
+  }
+  
+  /* View Type Selector */
+  .awards_standings_tab_content > div[style*="display: flex"]:first-child {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 12px !important;
+    margin-bottom: 20px !important;
+  }
+  
+  .awards_standings_tab_content > div[style*="display: flex"]:first-child > div {
+    width: 100% !important;
+    justify-content: stretch !important;
+  }
+  
+  .awards_standings_tab_content > div[style*="display: flex"]:first-child button {
+    flex: 1;
+    padding: 10px 16px !important;
+    font-size: 13px !important;
+    justify-content: center !important;
+  }
+  
+  /* Quick Selectors */
+  .quick-selectors {
+    flex-direction: column;
+    gap: 16px;
+    padding: 16px;
+  }
+  
+  .selector-group {
+    min-width: 100%;
+  }
+  
+  .selector-dropdown {
+    padding: 10px;
+    font-size: 14px;
+  }
+  
+  /* Selected Context */
+  .selected-context {
+    flex-direction: column;
+    min-width: 100%;
+    gap: 12px;
+    padding: 12px 16px;
+  }
+  
+  .context-divider {
+    display: none;
+  }
+  
+  .context-label {
+    font-size: 11px;
+  }
+  
+  .context-value {
+    font-size: 13px;
+  }
+  
+  /* Matches Grid */
+  .matches-grid {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+  
+  /* Match Card */
+  .match-card {
+    padding: 16px;
+  }
+  
+  .match-teams h4 {
+    font-size: 16px;
+  }
+  
+  .match-badges {
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+  
+  .round-badge,
+  .bracket-type-badge {
+    font-size: 11px;
+    padding: 3px 10px;
+  }
+  
+  .match-info {
+    font-size: 13px;
+  }
+  
+  .match-score {
+    font-size: 20px;
+  }
+  
+  /* Match Actions */
+  .match-actions {
+    flex-direction: column;
+    gap: 8px;
+  }
+  
+  .match-actions button {
+    width: 100%;
+    padding: 10px;
+    font-size: 13px;
+  }
+  
+  /* Bracket Info */
+  .bracket-info {
+    flex-direction: column;
+    gap: 12px;
+    padding: 16px;
+  }
+  
+  .bracket-info p {
+    font-size: 13px;
+  }
+  
+  /* Bracket Visualization Header */
+  .bracket-visualization-header {
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+  
+  .back-button {
+    width: 100%;
+    justify-content: center;
+    padding: 10px 16px;
+    font-size: 14px;
+  }
+  
+  /* Loading States */
+  .awards_standings_loading {
+    padding: 40px 16px;
+  }
+  
+  .awards_standings_loading p {
+    font-size: 14px;
+  }
+  
+  /* No Brackets Message */
+  .bracket-no-brackets {
+    padding: 40px 16px;
+  }
+  
+  .bracket-no-brackets p {
+    font-size: 16px;
+  }
+}
+
+/* Mobile Phones (480px and below) */
+@media (max-width: 480px) {
+  /* Dashboard Header */
+  .dashboard-header {
+    padding: 16px 12px;
+  }
+  
+  .dashboard-header h1 {
+    font-size: 20px;
+  }
+  
+  .dashboard-header p {
+    font-size: 13px;
+  }
+  
+  /* Main Content */
+  .dashboard-main {
+    padding: 12px;
+  }
+  
+  /* Breadcrumb */
+  .bracket-breadcrumb {
+    padding: 12px;
+    gap: 8px;
+  }
+  
+  .breadcrumb-item {
+    font-size: 14px;
+  }
+  
+  .breadcrumb-separator {
+    font-size: 20px !important;
+  }
+  
+  /* Bracket View Section */
+  .bracket-view-section {
+    padding: 20px 12px;
+  }
+  
+  .bracket-view-section h2 {
+    font-size: 20px;
+    margin-bottom: 16px;
+  }
+  
+  /* Search and Filter */
+  .bracket-view-section input[type="text"],
+  .bracket-view-section select {
+    padding: 10px 12px;
+    font-size: 13px;
+  }
+  
+  /* Results Info */
+  .bracket-view-section > div:nth-child(2) > div:first-child {
+    font-size: 13px;
+  }
+  
+  .bracket-view-section > div:nth-child(2) > div:last-child label {
+    font-size: 13px;
+  }
+  
+  .bracket-view-section > div:nth-child(2) > div:last-child select {
+    padding: 6px 10px;
+    font-size: 13px;
+  }
+  
+  .bracket-view-section > div:nth-child(2) > div:last-child span {
+    font-size: 13px;
+  }
+  
+  /* Event Group Container */
+  .event-group-container {
+    margin-bottom: 14px;
+  }
+  
+  /* Event Group Header */
+  .event-group-header {
+    padding: 14px;
+    gap: 10px;
+  }
+  
+  .event-expand-button {
+    padding: 5px !important;
+    font-size: 14px !important;
+  }
+  
+  .event-header-info h3 {
+    font-size: 16px !important;
+  }
+  
+  .event-header-info > div span {
+    font-size: 10px !important;
+    padding: 3px 8px !important;
+  }
+  
+  .event-header-info > div:last-child {
+    font-size: 11px !important;
+  }
+  
+  .event-header-actions span {
+    font-size: 12px !important;
+    margin-right: 12px !important;
+  }
+  
+  /* Brackets Table */
+  .event-brackets-table-container {
+    margin: 0 -12px;
+    padding: 0 12px;
+  }
+  
+  .awards_standings_table {
+    min-width: 650px;
+    font-size: 12px;
+  }
+  
+  .awards_standings_table th,
+  .awards_standings_table td {
+    padding: 8px 12px !important;
+    font-size: 12px !important;
+  }
+  
+  .bracket-sport-badge {
+    font-size: 10px !important;
+    padding: 4px 8px !important;
+  }
+  
+  .bracket-view-btn {
+    padding: 5px 8px !important;
+    font-size: 11px !important;
+    min-width: 35px !important;
+  }
+  
+  /* Pagination Controls */
+  .bracket-view-section > div:last-child[style*="marginTop"] {
+    padding: 14px !important;
+    gap: 14px !important;
+  }
+  
+  .bracket-view-section > div:last-child[style*="marginTop"] > div:first-child {
+    font-size: 13px;
+  }
+  
+  .bracket-view-section > div:last-child[style*="marginTop"] button {
+    padding: 8px 12px !important;
+    font-size: 13px !important;
+    min-width: 36px !important;
+  }
+  
+  /* Event Details Section */
+  .event-details-header {
+    padding: 16px 12px;
+  }
+  
+  .event-details-header h2 {
+    font-size: 20px;
+    margin-bottom: 14px;
+  }
+  
+  .event-details-info {
+    grid-template-columns: 1fr !important;
+    gap: 10px !important;
+  }
+  
+  .event-details-info span {
+    font-size: 12px !important;
+  }
+  
+  /* Tabs */
+  .awards_standings_tabs {
+    padding: 0 12px;
+  }
+  
+  .awards_standings_tab_button {
+    font-size: 13px;
+    padding: 10px 16px;
+  }
+  
+  /* Tab Content */
+  .awards_standings_tab_content {
+    padding: 16px 12px;
+  }
+  
+  .awards_standings_tab_content > div[style*="display: flex"]:first-child {
+    margin-bottom: 16px !important;
+  }
+  
+  .awards_standings_tab_content > div[style*="display: flex"]:first-child button {
+    padding: 10px 14px !important;
+    font-size: 12px !important;
+    gap: 6px !important;
+  }
+  
+  /* Match Card */
+  .match-card {
+    padding: 14px;
+  }
+  
+  .match-teams h4 {
+    font-size: 15px;
+  }
+  
+  .match-badges {
+    gap: 5px;
+  }
+  
+  .round-badge,
+  .bracket-type-badge {
+    font-size: 10px;
+    padding: 3px 8px;
+  }
+  
+  .match-status {
+    font-size: 10px;
+    padding: 3px 10px;
+  }
+  
+  .match-info {
+    font-size: 12px;
+  }
+  
+  .match-score {
+    font-size: 18px;
+  }
+  
+  .reset-final-badge {
+    font-size: 10px;
+    padding: 3px 6px;
+  }
+  
+  .champion-icon,
+  .trophy-icon {
+    font-size: 14px;
+  }
+  
+  /* Match Actions */
+  .match-actions {
+    gap: 6px;
+  }
+  
+  .match-actions button {
+    padding: 10px;
+    font-size: 12px;
+  }
+  
+  /* Bracket Info */
+  .bracket-info {
+    padding: 14px;
+    gap: 10px;
+  }
+  
+  .bracket-info p {
+    font-size: 12px;
+  }
+  
+  /* Back Button */
+  .back-button {
+    padding: 10px 14px;
+    font-size: 13px;
+  }
+  
+  /* Loading States */
+  .awards_standings_loading {
+    padding: 30px 12px;
+  }
+  
+  .awards_standings_loading p {
+    font-size: 13px;
+  }
+  
+  /* No Brackets Message */
+  .bracket-no-brackets {
+    padding: 30px 12px;
+  }
+  
+  .bracket-no-brackets p {
+    font-size: 15px;
+  }
+  
+  /* Quick Selectors */
+  .quick-selectors {
+    padding: 14px;
+  }
+  
+  .selector-group label {
+    font-size: 13px;
+  }
+  
+  .selector-dropdown {
+    padding: 10px;
+    font-size: 13px;
+  }
+  
+  /* Selected Context */
+  .selected-context {
+    padding: 10px 14px;
+  }
+}
+
+/* Extra Small Devices (360px and below) */
+@media (max-width: 360px) {
+  /* Dashboard Header */
+  .dashboard-header h1 {
+    font-size: 18px;
+  }
+  
+  .dashboard-header p {
+    font-size: 12px;
+  }
+  
+  /* Breadcrumb */
+  .breadcrumb-item {
+    font-size: 13px;
+  }
+  
+  .breadcrumb-separator {
+    font-size: 18px !important;
+  }
+  
+  /* Event Header */
+  .event-header-info h3 {
+    font-size: 15px !important;
+  }
+  
+  /* Table */
+  .awards_standings_table {
+    min-width: 600px;
+  }
+  
+  .awards_standings_table th,
+  .awards_standings_table td {
+    padding: 6px 10px !important;
+    font-size: 11px !important;
+  }
+  
+  .bracket-view-btn {
+    padding: 4px 6px !important;
+    font-size: 10px !important;
+  }
+  
+  /* Event Details */
+  .event-details-header h2 {
+    font-size: 18px;
+  }
+  
+  /* Tabs */
+  .awards_standings_tab_button {
+    font-size: 12px;
+    padding: 8px 14px;
+  }
+  
+  /* View Selector */
+  .awards_standings_tab_content > div[style*="display: flex"]:first-child button {
+    padding: 8px 12px !important;
+    font-size: 11px !important;
+  }
+  
+  /* Match Card */
+  .match-teams h4 {
+    font-size: 14px;
+  }
+  
+  .match-info {
+    font-size: 11px;
+  }
+  
+  .match-score {
+    font-size: 16px;
+  }
+}
+
+/* Landscape Mode for Small Devices */
+@media (max-height: 500px) and (orientation: landscape) {
+  .dashboard-header {
+    padding: 12px 16px;
+  }
+  
+  .dashboard-header h1 {
+    font-size: 18px;
+  }
+  
+  .dashboard-header p {
+    display: none;
+  }
+  
+  .event-group-header {
+    padding: 10px 12px;
+  }
+  
+  .awards_standings_tab_button {
+    padding: 8px 14px;
+  }
+}
+
+/* Animations for Mobile */
+@keyframes fadeInDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fadeInRow {
+  from {
+    opacity: 0;
+    transform: translateX(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
