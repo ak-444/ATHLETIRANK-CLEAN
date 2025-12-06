@@ -4442,8 +4442,8 @@ const handleNextMatch = async () => {
                   }}>
                     <div style={{
                       padding: '20px',
-                      background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                      borderBottom: '1px solid #2d3748'
+                      background: 'linear-gradient(135deg, #0b1222 0%, #122449 50%, #1b2b55 100%)',
+                      borderBottom: '1px solid #1f2a44'
                     }}>
                       <h3 style={{
                         margin: 0,

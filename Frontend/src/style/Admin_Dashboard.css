@@ -396,6 +396,30 @@
   box-shadow: var(--shadow-light);
 }
 
+.upcoming-matches-section {
+  background: transparent;
+  border: none;
+  box-shadow: none;
+  padding: 0;
+}
+
+.upcoming-matches-section .section-header {
+  margin-bottom: 16px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.upcoming-matches-section .empty-state {
+  padding: 16px 0;
+}
+
+.upcoming-matches-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 12px;
+}
+
 .section-header {
   display: flex;
   justify-content: space-between;

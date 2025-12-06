@@ -10,6 +10,10 @@ const TournamentCreator = ({ sidebarOpen }) => {
   const [currentStep, setCurrentStep] = useState(1);
   const [loading, setLoading] = useState(false);
   const [validationError, setValidationError] = useState("");
+  const EVENT_NAME_MIN_LENGTH = 3;
+  const EVENT_NAME_MAX_LENGTH = 100;
+  const TEAM_NAME_MIN_LENGTH = 3;
+  const TEAM_NAME_MAX_LENGTH = 100;
   const validationMessageRef = React.useRef(null);
   const dashboardContentRef = React.useRef(null);
 
@@ -325,8 +329,20 @@ useEffect(() => {
   };
 
 const handleContinueToTeams = () => {
-  if (!eventData.name.trim() || !eventData.startDate || !eventData.endDate) {
+  const trimmedEventName = eventData.name.trim();
+
+  if (!trimmedEventName || !eventData.startDate || !eventData.endDate) {
     setValidationError("Please fill in all event fields.");
+    return;
+  }
+
+  if (trimmedEventName.length < EVENT_NAME_MIN_LENGTH) {
+    setValidationError(`Event name must be at least ${EVENT_NAME_MIN_LENGTH} characters.`);
+    return;
+  }
+
+  if (trimmedEventName.length > EVENT_NAME_MAX_LENGTH) {
+    setValidationError(`Event name cannot exceed ${EVENT_NAME_MAX_LENGTH} characters.`);
     return;
   }
 
@@ -517,8 +533,11 @@ Jane Smith,12,${currentTeam.sport === 'Basketball' ? 'Shooting Guard' : 'Outside
   };
 
   const validateTeam = () => {
-  if (!currentTeam.teamName.trim()) return "Please enter a team name";
-  if (!currentTeam.sport) return "Please select a sport";
+    const trimmedTeamName = currentTeam.teamName.trim();
+    if (!trimmedTeamName) return "Please enter a team name";
+    if (trimmedTeamName.length < TEAM_NAME_MIN_LENGTH) return `Team name must be at least ${TEAM_NAME_MIN_LENGTH} characters.`;
+    if (trimmedTeamName.length > TEAM_NAME_MAX_LENGTH) return `Team name cannot exceed ${TEAM_NAME_MAX_LENGTH} characters.`;
+    if (!currentTeam.sport) return "Please select a sport";
 
   const players = currentTeam.players || [];
   const hasPartialPlayer = players.some(player => {
@@ -1201,8 +1220,12 @@ if (bracket.bracketType === 'round_robin') {
                         value={eventData.name}
                         onChange={handleEventInputChange}
                         placeholder="Enter event name"
+                        maxLength={EVENT_NAME_MAX_LENGTH}
                         required
                       />
+                      <div style={{ fontSize: "0.8rem", color: "#6b7280", marginTop: "4px", textAlign: "right" }}>
+                        {eventData.name.length}/{EVENT_NAME_MAX_LENGTH} characters
+                      </div>
                     </div>
 
                     <div style={{ 
@@ -1399,18 +1422,22 @@ if (bracket.bracketType === 'round_robin') {
                         </div>
                       )}
                       <div style={{ display: 'flex', gap: '20px', alignItems: 'flex-start' }}>
-  <div className="bracket-form-group" style={{ flex: 1 }}>
-    <label htmlFor="teamName">Team Name *</label>
-    <input
-      type="text"
-      id="teamName"
-      name="teamName"
-      value={currentTeam.teamName}
-      onChange={handleTeamInputChange}
-      placeholder="Enter team name"
-      style={{ fontSize: '16px' }}
-    />
-  </div>
+    <div className="bracket-form-group" style={{ flex: 1 }}>
+      <label htmlFor="teamName">Team Name *</label>
+      <input
+        type="text"
+        id="teamName"
+        name="teamName"
+        value={currentTeam.teamName}
+        onChange={handleTeamInputChange}
+        placeholder="Enter team name"
+        maxLength={TEAM_NAME_MAX_LENGTH}
+        style={{ fontSize: '16px' }}
+      />
+      <div style={{ fontSize: '0.8rem', color: '#6b7280', marginTop: '4px', textAlign: 'right' }}>
+        {currentTeam.teamName.length}/{TEAM_NAME_MAX_LENGTH} characters
+      </div>
+    </div>
 
   <div className="bracket-form-group" style={{ flex: 1 }}>
     <label htmlFor="sport">Sport *</label>

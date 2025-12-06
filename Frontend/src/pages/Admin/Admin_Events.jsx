@@ -1229,8 +1229,6 @@ const toggleAwardsDisclosure = async (bracketId, currentStatus) => {
       console.log('Matches updated:', visibleMatches.length);
     }
   }
-  
-        
         setSelectedBracket(prev => ({
           ...prev,
           team_count: teams.length
