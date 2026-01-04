@@ -4142,6 +4142,8 @@ const handleNextMatch = async () => {
                   className="bracket-cancel-btn"
                   style={{ 
                     width: '100%', 
+                    background: '#16a34a',
+                    color: 'white',
                     fontSize: '16px', 
                     display: 'flex', 
                     alignItems: 'center', 

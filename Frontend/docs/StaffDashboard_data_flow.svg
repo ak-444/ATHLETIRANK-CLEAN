@@ -1,0 +1,53 @@
+<svg width='1200' height='700' viewBox='0 0 1200 700' xmlns='http://www.w3.org/2000/svg'>
+  <style>
+    .node { fill: #f8f9fb; stroke: #233b7a; stroke-width: 2; }
+    .label { fill: #111; font-family: Segoe UI, Arial, sans-serif; font-size: 16px; font-weight: 600; }
+    .subtext { fill: #233b7a; font-size: 14px; font-weight: 400; }
+    .arrow-label { fill: #2c3e50; font-size: 13px; }
+  </style>
+  <defs>
+    <marker id='arrow' markerWidth='10' markerHeight='10' refX='5' refY='5' orient='auto'>
+      <path d='M0,0 L10,5 L0,10 Z' fill='#2c3e50' />
+    </marker>
+  </defs>
+
+  <rect class='node' x='80' y='120' width='320' height='120' rx='12' />
+  <text class='label' x='140' y='150'>Staff Dashboard UI</text>
+  <text class='subtext' x='94' y='175'>React component fetches and renders</text>
+  <text class='subtext' x='94' y='195'>events, brackets, matches</text>
+
+  <rect class='node' x='80' y='270' width='320' height='150' rx='12' />
+  <text class='label' x='120' y='305'>Calculated Dashboard Data</text>
+  <text class='subtext' x='94' y='330'>ongoing/completed events,</text>
+  <text class='subtext' x='94' y='350'>upcoming plus recent matches</text>
+
+  <rect class='node' x='80' y='460' width='320' height='90' rx='12' />
+  <text class='label' x='140' y='500'>Session Storage</text>
+  <text class='subtext' x='94' y='525'>stores navigation context</text>
+
+  <rect class='node' x='520' y='120' width='320' height='140' rx='12' />
+  <text class='label' x='590' y='150'>Backend API</text>
+  <text class='subtext' x='582' y='175'>events / brackets / matches endpoints</text>
+
+  <rect class='node' x='520' y='280' width='260' height='60' rx='10' />
+  <text class='label' x='556' y='315'>GET /api/events</text>
+
+  <rect class='node' x='520' y='360' width='260' height='60' rx='10' />
+  <text class='label' x='548' y='395'>GET /api/brackets</text>
+
+  <rect class='node' x='520' y='440' width='260' height='60' rx='10' />
+  <text class='label' x='545' y='475'>GET /api/brackets/{id}/matches</text>
+  <text class='subtext' x='545' y='495'>filters out hidden matches</text>
+
+  <line x1='400' y1='180' x2='520' y2='180' stroke='#2c3e50' stroke-width='3' marker-end='url(#arrow)' />
+  <text class='arrow-label' x='440' y='165'>Fetch events plus brackets</text>
+
+  <line x1='520' y1='410' x2='400' y2='350' stroke='#2f80ed' stroke-width='3' marker-end='url(#arrow)' />
+  <text class='arrow-label' x='420' y='395'>merged matches and stats data</text>
+
+  <line x1='240' y1='220' x2='240' y2='270' stroke='#2c3e50' stroke-width='3' marker-end='url(#arrow)' />
+  <text class='arrow-label' x='250' y='255'>derive stats</text>
+
+  <line x1='240' y1='410' x2='240' y2='460' stroke='#2c3e50' stroke-width='3' marker-end='url(#arrow)' />
+  <text class='arrow-label' x='250' y='435'>store click context</text>
+</svg>

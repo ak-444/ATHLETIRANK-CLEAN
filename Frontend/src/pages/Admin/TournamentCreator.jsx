@@ -78,6 +78,18 @@ const TournamentCreator = ({ sidebarOpen }) => {
   const [teamsInBracketsFromDB, setTeamsInBracketsFromDB] = useState([]);
   const [importingCSV, setImportingCSV] = useState(false);
 const fileInputRef = React.useRef(null);
+const navButtonStyle = {
+  padding: "14px 40px",
+  fontSize: "16px",
+  display: "inline-flex",
+  alignItems: "center",
+  gap: "8px"
+};
+const clearFormButtonStyle = {
+  ...navButtonStyle,
+  backgroundColor: "#dc2626",
+  color: "#fff"
+};
   // Step 1: Event Data
   const [eventData, setEventData] = useState({
     name: "",
@@ -532,12 +544,25 @@ Jane Smith,12,${currentTeam.sport === 'Basketball' ? 'Shooting Guard' : 'Outside
     }
   };
 
-  const validateTeam = () => {
-    const trimmedTeamName = currentTeam.teamName.trim();
-    if (!trimmedTeamName) return "Please enter a team name";
-    if (trimmedTeamName.length < TEAM_NAME_MIN_LENGTH) return `Team name must be at least ${TEAM_NAME_MIN_LENGTH} characters.`;
-    if (trimmedTeamName.length > TEAM_NAME_MAX_LENGTH) return `Team name cannot exceed ${TEAM_NAME_MAX_LENGTH} characters.`;
-    if (!currentTeam.sport) return "Please select a sport";
+const validateTeam = (teamIdToIgnore = null) => {
+  const trimmedTeamName = currentTeam.teamName.trim();
+  if (!trimmedTeamName) return "Please enter a team name";
+  if (trimmedTeamName.length < TEAM_NAME_MIN_LENGTH) return `Team name must be at least ${TEAM_NAME_MIN_LENGTH} characters.`;
+  if (trimmedTeamName.length > TEAM_NAME_MAX_LENGTH) return `Team name cannot exceed ${TEAM_NAME_MAX_LENGTH} characters.`;
+  if (!currentTeam.sport) return "Please select a sport";
+
+  const normalizedTeamName = trimmedTeamName.toLowerCase();
+  const isDuplicateName = createdTeams.some(team => {
+    if (teamIdToIgnore != null && String(team.id) === String(teamIdToIgnore)) return false;
+    return (team.name || "").trim().toLowerCase() === normalizedTeamName;
+  }) || teams.some(team => {
+    if (teamIdToIgnore != null && String(team.id) === String(teamIdToIgnore)) return false;
+    return (team.name || "").trim().toLowerCase() === normalizedTeamName;
+  });
+
+  if (isDuplicateName) {
+    return "A team with this name already exists. Please choose a different name.";
+  }
 
   const players = currentTeam.players || [];
   const hasPartialPlayer = players.some(player => {
@@ -693,7 +718,7 @@ const handleAddTeam = async () => {
     return;
   }
 
-  const error = validateTeam();
+    const error = validateTeam(editingTeamId);
   if (error) {
     setValidationError(error);
     return;
@@ -1640,14 +1665,15 @@ if (bracket.bracketType === 'round_robin') {
                           createdTeams.length >= maxTeams ? `Team Limit Reached (${maxTeams}/${maxTeams})` : "Add Team"}
                         </button>
                       )}
-                      <button
-                        type="button"
-                        className="bracket-cancel-btn"
-                        onClick={() => {
-                          setCurrentTeam({ teamName: "", sport: "", players: [] });
-                          setEditingTeamId(null);
-                        }}
-                      >
+                        <button
+                          type="button"
+                          className="bracket-cancel-btn"
+                          style={clearFormButtonStyle}
+                          onClick={() => {
+                            setCurrentTeam({ teamName: "", sport: "", players: [] });
+                            setEditingTeamId(null);
+                          }}
+                        >
                         Clear Form
                       </button>
                     </div>
@@ -1777,10 +1803,11 @@ title={createdTeams.length >= maxTeams ? "Maximum team limit reached" : "Add Tea
   borderTop: '2px solid rgba(255, 255, 255, 0.1)', 
   paddingTop: '20px'
 }}>
-  <button 
-    onClick={() => setCurrentStep(1)}
-    className="bracket-cancel-btn"
-  >
+    <button 
+      onClick={() => setCurrentStep(1)}
+      className="bracket-cancel-btn"
+      style={navButtonStyle}
+    >
     <FaChevronLeft style={{ marginRight: '8px' }} />
     Back to Event
   </button>
@@ -2001,10 +2028,11 @@ title={createdTeams.length >= maxTeams ? "Maximum team limit reached" : "Add Tea
                   ))}
 
                   <div className="bracket-form-actions">
-                    <button 
-                      onClick={() => setCurrentStep(2)}
-                      className="bracket-cancel-btn"
-                    >
+                      <button 
+                        onClick={() => setCurrentStep(2)}
+                        className="bracket-cancel-btn"
+                        style={navButtonStyle}
+                      >
                       <FaChevronLeft style={{ marginRight: '8px' }} />
                       Back to Teams
                     </button>

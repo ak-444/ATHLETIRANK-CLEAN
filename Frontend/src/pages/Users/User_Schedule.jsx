@@ -718,38 +718,53 @@ const [customDateRange, setCustomDateRange] = useState({ start: '', end: '' });
       </select>
     </div>
 
-    {tournamentPeriod && (
-      <div className="stats-filter-matches-group" style={{ flex: '1', minWidth: '250px' }}>
-        <div className="stats-filter-matches-label" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--text-secondary)', fontSize: '0.85rem', fontWeight: '500', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-          <FaCalendarAlt className="stats-filter-matches-label-icon" style={{ fontSize: '0.9rem', color: 'var(--primary-color)' }} />
-          <span>TOURNAMENT PERIOD</span>
-        </div>
-        <div className="stats-period-actions">
-          <div className="stats-period-display" style={{ display: 'flex', alignItems: 'center', gap: '1rem', padding: '0.75rem 1rem', background: 'var(--background-secondary)', border: '2px solid var(--border-color)', borderRadius: 'var(--border-radius)', height: '48px', boxSizing: 'border-box' }}>
-            <span className="stats-period-date" style={{ fontSize: '0.95rem', fontWeight: '600', color: 'var(--text-primary)' }}>
-              {new Date(tournamentPeriod.start).toLocaleDateString('en-US', { 
-                month: 'short', day: 'numeric', year: 'numeric' 
-              })}
-            </span>
-            <span className="stats-period-separator" style={{ color: 'var(--primary-color)', fontWeight: 'bold', fontSize: '1.2rem' }}>to</span>
-            <span className="stats-period-date" style={{ fontSize: '0.95rem', fontWeight: '600', color: 'var(--text-primary)' }}>
-              {new Date(tournamentPeriod.end).toLocaleDateString('en-US', { 
-                month: 'short', day: 'numeric', year: 'numeric' 
-              })}
-            </span>
-          </div>
-          <button
-            className="stats-bracket-view-btn"
-            onClick={handleBracketView}
-            disabled={!selectedRecentBracket}
-            title={selectedRecentBracket ? `View ${selectedRecentBracket.name} bracket` : "Select a bracket to view"}
-          >
-            View Bracket
-          </button>
-        </div>
-      </div>
-    )}
+  
 
+{tournamentPeriod && (
+  <div className="stats-filter-matches-group" style={{ flex: '1', minWidth: '250px' }}>
+    <div className="stats-filter-matches-label">
+      <FaCalendarAlt className="stats-filter-matches-label-icon" />
+      <span>TOURNAMENT PERIOD</span>
+    </div>
+    <div style={{
+      width: '100%',
+      padding: '12px 16px',
+      background: 'rgba(30, 41, 59, 0.5)',
+      border: '1px solid rgba(148, 163, 184, 0.2)',
+      borderRadius: '8px',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: '12px',
+      minHeight: '46px',
+      boxSizing: 'border-box'
+    }}>
+      <span style={{
+        fontSize: '14px',
+        fontWeight: '500',
+        color: '#e2e8f0',
+        whiteSpace: 'nowrap'
+      }}>
+        {new Date(tournamentPeriod.start).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+      </span>
+      <span style={{
+        fontSize: '14px',
+        color: '#94a3b8',
+        fontWeight: '500'
+      }}>
+        to
+      </span>
+      <span style={{
+        fontSize: '14px',
+        fontWeight: '500',
+        color: '#e2e8f0',
+        whiteSpace: 'nowrap'
+      }}>
+        {new Date(tournamentPeriod.end).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+      </span>
+    </div>
+  </div>
+)}
   </div>
 
   {/* Date Range Filter Row */}
