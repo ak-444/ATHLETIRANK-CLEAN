@@ -298,7 +298,7 @@ function validateDoubleEliminationBracket(totalTeams, matches) {
 
 function getExpectedMatchCounts(teams) {
   const expectations = {
-    3: { winner: 3, loser: 1, championship: 2, total: 6 },
+    3: { winner: 2, loser: 1, championship: 2, total: 5 }, // FIXED: 2 winner matches, not 3
     4: { winner: 3, loser: 2, championship: 2, total: 7 },
     5: { winner: 4, loser: 3, championship: 2, total: 9 }, // FIXED: 4 winner matches, not 5
     6: { winner: 5, loser: 4, championship: 2, total: 11 },
@@ -517,6 +517,226 @@ router.post("/:id/generate", async (req, res) => {
         });
       }
 
+      // SPECIAL HANDLING FOR 9 TEAMS - FIXED (8 matches total)
+      if (totalTeams === 9) {
+        console.log('Generating single elimination for 9 teams (8 matches total)');
+        
+        // Round 1: 1 match (Team 8 vs Team 9)
+        // This creates 8 teams for Round 2
+        const [r1m0] = await db.pool.query(
+          `INSERT INTO matches (bracket_id, round_number, bracket_type, team1_id, team2_id, winner_id, status, match_order) 
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+          [bracketId, 1, 'winner', shuffledTeams[7].id, shuffledTeams[8].id, null, 'scheduled', 0]
+        );
+        allMatches.push({
+          id: r1m0.insertId,
+          bracket_id: bracketId,
+          round_number: 1,
+          bracket_type: 'winner',
+          team1_id: shuffledTeams[7].id,
+          team2_id: shuffledTeams[8].id,
+          winner_id: null,
+          status: 'scheduled',
+          match_order: 0
+        });
+
+        // Round 2: 4 matches (quarterfinals)
+        // Game 2: Team 1 vs Team 2
+        // Game 3: Team 3 vs Team 4
+        // Game 4: Team 5 vs Team 6
+        // Game 5: Team 7 vs Winner(Game 1)
+        const round2Matches = [
+          { team1: shuffledTeams[0], team2: shuffledTeams[1], matchOrder: 0 }, // Game 2
+          { team1: shuffledTeams[2], team2: shuffledTeams[3], matchOrder: 1 }, // Game 3
+          { team1: shuffledTeams[4], team2: shuffledTeams[5], matchOrder: 2 }, // Game 4
+          { team1: shuffledTeams[6], team2: null, matchOrder: 3 }              // Game 5
+        ];
+
+        for (const { team1, team2, matchOrder } of round2Matches) {
+          const [result] = await db.pool.query(
+            `INSERT INTO matches (bracket_id, round_number, bracket_type, team1_id, team2_id, winner_id, status, match_order) 
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+            [bracketId, 2, 'winner', team1.id, team2?.id || null, null, 'scheduled', matchOrder]
+          );
+          allMatches.push({
+            id: result.insertId,
+            bracket_id: bracketId,
+            round_number: 2,
+            bracket_type: 'winner',
+            team1_id: team1.id,
+            team2_id: team2?.id || null,
+            winner_id: null,
+            status: 'scheduled',
+            match_order: matchOrder
+          });
+        }
+
+        // Round 3: 2 matches (semifinals)
+        // Game 6: Winner(Game 2) vs Winner(Game 3)
+        // Game 7: Winner(Game 4) vs Winner(Game 5)
+        for (let i = 0; i < 2; i++) {
+          const [result] = await db.pool.query(
+            `INSERT INTO matches (bracket_id, round_number, bracket_type, team1_id, team2_id, winner_id, status, match_order) 
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+            [bracketId, 3, 'winner', null, null, null, 'scheduled', i]
+          );
+          allMatches.push({
+            id: result.insertId,
+            bracket_id: bracketId,
+            round_number: 3,
+            bracket_type: 'winner',
+            team1_id: null,
+            team2_id: null,
+            winner_id: null,
+            status: 'scheduled',
+            match_order: i
+          });
+        }
+
+        // Round 4: Finals (1 match)
+        // Game 8: Winner(Game 6) vs Winner(Game 7)
+        const [finals] = await db.pool.query(
+          `INSERT INTO matches (bracket_id, round_number, bracket_type, team1_id, team2_id, winner_id, status, match_order) 
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+          [bracketId, 4, 'winner', null, null, null, 'scheduled', 0]
+        );
+        allMatches.push({
+          id: finals.insertId,
+          bracket_id: bracketId,
+          round_number: 4,
+          bracket_type: 'winner',
+          team1_id: null,
+          team2_id: null,
+          winner_id: null,
+          status: 'scheduled',
+          match_order: 0
+        });
+
+        console.log(`✅ Generated 8 matches for 9-team single elimination`);
+
+        return res.json({
+          success: true,
+          message: `Generated 8 matches for single elimination (9 teams)`,
+          matches: allMatches,
+          elimination_type: eliminationType,
+          team_count: totalTeams
+        });
+      }
+
+      // SPECIAL HANDLING FOR 10 TEAMS - FIXED (9 matches total)
+      if (totalTeams === 10) {
+        console.log('Generating single elimination for 10 teams (9 matches total)');
+        
+        // Round 1: 2 matches (creates 8 teams for Round 2)
+        // Game 1: Team 7 vs Team 8
+        // Game 2: Team 9 vs Team 10
+        const round1Matches = [
+          { team1: shuffledTeams[6], team2: shuffledTeams[7], matchOrder: 0 }, // Game 1
+          { team1: shuffledTeams[8], team2: shuffledTeams[9], matchOrder: 1 }  // Game 2
+        ];
+
+        for (const { team1, team2, matchOrder } of round1Matches) {
+          const [result] = await db.pool.query(
+            `INSERT INTO matches (bracket_id, round_number, bracket_type, team1_id, team2_id, winner_id, status, match_order) 
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+            [bracketId, 1, 'winner', team1.id, team2.id, null, 'scheduled', matchOrder]
+          );
+          allMatches.push({
+            id: result.insertId,
+            bracket_id: bracketId,
+            round_number: 1,
+            bracket_type: 'winner',
+            team1_id: team1.id,
+            team2_id: team2.id,
+            winner_id: null,
+            status: 'scheduled',
+            match_order: matchOrder
+          });
+        }
+
+        // Round 2: 4 matches (quarterfinals)
+        // Game 3: Team 1 vs Team 2
+        // Game 4: Team 3 vs Team 4
+        // Game 5: Team 5 vs Winner(Game 1)
+        // Game 6: Team 6 vs Winner(Game 2)
+        const round2Matches = [
+          { team1: shuffledTeams[0], team2: shuffledTeams[1], matchOrder: 0 }, // Game 3
+          { team1: shuffledTeams[2], team2: shuffledTeams[3], matchOrder: 1 }, // Game 4
+          { team1: shuffledTeams[4], team2: null, matchOrder: 2 },              // Game 5
+          { team1: shuffledTeams[5], team2: null, matchOrder: 3 }               // Game 6
+        ];
+
+        for (const { team1, team2, matchOrder } of round2Matches) {
+          const [result] = await db.pool.query(
+            `INSERT INTO matches (bracket_id, round_number, bracket_type, team1_id, team2_id, winner_id, status, match_order) 
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+            [bracketId, 2, 'winner', team1.id, team2?.id || null, null, 'scheduled', matchOrder]
+          );
+          allMatches.push({
+            id: result.insertId,
+            bracket_id: bracketId,
+            round_number: 2,
+            bracket_type: 'winner',
+            team1_id: team1.id,
+            team2_id: team2?.id || null,
+            winner_id: null,
+            status: 'scheduled',
+            match_order: matchOrder
+          });
+        }
+
+        // Round 3: 2 matches (semifinals)
+        // Game 7: Winner(Game 3) vs Winner(Game 4)
+        // Game 8: Winner(Game 5) vs Winner(Game 6)
+        for (let i = 0; i < 2; i++) {
+          const [result] = await db.pool.query(
+            `INSERT INTO matches (bracket_id, round_number, bracket_type, team1_id, team2_id, winner_id, status, match_order) 
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+            [bracketId, 3, 'winner', null, null, null, 'scheduled', i]
+          );
+          allMatches.push({
+            id: result.insertId,
+            bracket_id: bracketId,
+            round_number: 3,
+            bracket_type: 'winner',
+            team1_id: null,
+            team2_id: null,
+            winner_id: null,
+            status: 'scheduled',
+            match_order: i
+          });
+        }
+
+        // Round 4: Finals (1 match)
+        // Game 9: Winner(Game 7) vs Winner(Game 8)
+        const [finals] = await db.pool.query(
+          `INSERT INTO matches (bracket_id, round_number, bracket_type, team1_id, team2_id, winner_id, status, match_order) 
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+          [bracketId, 4, 'winner', null, null, null, 'scheduled', 0]
+        );
+        allMatches.push({
+          id: finals.insertId,
+          bracket_id: bracketId,
+          round_number: 4,
+          bracket_type: 'winner',
+          team1_id: null,
+          team2_id: null,
+          winner_id: null,
+          status: 'scheduled',
+          match_order: 0
+        });
+
+        console.log(`✅ Generated 9 matches for 10-team single elimination`);
+
+        return res.json({
+          success: true,
+          message: `Generated 9 matches for single elimination (10 teams)`,
+          matches: allMatches,
+          elimination_type: eliminationType,
+          team_count: totalTeams
+        });
+      }
+
       // STANDARD LOGIC FOR OTHER TEAM COUNTS
       const nextPowerOfTwo = Math.pow(2, Math.ceil(Math.log2(shuffledTeams.length)));
       while (shuffledTeams.length < nextPowerOfTwo) {
@@ -591,7 +811,63 @@ router.post("/:id/generate", async (req, res) => {
 
       let winnerMatches = [];
 
-      if (totalTeams === 5) {
+      // FIXED: 3-team generation
+      if (totalTeams === 3) {
+        console.log('Generating double elimination for 3 teams');
+        
+        // Winner's bracket - 2 games only
+        // Game 1: A3 vs A2
+        // Game 2: A1 vs Winner(Game 1)
+        
+        // Game 1: A3 vs A2
+        const game1Match = {
+          bracket_id: bracketId,
+          round_number: 1,
+          bracket_type: 'winner',
+          team1_id: paddedTeams[2].id,  // A3
+          team2_id: paddedTeams[1].id,  // A2
+          winner_id: null,
+          status: "scheduled",
+          match_order: 0
+        };
+
+        const [game1Result] = await db.pool.query(
+          `INSERT INTO matches (bracket_id, round_number, bracket_type, team1_id, team2_id, winner_id, status, match_order) 
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+          [game1Match.bracket_id, game1Match.round_number, game1Match.bracket_type,
+           game1Match.team1_id, game1Match.team2_id, game1Match.winner_id,
+           game1Match.status, game1Match.match_order]
+        );
+
+        game1Match.id = game1Result.insertId;
+        allMatches.push(game1Match);
+        winnerMatches.push({ ...game1Match, roundIndex: 1, matchIndex: 0 });
+
+        // Game 2: A1 vs Winner(Game 1)
+        const game2Match = {
+          bracket_id: bracketId,
+          round_number: 2,
+          bracket_type: 'winner',
+          team1_id: paddedTeams[0].id,  // A1
+          team2_id: null,               // Winner of Game 1
+          winner_id: null,
+          status: "scheduled",
+          match_order: 0
+        };
+
+        const [game2Result] = await db.pool.query(
+          `INSERT INTO matches (bracket_id, round_number, bracket_type, team1_id, team2_id, winner_id, status, match_order) 
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+          [game2Match.bracket_id, game2Match.round_number, game2Match.bracket_type,
+           game2Match.team1_id, game2Match.team2_id, game2Match.winner_id,
+           game2Match.status, game2Match.match_order]
+        );
+
+        game2Match.id = game2Result.insertId;
+        allMatches.push(game2Match);
+        winnerMatches.push({ ...game2Match, roundIndex: 2, matchIndex: 0 });
+
+      } else if (totalTeams === 5) {
         // CORRECTED: 5-team winner's bracket - ONLY 2 ROUNDS
         // Round 1: Game 1 (T1 vs T2), Game 2 (T3 vs T4)
         const round1Matches = [
@@ -1214,6 +1490,133 @@ router.post("/matches/:id/complete", async (req, res) => {
           tournamentComplete = true;
         }
       }
+      // SPECIAL HANDLING FOR 9 TEAMS - MATCH COMPLETION
+      else if (totalTeams === 9) {
+        if (match.round_number === 1) {
+          // Game 1 winner -> Game 5 (R2 M3) team2
+          const [nextMatches] = await db.pool.query(
+            `SELECT * FROM matches 
+             WHERE bracket_id = ? AND bracket_type = 'winner' 
+             AND round_number = 2 AND match_order = 3`,
+            [match.bracket_id]
+          );
+          
+          if (nextMatches.length > 0) {
+            await db.pool.query(
+              `UPDATE matches SET team2_id = ? WHERE id = ?`,
+              [winner_id, nextMatches[0].id]
+            );
+            winnerAdvanced = true;
+          }
+        } else if (match.round_number === 2) {
+          // Round 2 winners advance to semifinals (Round 3)
+          const semifinalMatchOrder = Math.floor(match.match_order / 2);
+          const [nextMatches] = await db.pool.query(
+            `SELECT * FROM matches 
+             WHERE bracket_id = ? AND bracket_type = 'winner' 
+             AND round_number = 3 AND match_order = ?`,
+            [match.bracket_id, semifinalMatchOrder]
+          );
+          
+          if (nextMatches.length > 0) {
+            const updateField = match.match_order % 2 === 0 ? 'team1_id' : 'team2_id';
+            await db.pool.query(
+              `UPDATE matches SET ${updateField} = ? WHERE id = ?`,
+              [winner_id, nextMatches[0].id]
+            );
+            winnerAdvanced = true;
+          }
+        } else if (match.round_number === 3) {
+          // Semifinals winners advance to Finals (Round 4)
+          const [finalsMatch] = await db.pool.query(
+            `SELECT * FROM matches 
+             WHERE bracket_id = ? AND bracket_type = 'winner' 
+             AND round_number = 4 AND match_order = 0`,
+            [match.bracket_id]
+          );
+          
+          if (finalsMatch.length > 0) {
+            const updateField = match.match_order === 0 ? 'team1_id' : 'team2_id';
+            await db.pool.query(
+              `UPDATE matches SET ${updateField} = ? WHERE id = ?`,
+              [winner_id, finalsMatch[0].id]
+            );
+            winnerAdvanced = true;
+          }
+        } else if (match.round_number === 4) {
+          // Finals - tournament complete
+          await db.pool.query(
+            "UPDATE brackets SET winner_team_id = ? WHERE id = ?",
+            [winner_id, match.bracket_id]
+          );
+          tournamentComplete = true;
+        }
+      }
+      // SPECIAL HANDLING FOR 10 TEAMS - MATCH COMPLETION
+      else if (totalTeams === 10) {
+        if (match.round_number === 1) {
+          // Round 1 winners advance to Round 2
+          // Game 1 winner -> Game 5 (R2 M2) team2
+          // Game 2 winner -> Game 6 (R2 M3) team2
+          const targetMatchOrder = match.match_order + 2;
+          const [nextMatches] = await db.pool.query(
+            `SELECT * FROM matches 
+             WHERE bracket_id = ? AND bracket_type = 'winner' 
+             AND round_number = 2 AND match_order = ?`,
+            [match.bracket_id, targetMatchOrder]
+          );
+          
+          if (nextMatches.length > 0) {
+            await db.pool.query(
+              `UPDATE matches SET team2_id = ? WHERE id = ?`,
+              [winner_id, nextMatches[0].id]
+            );
+            winnerAdvanced = true;
+          }
+        } else if (match.round_number === 2) {
+          // Round 2 winners advance to semifinals (Round 3)
+          const semifinalMatchOrder = Math.floor(match.match_order / 2);
+          const [nextMatches] = await db.pool.query(
+            `SELECT * FROM matches 
+             WHERE bracket_id = ? AND bracket_type = 'winner' 
+             AND round_number = 3 AND match_order = ?`,
+            [match.bracket_id, semifinalMatchOrder]
+          );
+          
+          if (nextMatches.length > 0) {
+            const updateField = match.match_order % 2 === 0 ? 'team1_id' : 'team2_id';
+            await db.pool.query(
+              `UPDATE matches SET ${updateField} = ? WHERE id = ?`,
+              [winner_id, nextMatches[0].id]
+            );
+            winnerAdvanced = true;
+          }
+        } else if (match.round_number === 3) {
+          // Semifinals winners advance to Finals (Round 4)
+          const [finalsMatch] = await db.pool.query(
+            `SELECT * FROM matches 
+             WHERE bracket_id = ? AND bracket_type = 'winner' 
+             AND round_number = 4 AND match_order = 0`,
+            [match.bracket_id]
+          );
+          
+          if (finalsMatch.length > 0) {
+            const updateField = match.match_order === 0 ? 'team1_id' : 'team2_id';
+            await db.pool.query(
+              `UPDATE matches SET ${updateField} = ? WHERE id = ?`,
+              [winner_id, finalsMatch[0].id]
+            );
+            winnerAdvanced = true;
+          }
+        } else if (match.round_number === 4) {
+          // Finals - tournament complete
+          await db.pool.query(
+            "UPDATE brackets SET winner_team_id = ? WHERE id = ?",
+            [winner_id, match.bracket_id]
+          );
+          tournamentComplete = true;
+        }
+      }
       else {
         // STANDARD LOGIC FOR OTHER TEAM COUNTS
         const [nextMatches] = await db.pool.query(
@@ -1246,8 +1649,78 @@ router.post("/matches/:id/complete", async (req, res) => {
     } else if (eliminationType === "double") {
       
       if (match.bracket_type === 'winner') {
-        // CORRECTED: 5-TEAM WINNER BRACKET PROGRESSION
-        if (totalTeams === 5) {
+        // FIXED: 3-team winner bracket progression
+        if (totalTeams === 3) {
+          if (match.round_number === 1) {
+            // Game 1 (A3 vs A2) winner -> Game 2 team2_id
+            const [nextMatches] = await db.pool.query(
+              `SELECT * FROM matches 
+               WHERE bracket_id = ? AND bracket_type = 'winner' 
+               AND round_number = 2 AND match_order = 0`,
+              [match.bracket_id]
+            );
+            
+            if (nextMatches.length > 0) {
+              await db.pool.query(
+                "UPDATE matches SET team2_id = ? WHERE id = ?",
+                [winner_id, nextMatches[0].id]
+              );
+              winnerAdvanced = true;
+            }
+
+            // Game 1 loser -> LB Final (round 101)
+            if (loser_id) {
+              const [loserMatches] = await db.pool.query(
+                `SELECT * FROM matches 
+                 WHERE bracket_id = ? AND bracket_type = 'loser' 
+                 AND round_number = 101 AND match_order = 0`,
+                [match.bracket_id]
+              );
+              
+              if (loserMatches.length > 0) {
+                await db.pool.query(
+                  `UPDATE matches SET team1_id = ? WHERE id = ?`,
+                  [loser_id, loserMatches[0].id]
+                );
+                loserAdvanced = true;
+              }
+            }
+          } else if (match.round_number === 2) {
+            // Game 2 winner -> Grand Final team1_id
+            const [grandFinalMatches] = await db.pool.query(
+              `SELECT * FROM matches 
+               WHERE bracket_id = ? AND bracket_type = 'championship' AND round_number = 200`,
+              [match.bracket_id]
+            );
+            
+            if (grandFinalMatches.length > 0) {
+              await db.pool.query(
+                "UPDATE matches SET team1_id = ? WHERE id = ?",
+                [winner_id, grandFinalMatches[0].id]
+              );
+              winnerAdvanced = true;
+            }
+
+            // Game 2 loser -> LB Final team2_id
+            if (loser_id) {
+              const [loserMatches] = await db.pool.query(
+                `SELECT * FROM matches 
+                 WHERE bracket_id = ? AND bracket_type = 'loser' 
+                 AND round_number = 101 AND match_order = 0`,
+                [match.bracket_id]
+              );
+              
+              if (loserMatches.length > 0) {
+                await db.pool.query(
+                  `UPDATE matches SET team2_id = ? WHERE id = ?`,
+                  [loser_id, loserMatches[0].id]
+                );
+                loserAdvanced = true;
+              }
+            }
+          }
+        } else if (totalTeams === 5) {
+          // CORRECTED: 5-team winner bracket progression
           if (match.round_number === 1) {
             // Round 1 matches
             if (match.match_order === 0) {
@@ -1741,6 +2214,102 @@ router.post("/matches/:id/complete", async (req, res) => {
               }
             }
           }
+        } else if (totalTeams === 8) {
+          // ===== FIXED 8-TEAM LOGIC =====
+          
+          // Winner advancement
+          if (match.round_number === 1) {
+            // Round 1: Games 1-4 winners advance to Round 2 (Games 5&6)
+            const nextMatchOrder = Math.floor(match.match_order / 2);
+            const [nextWinnerMatches] = await db.pool.query(
+              `SELECT * FROM matches 
+               WHERE bracket_id = ? AND bracket_type = 'winner' 
+               AND round_number = 2 AND match_order = ?`,
+              [match.bracket_id, nextMatchOrder]
+            );
+            
+            if (nextWinnerMatches.length > 0) {
+              const nextMatch = nextWinnerMatches[0];
+              const updateField = match.match_order % 2 === 0 ? 'team1_id' : 'team2_id';
+              await db.pool.query(
+                `UPDATE matches SET ${updateField} = ? WHERE id = ?`,
+                [winner_id, nextMatch.id]
+              );
+              winnerAdvanced = true;
+            }
+          } else if (match.round_number === 2) {
+            // Round 2: Games 5&6 winners advance to Round 3 (Game 7)
+            const [nextWinnerMatches] = await db.pool.query(
+              `SELECT * FROM matches 
+               WHERE bracket_id = ? AND bracket_type = 'winner' 
+               AND round_number = 3 AND match_order = 0`,
+              [match.bracket_id]
+            );
+            
+            if (nextWinnerMatches.length > 0) {
+              const nextMatch = nextWinnerMatches[0];
+              const updateField = match.match_order === 0 ? 'team1_id' : 'team2_id';
+              await db.pool.query(
+                `UPDATE matches SET ${updateField} = ? WHERE id = ?`,
+                [winner_id, nextMatch.id]
+              );
+              winnerAdvanced = true;
+            }
+          } else if (match.round_number === 3) {
+            // Round 3: Game 7 winner to Grand Final
+            const [grandFinalMatches] = await db.pool.query(
+              `SELECT * FROM matches 
+               WHERE bracket_id = ? AND bracket_type = 'championship' AND round_number = 200`,
+              [match.bracket_id]
+            );
+            
+            if (grandFinalMatches.length > 0) {
+              await db.pool.query(
+                "UPDATE matches SET team1_id = ? WHERE id = ?",
+                [winner_id, grandFinalMatches[0].id]
+              );
+              winnerAdvanced = true;
+            }
+          }
+          
+          // ===== FIXED LOSER ROUTING FOR 8 TEAMS =====
+          if (loser_id) {
+            let targetLoserRound, targetMatchOrder;
+            
+            if (match.round_number === 1) {
+              // Round 1 losers (Games 1-4) go to LB R1 (Games 8&9)
+              targetLoserRound = 101;
+              targetMatchOrder = Math.floor(match.match_order / 2);
+            } else if (match.round_number === 2) {
+              // Round 2 losers (Games 5&6) go to LB R2 (Games 10&11)
+              targetLoserRound = 102;
+              targetMatchOrder = match.match_order;
+            } else if (match.round_number === 3) {
+              // Round 3 loser (Game 7) goes to LB R3 (Game 12)
+              targetLoserRound = 104;
+              targetMatchOrder = 0;
+            }
+            
+            if (targetLoserRound) {
+              const [loserBracketMatches] = await db.pool.query(
+                `SELECT * FROM matches 
+                 WHERE bracket_id = ? AND bracket_type = 'loser' 
+                 AND round_number = ? AND match_order = ?`,
+                [match.bracket_id, targetLoserRound, targetMatchOrder]
+              );
+              
+              if (loserBracketMatches.length > 0) {
+                const targetMatch = loserBracketMatches[0];
+                const updateField = targetMatch.team1_id === null ? 'team1_id' : 'team2_id';
+                
+                await db.pool.query(
+                  `UPDATE matches SET ${updateField} = ? WHERE id = ?`,
+                  [loser_id, targetMatch.id]
+                );
+                loserAdvanced = true;
+              }
+            }
+          }
         } else if (totalTeams === 9) {
           const key = `${match.round_number}_${match.match_order}`;
           const winnerTargets = {
@@ -1941,7 +2510,23 @@ router.post("/matches/:id/complete", async (req, res) => {
         
       } else if (match.bracket_type === 'loser') {
         // LOSER BRACKET LOGIC
-        if (totalTeams === 5) {
+        // FIXED: 3-team loser bracket progression
+        if (totalTeams === 3) {
+          // LB Final (round 101) winner -> Grand Final team2_id
+          const [grandFinalMatches] = await db.pool.query(
+            `SELECT * FROM matches 
+             WHERE bracket_id = ? AND bracket_type = 'championship' AND round_number = 200`,
+            [match.bracket_id]
+          );
+          
+          if (grandFinalMatches.length > 0) {
+            await db.pool.query(
+              "UPDATE matches SET team2_id = ? WHERE id = ?",
+              [winner_id, grandFinalMatches[0].id]
+            );
+            winnerAdvanced = true;
+          }
+        } else if (totalTeams === 5) {
           if (match.round_number === 101) {
             // LB R1 winner -> LB R2
             const [nextLoserMatches] = await db.pool.query(
@@ -2171,6 +2756,77 @@ router.post("/matches/:id/complete", async (req, res) => {
             }
           } else if (match.round_number === 104) {
             // LB Final (Game 11) winner -> Grand Final
+            const [grandFinalMatches] = await db.pool.query(
+              `SELECT * FROM matches 
+               WHERE bracket_id = ? AND bracket_type = 'championship' AND round_number = 200`,
+              [match.bracket_id]
+            );
+            
+            if (grandFinalMatches.length > 0) {
+              await db.pool.query(
+                "UPDATE matches SET team2_id = ? WHERE id = ?",
+                [winner_id, grandFinalMatches[0].id]
+              );
+              winnerAdvanced = true;
+            }
+          }
+        } else if (totalTeams === 8) {
+          // ===== FIXED 8-TEAM LOSER BRACKET PROGRESSION =====
+          if (match.round_number === 101) {
+            // LB R1: Games 8 & 9 winners advance to LB R2 (Games 10 & 11)
+            const [nextLoserMatches] = await db.pool.query(
+              `SELECT * FROM matches 
+               WHERE bracket_id = ? AND bracket_type = 'loser' 
+               AND round_number = 102 AND match_order = ?`,
+              [match.bracket_id, match.match_order]
+            );
+            
+            if (nextLoserMatches.length > 0) {
+              const updateField = nextLoserMatches[0].team1_id === null ? 'team1_id' : 'team2_id';
+              await db.pool.query(
+                `UPDATE matches SET ${updateField} = ? WHERE id = ?`,
+                [winner_id, nextLoserMatches[0].id]
+              );
+              winnerAdvanced = true;
+            }
+          } else if (match.round_number === 102) {
+            // LB R2: FIXED LOGIC
+            // Game 10 (M0) winner -> Game 12 (LB R3)
+            // Game 11 (M1) winner -> Game 12 (LB R3)
+            const [nextLoserMatches] = await db.pool.query(
+              `SELECT * FROM matches 
+               WHERE bracket_id = ? AND bracket_type = 'loser' 
+               AND round_number = 103 AND match_order = 0`,
+              [match.bracket_id]
+            );
+            
+            if (nextLoserMatches.length > 0) {
+              const updateField = nextLoserMatches[0].team1_id === null ? 'team1_id' : 'team2_id';
+              await db.pool.query(
+                `UPDATE matches SET ${updateField} = ? WHERE id = ?`,
+                [winner_id, nextLoserMatches[0].id]
+              );
+              winnerAdvanced = true;
+            }
+          } else if (match.round_number === 103) {
+            // LB R3 (Game 12) winner -> LB Final (Game 13)
+            const [nextLoserMatches] = await db.pool.query(
+              `SELECT * FROM matches 
+               WHERE bracket_id = ? AND bracket_type = 'loser' 
+               AND round_number = 104 AND match_order = 0`,
+              [match.bracket_id]
+            );
+            
+            if (nextLoserMatches.length > 0) {
+              const updateField = nextLoserMatches[0].team1_id === null ? 'team1_id' : 'team2_id';
+              await db.pool.query(
+                `UPDATE matches SET ${updateField} = ? WHERE id = ?`,
+                [winner_id, nextLoserMatches[0].id]
+              );
+              winnerAdvanced = true;
+            }
+          } else if (match.round_number === 104) {
+            // LB Final (Game 13) winner -> Grand Final
             const [grandFinalMatches] = await db.pool.query(
               `SELECT * FROM matches 
                WHERE bracket_id = ? AND bracket_type = 'championship' AND round_number = 200`,
