@@ -1,7 +1,4 @@
 import React, { useState, useEffect } from "react";
-import { FaBasketballBall, FaVolleyballBall, FaTrophy } from "react-icons/fa";
-import { IoStatsChart } from "react-icons/io5";
-import TeamPositionStats from "./TeamPositionStats.jsx"; // Import the new component
 import "../../style/SeasonalLeadersStats.css";
 
 const SeasonalLeadersStats = ({ sidebarOpen }) => {
@@ -21,30 +18,6 @@ const SeasonalLeadersStats = ({ sidebarOpen }) => {
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
-  const [topEfficiency, setTopEfficiency] = useState([]);
-
-  const formatDecimal = (value, digits = 1) => {
-    const num = Number(value);
-    return Number.isFinite(num) ? num.toFixed(digits) : Number(0).toFixed(digits);
-  };
-
-  const safeNumber = (value) => {
-    const num = Number(value);
-    return Number.isFinite(num) ? num : 0;
-  };
-
-  // Calculate basketball MVP efficiency score
-  // Formula: MVP Score = PPG + RPG + APG + SPG + BPG - TOV
-  const calculateBasketballMVPScore = (player) => {
-    const ppg = safeNumber(player.ppg);
-    const rpg = safeNumber(player.rpg);
-    const apg = safeNumber(player.apg);
-    const spg = safeNumber(player.spg);
-    const bpg = safeNumber(player.bpg);
-    const tpg = safeNumber(player.tpg);
-    
-    return ppg + rpg + apg + spg + bpg - tpg;
-  };
 
   // Fetch all events on mount
   useEffect(() => {
@@ -120,8 +93,6 @@ const SeasonalLeadersStats = ({ sidebarOpen }) => {
       
       const sportType = selectedBracket.sport_type;
       
-      let efficiencyList = [];
-
       if (sportType === "basketball") {
         setLeaderboards({
           points: [...data].sort((a, b) => (b.ppg || 0) - (a.ppg || 0)).slice(0, 5),
@@ -130,14 +101,6 @@ const SeasonalLeadersStats = ({ sidebarOpen }) => {
           blocks: [...data].sort((a, b) => (b.bpg || 0) - (a.bpg || 0)).slice(0, 5),
           steals: [...data].sort((a, b) => (b.spg || 0) - (a.spg || 0)).slice(0, 5),
         });
-
-        efficiencyList = [...data]
-          .map(player => ({
-            ...player,
-            efficiencyScore: calculateBasketballMVPScore(player)
-          }))
-          .sort((a, b) => b.efficiencyScore - a.efficiencyScore)
-          .slice(0, 10);
       } else if (sportType === "volleyball") {
         setLeaderboards({
           kills: [...data].sort((a, b) => (b.kills || 0) - (a.kills || 0)).slice(0, 5),
@@ -146,11 +109,7 @@ const SeasonalLeadersStats = ({ sidebarOpen }) => {
           blocks: [...data].sort((a, b) => (b.blocks || 0) - (a.blocks || 0)).slice(0, 5),
           serviceAces: [...data].sort((a, b) => (b.service_aces || 0) - (a.service_aces || 0)).slice(0, 5),
         });
-
-        efficiencyList = [];
       }
-
-      setTopEfficiency(efficiencyList);
     } catch (err) {
       console.error("Error fetching seasonal leaders:", err);
       setError("Failed to load seasonal leaders");
@@ -285,159 +244,25 @@ const SeasonalLeadersStats = ({ sidebarOpen }) => {
 
             {/* Leaderboards Grid */}
             {!loading && !error && selectedEvent && selectedBracket && (
-              <>
-                <div className="seasonal-leaders-grid">
-                  {selectedBracket.sport_type === "basketball" ? (
-                    <>
-                      {renderLeaderCard("POINTS", leaderboards.points, "ppg", "🏀")}
-                      {renderLeaderCard("REBOUNDS", leaderboards.rebounds, "rpg", "🏀")}
-                      {renderLeaderCard("ASSISTS", leaderboards.assists, "apg", "🏀")}
-                      {renderLeaderCard("BLOCKS", leaderboards.blocks, "bpg", "🛡️")}
-                      {renderLeaderCard("STEALS", leaderboards.steals, "spg", "🤲")}
-                    </>
-                  ) : (
-                    <>
-                      {renderLeaderCard("KILLS", leaderboards.kills, "kills", "⚡")}
-                      {renderLeaderCard("DIGS", leaderboards.digs, "digs", "🏐")}
-                      {renderLeaderCard("ASSISTS", leaderboards.assists, "assists", "🤝")}
-                      {renderLeaderCard("BLOCKS", leaderboards.blocks, "blocks", "🛡️")}
-                      {renderLeaderCard("SERVICE ACES", leaderboards.serviceAces, "service_aces", "🎯")}
-                    </>
-                  )}
-                </div>
-
-                {selectedBracket.sport_type === "basketball" && topEfficiency.length > 0 && (
-                  <div className="seasonal-position-stats seasonal-efficiency-section">
-                    <div className="seasonal-position-header">
-                      <h2 className="seasonal-position-title">Top 10 Leaders</h2>
-                      <p className="seasonal-position-subtitle">
-                        Players with the highest all-around impact based on efficiency.
-                      </p>
-                    </div>
-
-                    <div className="seasonal-position-table-container">
-                      <table className="seasonal-position-table">
-                        <thead>
-                          <tr>
-                            <th>Rank</th>
-                            <th>Team</th>
-                            <th>Player</th>
-                            <th className="text-center">Jersey</th>
-                            <th className="text-center">Games</th>
-                            {selectedBracket.sport_type === "basketball" ? (
-                              <>
-                                <th className="text-center">PPG</th>
-                                <th className="text-center">RPG</th>
-                                <th className="text-center">APG</th>
-                              </>
-                            ) : (
-                              <>
-                                <th className="text-center">Kills</th>
-                                <th className="text-center">Assists</th>
-                                <th className="text-center">Digs</th>
-                                <th className="text-center">Blocks</th>
-                              </>
-                            )}
-                            <th className="text-center">EFF</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {topEfficiency.map((player, index) => (
-                            <tr key={player.id} className={index < 3 ? "top-three" : ""}>
-                              <td>
-                                <span className={`seasonal-rank-badge seasonal-rank-${index + 1}`}>
-                                  {index + 1}
-                                </span>
-                              </td>
-                              <td>
-                                <span className="seasonal-position-team">{player.team_name || "—"}</span>
-                              </td>
-                              <td>
-                                <span className="seasonal-position-player">{player.name}</span>
-                                <div className="seasonal-leader-team">{player.position || "—"}</div>
-                              </td>
-                              <td className="text-center">
-                                <span className="seasonal-position-jersey">#{player.jersey_number || "--"}</span>
-                              </td>
-                              <td className="text-center">
-                                <span className="seasonal-position-stat-value">
-                                  {player.games_played || 0}
-                                </span>
-                              </td>
-                              {selectedBracket.sport_type === "basketball" ? (
-                                <>
-                                  <td className="text-center">
-                                    <span className="seasonal-position-stat-value">{formatDecimal(player.ppg)}</span>
-                                  </td>
-                                  <td className="text-center">
-                                    <span className="seasonal-position-stat-value">{formatDecimal(player.rpg)}</span>
-                                  </td>
-                                  <td className="text-center">
-                                    <span className="seasonal-position-stat-value">{formatDecimal(player.apg)}</span>
-                                  </td>
-                                </>
-                              ) : (
-                                <>
-                                  <td className="text-center">
-                                    <span className="seasonal-position-stat-value">{player.kills || 0}</span>
-                                  </td>
-                                  <td className="text-center">
-                                    <span className="seasonal-position-stat-value">{player.assists || 0}</span>
-                                  </td>
-                                  <td className="text-center">
-                                    <span className="seasonal-position-stat-value">{player.digs || 0}</span>
-                                  </td>
-                                  <td className="text-center">
-                                    <span className="seasonal-position-stat-value">{player.blocks || 0}</span>
-                                  </td>
-                                </>
-                              )}
-                              <td className="text-center">
-                                <span className="seasonal-position-stat-value">
-                                  {formatDecimal(player.efficiencyScore)}
-                                </span>
-                              </td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
-
-                    {topEfficiency.length > 0 && (
-                      <div className="seasonal-position-summary">
-                        <div className="seasonal-position-summary-card">
-                          <div className="seasonal-position-summary-label">🏆 Efficiency Leader</div>
-                          <div className="seasonal-position-summary-value">{topEfficiency[0].name}</div>
-                          <div className="seasonal-position-summary-team">{topEfficiency[0].team_name}</div>
-                        </div>
-                        <div className="seasonal-position-summary-card">
-                          <div className="seasonal-position-summary-label">📈 Avg EFF (Top 10)</div>
-                          <div className="seasonal-position-summary-value-large">
-                            {formatDecimal(
-                              topEfficiency.reduce(
-                                (sum, player) => sum + safeNumber(player.efficiencyScore),
-                                0
-                              ) / topEfficiency.length
-                            )}
-                          </div>
-                        </div>
-                        <div className="seasonal-position-summary-card">
-                          <div className="seasonal-position-summary-label">👥 Teams Represented</div>
-                          <div className="seasonal-position-summary-value-large">
-                            {new Set(topEfficiency.map(player => player.team_name)).size}
-                          </div>
-                        </div>
-                      </div>
-                    )}
-                  </div>
+              <div className="seasonal-leaders-grid">
+                {selectedBracket.sport_type === "basketball" ? (
+                  <>
+                    {renderLeaderCard("POINTS", leaderboards.points, "ppg", "🏀")}
+                    {renderLeaderCard("REBOUNDS", leaderboards.rebounds, "rpg", "🏀")}
+                    {renderLeaderCard("ASSISTS", leaderboards.assists, "apg", "🏀")}
+                    {renderLeaderCard("BLOCKS", leaderboards.blocks, "bpg", "🛡️")}
+                    {renderLeaderCard("STEALS", leaderboards.steals, "spg", "🤲")}
+                  </>
+                ) : (
+                  <>
+                    {renderLeaderCard("KILLS", leaderboards.kills, "kills", "⚡")}
+                    {renderLeaderCard("DIGS", leaderboards.digs, "digs", "🏐")}
+                    {renderLeaderCard("ASSISTS", leaderboards.assists, "assists", "🤝")}
+                    {renderLeaderCard("BLOCKS", leaderboards.blocks, "blocks", "🛡️")}
+                    {renderLeaderCard("SERVICE ACES", leaderboards.serviceAces, "service_aces", "🎯")}
+                  </>
                 )}
-
-                {/* Team Position Stats - Only show for volleyball */}
-                <TeamPositionStats 
-                  selectedEvent={selectedEvent}
-                  selectedBracket={selectedBracket}
-                />
-              </>
+              </div>
             )}
           </div>
         </div>
