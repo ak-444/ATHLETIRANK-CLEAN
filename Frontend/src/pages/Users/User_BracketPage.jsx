@@ -294,9 +294,11 @@ const User_BracketPage = ({ sidebarOpen }) => {
                               <span className={`user_bracket_page_bracket_sport_badge user_bracket_page_bracket_sport_${b.sport_type}`}>
                                 {capitalize(b.sport_type)}
                               </span>
-                              {/* Add elimination type badge */}
+                              {/* Add elimination type badge - FIXED */}
                               <span className={`user_bracket_page_bracket_elimination_badge user_bracket_page_bracket_elimination_${b.elimination_type}`}>
-                                {b.elimination_type === 'double' ? 'DOUBLE' : 'SINGLE'}
+                                {b.elimination_type === 'double' ? 'DOUBLE' : 
+                                 b.elimination_type === 'round_robin' ? 'ROUND ROBIN' :
+                                 b.elimination_type === 'round_robin_knockout' ? 'RR + KNOCKOUT' : 'SINGLE'}
                               </span>
                               {isOngoing && (
                                 <span className="user_bracket_page_bracket_status_badge user_bracket_page_bracket_status_live">
@@ -313,7 +315,14 @@ const User_BracketPage = ({ sidebarOpen }) => {
                           
                           <div className="user_bracket_page_bracket_card_info">
                             <div><strong>Event:</strong> {eventName}</div>
-                            <div><strong>Format:</strong> {b.elimination_type === "single" ? "Single" : "Double"} Elimination</div>
+                            {/* Format display in bracket card - FIXED */}
+                            <div><strong>Format:</strong> {
+                              b.elimination_type === "single" ? "Single Elimination" :
+                              b.elimination_type === "double" ? "Double Elimination" :
+                              b.elimination_type === "round_robin" ? "Round Robin" :
+                              b.elimination_type === "round_robin_knockout" ? "Round Robin + Knockout" :
+                              capitalize(b.elimination_type)
+                            }</div>
                             <div><strong>Teams:</strong> {b.team_count || 0}</div>
                             <div><strong>Created:</strong> {new Date(b.created_at).toLocaleDateString()}</div>
                             {b.description && (
@@ -354,7 +363,14 @@ const User_BracketPage = ({ sidebarOpen }) => {
                 <div className="user_bracket_page_bracket_info">
                   <p><strong>Event:</strong> {events.find(e => e.id === selectedBracket.event_id)?.name || `Event ${selectedBracket.event_id}`}</p>
                   <p><strong>Sport:</strong> {capitalize(selectedBracket.sport_type)}</p>
-                  <p><strong>Format:</strong> {selectedBracket.elimination_type === "single" ? "Single" : "Double"} Elimination</p>
+                  {/* Format display in bracket visualization - FIXED */}
+                  <p><strong>Format:</strong> {
+                    selectedBracket.elimination_type === "single" ? "Single Elimination" :
+                    selectedBracket.elimination_type === "double" ? "Double Elimination" :
+                    selectedBracket.elimination_type === "round_robin" ? "Round Robin" :
+                    selectedBracket.elimination_type === "round_robin_knockout" ? "Round Robin + Knockout" :
+                    capitalize(selectedBracket.elimination_type)
+                  }</p>
                   <p><strong>Teams:</strong> {selectedBracket.team_count || 0}</p>
                 </div>
                 

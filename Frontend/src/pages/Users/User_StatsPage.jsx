@@ -1,65 +1,34 @@
 ﻿import React, { useState, useEffect } from "react";
-
 import { FaSearch, FaUsers, FaChartLine, FaTrophy, FaArrowLeft, FaChartBar, FaEye, FaFilter, FaMedal, FaCalendarAlt } from "react-icons/fa";
-
 import { useNavigate } from "react-router-dom";
-
 import '../../style/User_StatsPage.css'
 
-
-
 const UserStatsPage = () => {
-
   const navigate = useNavigate();
-
   const [events, setEvents] = useState([]);
-
   const [selectedEvent, setSelectedEvent] = useState(null);
-
   const [selectedBracket, setSelectedBracket] = useState(null);
-
   const [brackets, setBrackets] = useState([]);
-
   const [standings, setStandings] = useState([]);
-
   const [allPlayersData, setAllPlayersData] = useState([]);
-
   const [tournamentPeriod, setTournamentPeriod] = useState(null);
-
   const [allTeamsData, setAllTeamsData] = useState([]);
-
   const [eventStatistics, setEventStatistics] = useState({
-
     total_players: 0,
-
     total_games: 0,
-
     sport_type: 'basketball',
-
     avg_ppg: 0,
-
     avg_rpg: 0,
-
     avg_apg: 0,
-
     avg_bpg: 0,
-
     avg_kills: 0,
-
     avg_digs: 0,
-
     avg_total_errors: 0
-
   });
-
   const [loading, setLoading] = useState(false);
-
   const [error, setError] = useState(null);
-
   const [searchTerm, setSearchTerm] = useState("");
-
   const [activeTab, setActiveTab] = useState("events");
-
   const [viewMode, setViewMode] = useState("standings");
   const [sortConfig, setSortConfig] = useState({ key: 'overall_score', direction: 'desc' });
   const [currentPage, setCurrentPage] = useState(1);
@@ -67,43 +36,22 @@ const UserStatsPage = () => {
   const [statsDisplayMode, setStatsDisplayMode] = useState('averages');
   const [volleyballDisplayMode, setVolleyballDisplayMode] = useState('averages');
 
-
-  // Add these after line 33
-
-
-
   // Event filters
-
   const [eventSearchTerm, setEventSearchTerm] = useState("");
-
   const [sportFilter, setSportFilter] = useState("all");
 
-
-
   // Recent matches state
-
   const [recentMatches, setRecentMatches] = useState([]);
-
   const [recentTournament, setRecentTournament] = useState(null);
-
   const [recentBrackets, setRecentBrackets] = useState([]);
-
   const [selectedRecentBracket, setSelectedRecentBracket] = useState(null);
 
-
-
   // Fix for the flash error - initialize state properly
-
   const [isInitialized, setIsInitialized] = useState(false);
-
   const [hasVolleyballData, setHasVolleyballData] = useState(true);
 
-
-
   const getCurrentSportType = () => {
-
     return selectedBracket?.sport_type || eventStatistics.sport_type || 'basketball';
-
   };
 
   const getToggleStyle = (sport) => {
@@ -139,831 +87,417 @@ const UserStatsPage = () => {
     };
   };
 
-
-
   useEffect(() => {
-
     fetchEvents();
-
     fetchRecentMatches();
-
     setIsInitialized(true);
-
   }, []);
 
-
-
   const fetchEvents = async () => {
-
     setLoading(true);
-
     try {
-
       // Fetch ongoing events
-
       const ongoingRes = await fetch("http://localhost:5000/api/events");
-
       const ongoingData = await ongoingRes.json();
-
       
-
       // Fetch completed events
-
       const completedRes = await fetch("http://localhost:5000/api/awards/events/completed");
-
       const completedData = await completedRes.json();
-
       
-
       // Combine both ongoing and completed events
-
       const allEvents = [...ongoingData, ...completedData];
-
       
-
       // Remove duplicates based on event ID
-
       const uniqueEvents = allEvents.filter((event, index, self) => 
-
         index === self.findIndex(e => e.id === event.id)
-
       );
-
       
-
       // Sort by creation date (most recent first)
-
       const sortedEvents = uniqueEvents.sort((a, b) => {
-
         const dateA = new Date(a.created_at || a.id);
-
         const dateB = new Date(b.created_at || b.id);
-
         return dateB - dateA;
-
       });
-
-
 
       // Fetch brackets for each event
-
       const eventsWithBrackets = await Promise.all(
-
         sortedEvents.map(async (event) => {
-
           try {
-
             // Try to fetch brackets from events endpoint first
-
             let bracketsRes;
-
             try {
-
               bracketsRes = await fetch(`http://localhost:5000/api/events/${event.id}/brackets`);
-
             } catch (err) {
-
               // Fallback to completed brackets endpoint
-
               bracketsRes = await fetch(`http://localhost:5000/api/awards/events/${event.id}/completed-brackets`);
-
             }
-
             
-
             const brackets = await bracketsRes.json();
-
             return { ...event, brackets: brackets || [] };
-
           } catch (err) {
-
             console.error(`Error fetching brackets for event ${event.id}:`, err);
-
             return { ...event, brackets: [] };
-
           }
-
         })
-
       );
-
       
-
       setEvents(eventsWithBrackets);
-
     } catch (err) {
-
       setError("Failed to load events");
-
       console.error("Error fetching events:", err);
-
     } finally {
-
       setLoading(false);
-
     }
-
   };
-
-
 
   // Add this function after the fetchEvents function (around line 150)
-
 const fetchTournamentPeriod = async (eventId) => {
-
   try {
-
     const res = await fetch(`http://localhost:5000/api/events/${eventId}`);
-
     const data = await res.json();
-
     setTournamentPeriod({
-
       start: data.start_date,
-
       end: data.end_date
-
     });
-
   } catch (err) {
-
     console.error("Error fetching tournament period:", err);
-
   }
-
 };
-
-
 
   // Fetch recent matches for the top containers
-
   const fetchRecentMatches = async () => {
-
     try {
-
       // Get the most recently created event (ongoing or completed)
-
       const ongoingRes = await fetch("http://localhost:5000/api/events");
-
       const ongoingData = await ongoingRes.json();
-
       
-
       const completedRes = await fetch("http://localhost:5000/api/awards/events/completed");
-
       const completedData = await completedRes.json();
-
       
-
       const allEvents = [...ongoingData, ...completedData];
-
       
-
       if (allEvents.length > 0) {
-
         // Sort by creation date to get the most recent
-
         const sortedEvents = allEvents.sort((a, b) => {
-
           const dateA = new Date(a.created_at || a.id);
-
           const dateB = new Date(b.created_at || b.id);
-
           return dateB - dateA;
-
         });
-
         
-
         const recentEvent = sortedEvents[0];
-
         setRecentTournament(recentEvent);
-
         
-
         // Fetch brackets for this event
-
         let brackets;
-
         try {
-
           const bracketsRes = await fetch(`http://localhost:5000/api/events/${recentEvent.id}/brackets`);
-
           brackets = await bracketsRes.json();
-
         } catch (err) {
-
           const bracketsRes = await fetch(`http://localhost:5000/api/awards/events/${recentEvent.id}/completed-brackets`);
-
           brackets = await bracketsRes.json();
-
         }
-
         
-
         setRecentBrackets(brackets || []);
-
         
-
         if (brackets && brackets.length > 0) {
-
           setSelectedRecentBracket(brackets[0]);
-
           await loadRecentBracketData(recentEvent, brackets[0]);
-
         }
-
       } else {
-
         console.log("No events found for recent tournament");
-
       }
-
     } catch (err) {
-
       console.error("Error fetching recent matches:", err);
-
     }
-
   };
-
-
 
   // Find the loadRecentBracketData function and update it (around line 180)
-
 const loadRecentBracketData = async (event, bracket) => {
-
   try {
-
     // Clear previous data
-
     setStandings([]);
-
     setAllPlayersData([]);
-
     setAllTeamsData([]);
-
-
 
     // Fetch tournament period
-
     await fetchTournamentPeriod(event.id);
 
-
-
     // Load standings
-
     await loadStandingsData(bracket.id);
-
     
-
     // Load players data
-
     await loadRecentPlayersData(event.id, bracket.id);
-
     
-
     // Load teams data
-
     await loadRecentTeamsData(event.id, bracket.id);
-
   } catch (err) {
-
     console.error("Error loading recent bracket data:", err);
-
   }
-
 };
 
-
-
   const loadStandingsData = async (bracketId) => {
-
     try {
-
       console.log(`Loading standings for bracket ${bracketId}`);
-
       const standingsRes = await fetch(`http://localhost:5000/api/awards/brackets/${bracketId}/standings`);
-
       
-
       if (!standingsRes.ok) {
-
         if (standingsRes.status === 500) {
-
           console.warn(`Server error (500) loading standings for bracket ${bracketId}. This might be a volleyball standings issue.`);
-
           setStandings([]);
-
           setHasVolleyballData(false);
-
           return;
-
         }
-
         throw new Error(`HTTP ${standingsRes.status}: ${standingsRes.statusText}`);
-
       }
-
       
-
       const standingsData = await standingsRes.json();
-
       console.log(`Standings data received for bracket ${bracketId}:`, standingsData);
-
       
-
       if (standingsData.standings && Array.isArray(standingsData.standings)) {
-
         // Validate and clean up the standings data
-
         const validatedStandings = standingsData.standings.map((team, index) => ({
-
           position: team.position || index + 1,
-
           team: team.team || 'Unknown Team',
-
           wins: team.wins || 0,
-
           losses: team.losses || 0,
-
           points_for: team.points_for || 0,
-
           points_against: team.points_against || 0,
-
           point_diff: team.point_diff || 0,
-
           sets_for: team.sets_for || 0,
-
           sets_against: team.sets_against || 0,
-
           set_ratio: team.set_ratio || 0,
-
           win_percentage: team.win_percentage || '0.0%'
-
         }));
-
         
-
         setStandings(validatedStandings);
-
         setHasVolleyballData(true);
-
       } else {
-
         console.warn(`No standings array in response for bracket ${bracketId}`);
-
         setStandings([]);
-
         setHasVolleyballData(false);
-
       }
-
     } catch (err) {
-
       console.error(`Error loading standings for bracket ${bracketId}:`, err);
-
       setStandings([]);
-
       setHasVolleyballData(false);
-
     }
-
   };
-
-
 
   const loadRecentPlayersData = async (eventId, bracketId = null) => {
-
     try {
-
       let url = `http://localhost:5000/api/stats/events/${eventId}/players-statistics`;
-
       if (bracketId) {
-
         url += `?bracketId=${bracketId}`;
-
       }
-
       
-
       const res = await fetch(url);
-
       const data = await res.json();
-
       
-
       const sortedData = data.sort((a, b) => {
-
         const scoreA = a.overall_score || 0;
-
         const scoreB = b.overall_score || 0;
-
         return scoreB - scoreA;
-
       });
-
       
-
       setAllPlayersData(sortedData);
-
     } catch (err) {
-
       console.error("Error fetching recent players data:", err);
-
     }
-
   };
-
-
 
   const loadRecentTeamsData = async (eventId, bracketId = null) => {
-
     try {
-
       let url = `http://localhost:5000/api/stats/events/${eventId}/teams-statistics`;
-
       if (bracketId) {
-
         url += `?bracketId=${bracketId}`;
-
       }
-
       
-
       const res = await fetch(url);
-
       const data = await res.json();
-
       
-
       const sortedData = data.sort((a, b) => {
-
         const scoreA = a.overall_score || 0;
-
         const scoreB = b.overall_score || 0;
-
         return scoreB - scoreA;
-
       });
-
       
-
       setAllTeamsData(sortedData);
-
     } catch (err) {
-
       console.error("Error fetching recent teams data:", err);
-
     }
-
   };
-
-
 
   const handleEventSelect = async (event, bracket = null) => {
-
     setSelectedEvent(event);
-
     setBrackets(event.brackets || []);
-
     
-
     // Clear recent data when a specific event is selected
-
     setStandings([]);
-
     setAllPlayersData([]);
-
     setAllTeamsData([]);
-
     
-
     // Use the provided bracket if available, otherwise use the first bracket
-
     const targetBracket = bracket || (event.brackets && event.brackets.length > 0 ? event.brackets[0] : null);
-
     
-
     if (targetBracket) {
-
       setSelectedBracket(targetBracket);
-
       await loadBracketData(event, targetBracket);
-
     } else {
-
       setSelectedBracket(null);
-
       setEventStatistics({
-
         total_players: 0,
-
         total_games: 0,
-
         sport_type: 'basketball',
-
         avg_ppg: 0,
-
         avg_rpg: 0,
-
         avg_apg: 0,
-
         avg_bpg: 0,
-
         avg_kills: 0,
-
         avg_digs: 0,
-
         avg_total_errors: 0
-
       });
-
     }
-
     
-
     setActiveTab("results");
-
     setViewMode("standings");
-
   };
-
-
 
   const handleBracketChange = async (bracketId) => {
-
     const bracket = brackets.find(b => b.id === bracketId);
-
     if (bracket) {
-
       setSelectedBracket(bracket);
-
       await loadBracketData(selectedEvent, bracket);
-
     }
-
   };
-
-
 
   const loadBracketData = async (event, bracket) => {
-
     setLoading(true);
-
     setError(null);
 
-
-
     try {
-
       // Clear any existing data
-
       setStandings([]);
-
       setAllPlayersData([]);
-
       setAllTeamsData([]);
-
-
 
       // Load standings
-
       await loadStandingsData(bracket.id);
 
-
-
       // Load event statistics
-
       await loadEventStatistics(event.id, bracket.id);
-
       
-
       // Load players data
-
       await loadAllPlayersData(event.id, bracket.id);
-
       
-
       // Load teams data
-
       await loadAllTeamsData(event.id, bracket.id);
-
     } catch (err) {
-
       setError("Failed to load data: " + err.message);
-
       console.error("Error loading data:", err);
-
     } finally {
-
       setLoading(false);
-
     }
-
   };
-
-
 
   const loadEventStatistics = async (eventId, bracketId = null) => {
-
     try {
-
       let url = `http://localhost:5000/api/stats/events/${eventId}/statistics`;
-
       if (bracketId) {
-
         url += `?bracketId=${bracketId}`;
-
       }
-
       
-
       const res = await fetch(url);
-
       const data = await res.json();
-
       setEventStatistics(data);
-
     } catch (err) {
-
       console.error("Error fetching event statistics:", err);
-
       setEventStatistics({
-
         total_players: 0,
-
         total_games: 0,
-
         sport_type: 'basketball',
-
         avg_ppg: 0,
-
         avg_rpg: 0,
-
         avg_apg: 0,
-
         avg_bpg: 0,
-
         avg_kills: 0,
-
         avg_digs: 0,
-
         avg_total_errors: 0
-
       });
-
     }
-
   };
-
-
 
   const loadAllPlayersData = async (eventId, bracketId = null) => {
-
     try {
-
       let url = `http://localhost:5000/api/stats/events/${eventId}/players-statistics`;
-
       if (bracketId) {
-
         url += `?bracketId=${bracketId}`;
-
       }
-
       
-
       const res = await fetch(url);
-
       const data = await res.json();
-
       
-
       const sortedData = data.sort((a, b) => {
-
         const scoreA = a.overall_score || 0;
-
         const scoreB = b.overall_score || 0;
-
         return scoreB - scoreA;
-
       });
-
       
-
       setAllPlayersData(sortedData);
-
     } catch (err) {
-
       console.error("Error fetching players data:", err);
-
       setAllPlayersData([]);
-
     }
-
   };
-
-
 
   const loadAllTeamsData = async (eventId, bracketId = null) => {
-
     try {
-
       let url = `http://localhost:5000/api/stats/events/${eventId}/teams-statistics`;
-
       if (bracketId) {
-
         url += `?bracketId=${bracketId}`;
-
       }
-
       
-
       const res = await fetch(url);
-
       const data = await res.json();
-
       
-
       const sortedData = data.sort((a, b) => {
-
         const scoreA = a.overall_score || 0;
-
         const scoreB = b.overall_score || 0;
-
         return scoreB - scoreA;
-
       });
-
       
-
       setAllTeamsData(sortedData);
-
     } catch (err) {
-
       console.error("Error fetching teams data:", err);
-
       setAllTeamsData([]);
-
     }
-
   };
-
-
 
   const handleBackToHome = () => {
-
     navigate("/");
-
   };
-
-
 
   const handleBackToEvents = () => {
-
     setSelectedEvent(null);
-
     setSelectedBracket(null);
-
     setBrackets([]);
-
     setActiveTab("events");
-
     setViewMode("standings");
-
     setSearchTerm("");
-
     setCurrentPage(1);
-
     
-
     // Reload recent matches when going back to events
-
     fetchRecentMatches();
-
   };
-
-
 
   const handleSort = (key) => {
-
     let direction = 'desc';
-
     
-
     if (sortConfig.key === key) {
-
       direction = sortConfig.direction === 'desc' ? 'asc' : 'desc';
-
     }
-
     
-
     setSortConfig({ key, direction });
-
   };
-
-
 
   const getPerformanceColor = (value, stat) => {
     const sportType = getCurrentSportType();
@@ -1025,7 +559,6 @@ const loadRecentBracketData = async (event, bracket) => {
       return 'stats-medium-value';
 
     }
-
   };
 
   const getVolleyballPerSetValue = (entity, key) => {
@@ -1051,10 +584,7 @@ const loadRecentBracketData = async (event, bracket) => {
     return entity[key] || 0;
   };
 
-
-
   // Filter and sort players
-
   const sortedPlayers = [...allPlayersData].sort((a, b) => {
     const aValue = getSortValue(a, sortConfig.key);
     const bValue = getSortValue(b, sortConfig.key);
@@ -1066,22 +596,13 @@ const loadRecentBracketData = async (event, bracket) => {
     }
   });
 
-
-
   const filteredPlayers = sortedPlayers.filter(player =>
-
     (player.name && player.name.toLowerCase().includes(searchTerm.toLowerCase())) ||
-
     (player.team_name && player.team_name.toLowerCase().includes(searchTerm.toLowerCase())) ||
-
     (player.jersey_number && player.jersey_number.toString().includes(searchTerm))
-
   );
 
-
-
   // Filter and sort teams
-
   const sortedTeams = [...allTeamsData].sort((a, b) => {
     const aValue = getSortValue(a, sortConfig.key);
     const bValue = getSortValue(b, sortConfig.key);
@@ -1093,89 +614,46 @@ const loadRecentBracketData = async (event, bracket) => {
     }
   });
 
-
-
   const filteredTeams = sortedTeams.filter(team =>
-
     team.team_name && team.team_name.toLowerCase().includes(searchTerm.toLowerCase())
-
   );
-
-
 
   const filteredStandings = standings.filter(team =>
-
     team.team && team.team.toLowerCase().includes(searchTerm.toLowerCase())
-
   );
 
-
-
   // Filter events
-
   const getFilteredEvents = () => {
-
     return events.filter(event => {
-
       const matchesSearch = event.name && event.name.toLowerCase().includes(eventSearchTerm.toLowerCase());
-
       let matchesSport = sportFilter === "all";
-
       if (!matchesSport && event.brackets) {
-
         matchesSport = event.brackets.some(bracket => 
-
           bracket.sport_type === sportFilter
-
         );
-
       }
-
       return matchesSearch && matchesSport;
-
     });
-
   };
-
-
 
   const filteredEvents = getFilteredEvents();
 
-
-
   // Pagination
-
   const indexOfLastItem = currentPage * itemsPerPage;
-
   const indexOfFirstItem = indexOfLastItem - itemsPerPage;
-
   const currentPlayers = filteredPlayers.slice(indexOfFirstItem, indexOfLastItem);
-
   const totalPagesPlayers = Math.ceil(filteredPlayers.length / itemsPerPage);
-
   const currentTeams = filteredTeams.slice(indexOfFirstItem, indexOfLastItem);
-
   const totalPagesTeams = Math.ceil(filteredTeams.length / itemsPerPage);
 
-
-
   const paginate = (pageNumber) => {
-
     setCurrentPage(pageNumber);
-
     window.scrollTo({ top: 0, behavior: 'smooth' });
-
   };
 
-
-
   useEffect(() => {
-
     setCurrentPage(1);
-
   }, [searchTerm, itemsPerPage, viewMode]);
-
-
 
       // Render Basketball Headers (totals vs averages)
   const renderBasketballPlayerHeaders = () => (
@@ -1528,8 +1006,6 @@ const loadRecentBracketData = async (event, bracket) => {
 
     }
 
-
-
     return (
 
       <div className="recent-tournament-section">
@@ -1768,41 +1244,11 @@ const loadRecentBracketData = async (event, bracket) => {
           <tr>
 
             <th>Rank</th>
-
-<th>Team</th>
-
-<th style={{ textAlign: 'center' }}>W</th>
-
-<th style={{ textAlign: 'center' }}>L</th>
-
-            {selectedRecentBracket?.sport_type === "basketball" ? (
-
-              <>
-
-                <th style={{ width: '80px', textAlign: 'center' }}>PF</th>
-
-                <th style={{ width: '80px', textAlign: 'center' }}>PA</th>
-
-                <th style={{ width: '100px', textAlign: 'center' }}>Diff</th>
-
-              </>
-
-            ) : (
-
-              <>
-
-                <th style={{ width: '80px', textAlign: 'center' }}>SF</th>
-
-                <th style={{ width: '80px', textAlign: 'center' }}>SA</th>
-
-                <th style={{ width: '100px', textAlign: 'center' }}>Ratio</th>
-
-              </>
-
-            )}
-
+            <th>Team</th>
+            <th style={{ textAlign: 'center' }}>W</th>
+            <th style={{ textAlign: 'center' }}>L</th>
+            {/* REMOVED PF/PA/SF/SA COLUMNS */}
             <th style={{ width: '100px', textAlign: 'center' }}>Win%</th>
-
           </tr>
 
         </thead>
@@ -1838,53 +1284,10 @@ const loadRecentBracketData = async (event, bracket) => {
               </td>
 
               <td style={{ textAlign: 'center', fontWeight: '600' }}>{team.wins || 0}</td>
-
               <td style={{ textAlign: 'center' }}>{team.losses || 0}</td>
-
-              {selectedRecentBracket?.sport_type === "basketball" ? (
-
-                <>
-
-                  <td style={{ textAlign: 'center' }}>{team.points_for || 0}</td>
-
-                  <td style={{ textAlign: 'center' }}>{team.points_against || 0}</td>
-
-                  <td style={{ 
-
-                    textAlign: 'center', 
-
-                    fontWeight: '600',
-
-                    color: String(team.point_diff || 0).startsWith('+') ? '#10b981' : 
-
-                           String(team.point_diff || 0).startsWith('-') ? '#ef4444' : '#94a3b8'
-
-                  }}>
-
-                    {team.point_diff || 0}
-
-                  </td>
-
-                </>
-
-              ) : (
-
-                <>
-
-                  <td style={{ textAlign: 'center' }}>{team.sets_for || 0}</td>
-
-                  <td style={{ textAlign: 'center' }}>{team.sets_against || 0}</td>
-
-                  <td style={{ textAlign: 'center' }}>{team.set_ratio || 0}</td>
-
-                </>
-
-              )}
-
+              {/* REMOVED PF/PA/SF/SA DATA CELLS */}
               <td style={{ textAlign: 'center', fontWeight: '700', color: '#3b82f6' }}>
-
                 {team.win_percentage || '0.0%'}
-
               </td>
 
             </tr>
@@ -2112,432 +1515,218 @@ const loadRecentBracketData = async (event, bracket) => {
 
   };
 
-
-
   // Calculate flattened rows for events table
-
   const getFlattenedRows = () => {
-
     const rows = [];
-
     filteredEvents.forEach(event => {
-
       if (event.brackets && event.brackets.length > 0) {
-
         event.brackets.forEach(bracket => {
-
           rows.push({ event, bracket });
-
         });
-
       } else {
-
         rows.push({ event, bracket: null });
-
       }
-
     });
-
     return rows;
-
   };
-
-
 
   const flattenedRows = getFlattenedRows();
 
-
-
   // Events pagination calculations
-
   const totalRows = flattenedRows.length;
-
   const totalPages = Math.ceil(totalRows / itemsPerPage);
-
   const indexOfLastRow = currentPage * itemsPerPage;
-
   const indexOfFirstRow = indexOfLastRow - itemsPerPage;
-
   const currentRows = flattenedRows.slice(indexOfFirstRow, indexOfLastRow);
 
-
-
   // Events pagination handlers
-
   const goToPage = (page) => {
-
     setCurrentPage(Math.max(1, Math.min(page, totalPages)));
-
   };
-
-
 
   const goToNextPage = () => {
-
     if (currentPage < totalPages) setCurrentPage(currentPage + 1);
-
   };
-
-
 
   const goToPrevPage = () => {
-
     if (currentPage > 1) setCurrentPage(currentPage - 1);
-
   };
 
-
-
   if (!isInitialized) {
-
     return (
-
       <div className="user-teams-page">
-
         <div className="loading-state">
-
           <div className="loading-spinner"></div>
-
           <p>Loading statistics...</p>
-
         </div>
-
       </div>
-
     );
-
   }
 
-
-
   return (
-
     <div className="user-teams-page">
-
       <div className="teams-header">
-
         <div className="header-content">
-
           <div className="header-top">
-
             <button className="back-btn" onClick={handleBackToHome}>
-
               <FaArrowLeft className="back-arrow" />
-
               Back to Home
-
             </button>
-
           </div>
-
           <div className="header-center">
-
             <h1><FaChartLine className="header-icon" /> Statistics</h1>
-
             <p>Explore team performance and player statistics</p>
-
           </div>
-
         </div>
-
       </div>
 
-
-
       <div className="teams-container">
-
         <div className="content">
-
           {error && (
-
             <div className="error-message">
-
               <p>{error}</p>
-
               <button onClick={() => setError(null)} className="error-close">×</button>
-
             </div>
-
           )}
 
-
-
           {/* Recent Tournament Containers - Only shown when no specific event is selected */}
-
           {renderRecentTournamentContainers()}
 
-
-
           {/* Results Tab */}
-
           {activeTab === "results" && selectedEvent && (
-
             <div className="view-section">
-
               <div className="section-header" style={{ marginBottom: '1.5rem' }}>
-
                 <div>
-
                   <button className="back-btn" onClick={handleBackToEvents} style={{ marginBottom: '1rem' }}>
-
                     <FaArrowLeft className="back-arrow" />
-
                     Back to Events
-
                   </button>
-
                   <h2>{selectedEvent.name}</h2>
-
                   
-
                   {selectedBracket && (
-
                     <div style={{ display: 'flex', gap: '1rem', marginTop: '0.5rem', flexWrap: 'wrap' }}>
-
                       <span><strong>Sport:</strong> {selectedBracket.sport_type}</span>
-
                       <span><strong>Champion:</strong> {selectedBracket.winner_team_name}</span>
-
                       <span><strong>Type:</strong> {selectedBracket.elimination_type === 'double' ? 'Double Elimination' : 'Single Elimination'}</span>
-
                     </div>
-
                   )}
-
                 </div>
-
               </div>
 
-
-
               {!selectedBracket ? (
-
                 <div className="empty-state">
-
                   <p>No brackets available for this event.</p>
-
                 </div>
-
               ) : (
-
                 <>
-
                   {/* Stats Cards */}
-
                   <div className="stats-cards-grid" style={{
-
                     display: 'grid',
-
                     gridTemplateColumns: 'repeat(3, 1fr)',
-
                     gap: '20px',
-
                     padding: '0 20px',  // Add consistent horizontal padding
-
                     marginBottom: '24px'
-
                   }}>
-
                     <div className="stats-card stats-view-mode-card">
-
                       <div className="stats-card-header">
-
                         <span className="stats-card-label">View Mode</span>
-
                         <FaChartBar className="stats-card-icon" />
-
                       </div>
-
                       <select 
-
                         value={viewMode}
-
                         onChange={(e) => setViewMode(e.target.value)}
-
                         className="stats-view-mode-select"
-
                         style={{
-
                           width: '100%',
-
                           padding: '8px 12px',
-
                           border: '2px solid var(--border-color)',
-
                           borderRadius: '6px',
-
                           fontSize: '14px',
-
                           backgroundColor: 'var(--background-secondary)',
-
                           color: 'var(--text-primary)',
-
                           cursor: 'pointer',
-
                           fontWeight: '500',
-
                           outline: 'none',
-
                           transition: 'var(--transition)',
-
                           marginTop: '0.5rem'
-
                         }}
-
                       >
-
                         <option value="standings">?? Team Standings</option>
-
                         <option value="players">?? Player Statistics</option>
-
                         <option value="teams">?? Team Statistics</option>
-
                       </select>
-
                       <div className="stats-card-subtext">
-
                         Change data view
-
                       </div>
-
                     </div>
-
                     
-
                     <div className="stats-card stats-card-primary">
-
                       <div className="stats-card-header">
-
                         <span className="stats-card-label">Total Players</span>
-
                         <FaUsers className="stats-card-icon" />
-
                       </div>
-
                       <div className="stats-card-value">
-
                         {eventStatistics.total_players || 0}
-
                       </div>
-
                       <div className="stats-card-subtext">
-
                         Competing
-
                       </div>
-
                     </div>
-
                     
-
                     <div className="stats-card stats-card-success">
-
                       <div className="stats-card-header">
-
                         <span className="stats-card-label">
-
                           {getCurrentSportType() === 'basketball' ? 'Avg PPG' : 'Avg Kills'}
-
                         </span>
-
                         <FaChartBar className="stats-card-icon" />
-
                       </div>
-
                       <div className="stats-card-value">
-
                         {getCurrentSportType() === 'basketball' ? eventStatistics.avg_ppg : eventStatistics.avg_kills}
-
                       </div>
-
                       <div className="stats-card-subtext">
-
                         {getCurrentSportType() === 'basketball' ? 'Points Per Game' : 'Kills Per Game'}
-
                       </div>
-
                     </div>
-
                     
-
                     <div className="stats-card stats-card-info">
-
                       <div className="stats-card-header">
-
                         <span className="stats-card-label">Total Games</span>
-
                         <div className="stats-card-icon">??</div>
-
                       </div>
-
                       <div className="stats-card-value">
-
                         {eventStatistics.total_games || 0}
-
                       </div>
-
                       <div className="stats-card-subtext">
-
                         Matches Played
-
                       </div>
-
                     </div>
-
                   </div>
 
-
-
                   {loading ? (
-
                     <div className="loading-state">
-
                       <div className="loading-spinner"></div>
-
                       <p>Loading data...</p>
-
                     </div>
-
                   ) : (
-
                     <>
-
                       {/* Team Standings View */}
-
                       {viewMode === "standings" && (
-
                         <div className="stats-tab-content">
-
                           <div className="stats-section-header" style={{ marginBottom: '1.5rem' }}>
-
                             <h2 className="stats-section-title">Team Standings</h2>
-
                             <p className="stats-section-subtitle">
-
                               Final standings for {selectedBracket.name}
-
                             </p>
-
                             {selectedBracket.sport_type === 'volleyball' && !hasVolleyballData && (
-
                               <div style={{ fontSize: '14px', color: '#666', marginTop: '10px', fontStyle: 'italic' }}>
-
                                 Volleyball standings are not available for this tournament
-
                               </div>
-
                             )}
-
                           </div>
 
-
-
                           <div className="stats-table-controls">
-
                             <div className="stats-mode-toggle">
-
                               {getCurrentSportType() === 'basketball' ? (
-
                                 <button
                                   className="stats-toggle-btn"
                                   style={getToggleStyle('basketball')}
@@ -2584,198 +1773,75 @@ const loadRecentBracketData = async (event, bracket) => {
 
                           </div>
 
-
-
                           {selectedBracket.sport_type === 'volleyball' && !hasVolleyballData ? (
-
                             <div className="empty-state">
-
                               <p>Volleyball standings data is not available.</p>
-
                               <p style={{ fontSize: '14px', color: '#666', marginTop: '10px' }}>
-
                                 This is expected for volleyball tournaments - player and team statistics are still available.
-
                               </p>
-
                             </div>
-
                           ) : (
-
                             <>
-
                               <div className="stats-table-container">
-
                                 <table className="stats-table">
-
                                   <thead>
-
                                     <tr>
-
                                       <th>Rank</th>
-
                                       <th>Team</th>
-
                                       <th>W</th>
-
                                       <th>L</th>
-
-                                      {selectedBracket.sport_type === "basketball" ? (
-
-                                        <>
-
-                                          <th>PF</th>
-
-                                          <th>PA</th>
-
-                                          <th>Diff</th>
-
-                                        </>
-
-                                      ) : (
-
-                                        <>
-
-                                          <th>SF</th>
-
-                                          <th>SA</th>
-
-                                          <th>Ratio</th>
-
-                                        </>
-
-                                      )}
-
+                                      {/* REMOVED PF/PA/SF/SA COLUMNS */}
                                       <th>Win%</th>
-
                                     </tr>
-
                                   </thead>
-
                                   <tbody>
-
                                     {filteredStandings.map((team, index) => (
-
                                       <tr key={index} className={team.position <= 3 ? `awards_standings_podium_${team.position}` : ""}>
-
                                         <td className="stats-rank-cell">
-
                                           <div className={`stats-rank-badge ${
-
                                             team.position === 1 ? 'stats-rank-1' : 
-
                                             team.position === 2 ? 'stats-rank-2' :
-
                                             team.position === 3 ? 'stats-rank-3' : 'stats-rank-other'
-
                                           }`}>
-
                                             <span className="stats-rank-number">{team.position || index + 1}</span>
-
                                           </div>
-
                                         </td>
-
                                         <td className="stats-team-name">
-
                                           <strong>{team.team || 'Unknown Team'}</strong>
-
                                         </td>
-
                                         <td>{team.wins || 0}</td>
-
                                         <td>{team.losses || 0}</td>
-
-                                        {selectedBracket.sport_type === "basketball" ? (
-
-                                          <>
-
-                                            <td>{team.points_for || 0}</td>
-
-                                            <td>{team.points_against || 0}</td>
-
-                                            <td className={String(team.point_diff || 0).startsWith('+') ? 'stats-high-value' : String(team.point_diff || 0).startsWith('-') ? 'stats-low-value' : ''}>
-
-                                              {team.point_diff || 0}
-
-                                            </td>
-
-                                          </>
-
-                                        ) : (
-
-                                          <>
-
-                                            <td>{team.sets_for || 0}</td>
-
-                                            <td>{team.sets_against || 0}</td>
-
-                                            <td>{team.set_ratio || 0}</td>
-
-                                          </>
-
-                                        )}
-
+                                        {/* REMOVED PF/PA/SF/SA DATA CELLS */}
                                         <td>{team.win_percentage || '0.0%'}</td>
-
                                       </tr>
-
                                     ))}
-
                                   </tbody>
-
                                 </table>
-
                               </div>
 
-
-
                               {filteredStandings.length === 0 && (
-
                                 <div className="empty-state">
-
                                   <p>No standings data available.</p>
-
                                 </div>
-
                               )}
-
                             </>
-
                           )}
-
                         </div>
-
                       )}
 
-
-
                       {/* Player Statistics View */}
-
                       {viewMode === "players" && (
-
                         <div className="stats-tab-content">
-
                           <div className="stats-section-header" style={{ marginBottom: '1.5rem' }}>
-
                             <h2 className="stats-section-title">Player Statistics</h2>
-
                             <p className="stats-section-subtitle">
-
                               Players ranked by performance in {selectedBracket.name}
-
                             </p>
-
                           </div>
 
-
-
                           <div className="stats-table-controls">
-
                             <div className="stats-mode-toggle">
-
                               {getCurrentSportType() === 'basketball' ? (
-
                                 <button
                                   className="stats-toggle-btn"
                                   style={getToggleStyle('basketball')}
@@ -2822,80 +1888,42 @@ const loadRecentBracketData = async (event, bracket) => {
 
                           </div>
 
-
-
                           <div className="stats-results-info">
-
                             <div className="stats-results-count">
-
                               {searchTerm ? (
-
                                 <>
-
                                   Showing {Math.min(itemsPerPage, currentPlayers.length)} of {currentPlayers.length} results
-
                                   {searchTerm && <span className="stats-search-indicator">  Searching: "{searchTerm}"</span>}
-
                                 </>
-
                               ) : (
-
                                 <>Showing {indexOfFirstItem + 1}-{Math.min(indexOfLastItem, filteredPlayers.length)} of {filteredPlayers.length} players</>
-
                               )}
-
                             </div>
-
                             <div className="stats-items-per-page">
-
                               <label className="stats-items-per-page-label">Show:</label>
-
                               <select
-
                                 value={itemsPerPage}
-
                                 onChange={(e) => setItemsPerPage(Number(e.target.value))}
-
                                 className="stats-items-per-page-select"
-
                               >
-
                                 <option value={5}>5</option>
-
                                 <option value={10}>10</option>
-
                                 <option value={20}>20</option>
-
                                 <option value={50}>50</option>
-
                                 <option value={100}>100</option>
-
                               </select>
-
                               <span className="stats-items-per-page-text">per page</span>
-
                             </div>
-
                           </div>
-
                           
-
                           <div className="stats-table-container">
-
                             <table className="stats-table">
-
                               <thead>
-
                                 <tr>
-
                                   <th>Rank</th>
-
                                   <th>Player</th>
-
                                   <th>Team</th>
-
                                   <th>Jersey</th>
-
                                   <th className="stats-sortable-header" onClick={() => handleSort(getCurrentSportType() === 'volleyball' ? 'total_sets_played' : 'games_played')}>
                                     {getCurrentSportType() === 'volleyball' ? 'S' : 'GP'} {sortConfig.key === (getCurrentSportType() === 'volleyball' ? 'total_sets_played' : 'games_played') && (sortConfig.direction === 'desc' ? '?' : '?')}
                                   </th>
@@ -2915,345 +1943,175 @@ const loadRecentBracketData = async (event, bracket) => {
                               <tbody>
 
                                 {getCurrentSportType() === 'basketball' ? 
-
                                   currentPlayers.map((player, index) => (
-
                                     <tr key={player.id || index} className="stats-player-row">
-
                                       <td className="stats-rank-cell">
-
                                         <div className={`stats-rank-badge ${
-
                                           indexOfFirstItem + index === 0 ? 'stats-rank-1' : 
-
                                           indexOfFirstItem + index === 1 ? 'stats-rank-2' :
-
                                           indexOfFirstItem + index === 2 ? 'stats-rank-3' : 'stats-rank-other'
-
                                         }`}>
-
                                           {indexOfFirstItem + index + 1}
-
                                         </div>
-
                                       </td>
-
                                       <td className="stats-player-name">{player.name || 'Unknown Player'}</td>
-
                                       <td className="stats-team-name">{player.team_name || 'Unknown Team'}</td>
-
                                       <td className="stats-jersey-number">{player.jersey_number || ''}</td>
-
                                       <td className="stats-games-played">{getCurrentSportType() === 'volleyball' ? (player.total_sets_played || 0) : (player.games_played || 0)}</td>
-
                                       <td className={getPerformanceColor(player.overall_score, 'overall_score')}>
-
                                         {player.overall_score || 0}
-
                                       </td>
-
                                       {renderBasketballPlayerStatCells(player)}
-
                                     </tr>
-
                                   )) : 
-
                                   currentPlayers.map((player, index) => (
-
                                     <tr key={player.id || index} className="stats-player-row">
-
                                       <td className="stats-rank-cell">
-
                                         <div className={`stats-rank-badge ${
-
                                           indexOfFirstItem + index === 0 ? 'stats-rank-1' : 
-
                                           indexOfFirstItem + index === 1 ? 'stats-rank-2' :
-
                                           indexOfFirstItem + index === 2 ? 'stats-rank-3' : 'stats-rank-other'
-
                                         }`}>
-
                                           {indexOfFirstItem + index + 1}
-
                                         </div>
-
                                       </td>
-
                                       <td className="stats-player-name">{player.name || 'Unknown Player'}</td>
-
                                       <td className="stats-team-name">{player.team_name || 'Unknown Team'}</td>
-
                                       <td className="stats-jersey-number">{player.jersey_number || ''}</td>
-
                                       <td className="stats-games-played">{getCurrentSportType() === 'volleyball' ? (player.total_sets_played || 0) : (player.games_played || 0)}</td>
-
                                       <td className={getPerformanceColor(player.overall_score, 'overall_score')}>
-
                                         {player.overall_score || 0}
-
                                       </td>
-
                                       {renderVolleyballPlayerStatCells(player)}
-
                                     </tr>
-
                                   ))
-
                                 }
-
                               </tbody>
-
                             </table>
-
                           </div>
-
-
 
                           {filteredPlayers.length === 0 && (
-
                             <div className="empty-state">
-
                               <p>No players found matching your search.</p>
-
                             </div>
-
                           )}
-
-
 
                           {totalPagesPlayers > 1 && (
-
                             <div className="stats-pagination-container">
-
                               <div className="stats-pagination-info">
-
                                 Page {currentPage} of {totalPagesPlayers}
-
                               </div>
-
                               
-
                               <div className="stats-pagination-controls">
-
                                 <button 
-
                                   className="stats-pagination-btn"
-
                                   onClick={() => paginate(currentPage - 1)}
-
                                   disabled={currentPage === 1}
-
                                 >
-
                                   Previous
-
                                 </button>
-
                                 
-
                                 <div className="stats-pagination-numbers">
-
                                   {[...Array(totalPagesPlayers)].map((_, index) => {
-
                                     const pageNumber = index + 1;
-
                                     if (
-
                                       pageNumber === 1 ||
-
                                       pageNumber === totalPagesPlayers ||
-
                                       (pageNumber >= currentPage - 1 && pageNumber <= currentPage + 1)
-
                                     ) {
-
                                       return (
-
                                         <button
-
                                           key={pageNumber}
-
                                           className={`stats-pagination-number ${currentPage === pageNumber ? 'active' : ''}`}
-
                                           onClick={() => paginate(pageNumber)}
-
                                         >
-
                                           {pageNumber}
-
                                         </button>
-
                                       );
-
                                     } else if (
-
                                       pageNumber === currentPage - 2 ||
-
                                       pageNumber === currentPage + 2
-
                                     ) {
-
                                       return <span key={pageNumber} className="stats-pagination-ellipsis">...</span>;
-
                                     }
-
                                     return null;
-
                                   })}
-
                                 </div>
-
                                 
-
                                 <button 
-
                                   className="stats-pagination-btn"
-
                                   onClick={() => paginate(currentPage + 1)}
-
                                   disabled={currentPage === totalPagesPlayers}
-
                                 >
-
                                   Next
-
                                 </button>
-
                               </div>
-
                             </div>
-
                           )}
 
-
-
                           <div className="stats-table-footer">
-
                             <div>Total {filteredPlayers.length} players  Last updated: {new Date().toLocaleString()}</div>
-
                           </div>
-
                         </div>
-
                       )}
 
-
-
                       {/* Team Statistics View */}
-
                       {viewMode === "teams" && (
-
                         <div className="stats-tab-content">
-
                           <div className="stats-section-header" style={{ marginBottom: '1.5rem' }}>
-
                             <h2 className="stats-section-title">Team Statistics</h2>
-
                             <p className="stats-section-subtitle">
-
                               Teams ranked by overall performance in {selectedBracket.name}
-
                             </p>
-
                           </div>
-
-
 
                           <div className="stats-table-controls">
-
                             <div className="stats-search-container">
-
                               <FaSearch className="stats-search-icon" />
-
                               <input
-
                                 type="text"
-
                                 placeholder="Search teams..."
-
                                 value={searchTerm}
-
                                 onChange={(e) => setSearchTerm(e.target.value)}
-
                                 className="stats-search-input"
-
                               />
-
                             </div>
-
                           </div>
-
-
 
                           <div className="stats-results-info">
-
                             <div className="stats-results-count">
-
                               {searchTerm ? (
-
                                 <>
-
                                   Showing {Math.min(itemsPerPage, currentTeams.length)} of {currentTeams.length} results
-
                                   {searchTerm && <span className="stats-search-indicator">  Searching: "{searchTerm}"</span>}
-
                                 </>
-
                               ) : (
-
                                 <>Showing {indexOfFirstItem + 1}-{Math.min(indexOfLastItem, filteredTeams.length)} of {filteredTeams.length} teams</>
-
                               )}
-
                             </div>
-
                             <div className="stats-items-per-page">
-
                               <label className="stats-items-per-page-label">Show:</label>
-
                               <select
-
                                 value={itemsPerPage}
-
                                 onChange={(e) => setItemsPerPage(Number(e.target.value))}
-
                                 className="stats-items-per-page-select"
-
                               >
-
                                 <option value={5}>5</option>
-
                                 <option value={10}>10</option>
-
                                 <option value={20}>20</option>
-
                                 <option value={50}>50</option>
-
                                 <option value={100}>100</option>
-
                               </select>
-
                               <span className="stats-items-per-page-text">per page</span>
-
                             </div>
-
                           </div>
-
                           
-
                           <div className="stats-table-container">
-
                             <table className="stats-table">
-
                               <thead>
-
                                 <tr>
-
                                   <th>Rank</th>
-
                                   <th>Team</th>
-
                                   <th className="stats-sortable-header" onClick={() => handleSort(getCurrentSportType() === 'volleyball' ? 'total_sets_played' : 'games_played')}>
                                     {getCurrentSportType() === 'volleyball' ? 'S' : 'GP'} {sortConfig.key === (getCurrentSportType() === 'volleyball' ? 'total_sets_played' : 'games_played') && (sortConfig.direction === 'desc' ? '?' : '?')}
                                   </th>
@@ -3273,252 +2131,123 @@ const loadRecentBracketData = async (event, bracket) => {
                               <tbody>
 
                                 {getCurrentSportType() === 'basketball' ? 
-
                                   currentTeams.map((team, index) => (
-
                                     <tr key={team.team_id || index} className="stats-player-row">
-
                                       <td className="stats-rank-cell">
-
                                         <div className={`stats-rank-badge ${
-
                                           indexOfFirstItem + index === 0 ? 'stats-rank-1' : 
-
                                           indexOfFirstItem + index === 1 ? 'stats-rank-2' :
-
                                           indexOfFirstItem + index === 2 ? 'stats-rank-3' : 'stats-rank-other'
-
                                         }`}>
-
                                           {indexOfFirstItem + index + 1}
-
                                         </div>
-
                                       </td>
-
                                       <td className="stats-team-name">{team.team_name || 'Unknown Team'}</td>
-
                                       <td className="stats-games-played">{getCurrentSportType() === 'volleyball' ? (team.total_sets_played || 0) : (team.games_played || 0)}</td>
-
                                       <td className={getPerformanceColor(team.overall_score, 'overall_score')}>
-
                                         {team.overall_score || 0}
-
                                       </td>
-
                                       {renderBasketballTeamStatCells(team)}
-
                                     </tr>
-
                                   )) : 
-
                                   currentTeams.map((team, index) => (
-
                                     <tr key={team.team_id || index} className="stats-player-row">
-
                                       <td className="stats-rank-cell">
-
                                         <div className={`stats-rank-badge ${
-
                                           indexOfFirstItem + index === 0 ? 'stats-rank-1' : 
-
                                           indexOfFirstItem + index === 1 ? 'stats-rank-2' :
-
                                           indexOfFirstItem + index === 2 ? 'stats-rank-3' : 'stats-rank-other'
-
                                         }`}>
-
                                           {indexOfFirstItem + index + 1}
-
                                         </div>
-
                                       </td>
-
                                       <td className="stats-team-name">{team.team_name || 'Unknown Team'}</td>
-
                                       <td className="stats-games-played">{getCurrentSportType() === 'volleyball' ? (team.total_sets_played || 0) : (team.games_played || 0)}</td>
-
                                       <td className={getPerformanceColor(team.overall_score, 'overall_score')}>
-
                                         {team.overall_score || 0}
-
                                       </td>
-
                                       {renderVolleyballTeamStatCells(team)}
-
                                     </tr>
-
                                   ))
-
                                 }
-
                               </tbody>
-
                             </table>
-
                           </div>
-
-
 
                           {filteredTeams.length === 0 && (
-
                             <div className="empty-state">
-
                               <p>No teams found matching your search.</p>
-
                             </div>
-
                           )}
-
-
 
                           {totalPagesTeams > 1 && (
-
                             <div className="stats-pagination-container">
-
                               <div className="stats-pagination-info">
-
                                 Page {currentPage} of {totalPagesTeams}
-
                               </div>
-
                               
-
                               <div className="stats-pagination-controls">
-
                                 <button 
-
                                   className="stats-pagination-btn"
-
                                   onClick={() => paginate(currentPage - 1)}
-
                                   disabled={currentPage === 1}
-
                                 >
-
                                   Previous
-
                                 </button>
-
                                 
-
                                 <div className="stats-pagination-numbers">
-
                                   {[...Array(totalPagesTeams)].map((_, index) => {
-
                                     const pageNumber = index + 1;
-
                                     if (
-
                                       pageNumber === 1 ||
-
                                       pageNumber === totalPagesTeams ||
-
                                       (pageNumber >= currentPage - 1 && pageNumber <= currentPage + 1)
-
                                     ) {
-
                                       return (
-
                                         <button
-
                                           key={pageNumber}
-
                                           className={`stats-pagination-number ${currentPage === pageNumber ? 'active' : ''}`}
-
                                           onClick={() => paginate(pageNumber)}
-
                                         >
-
                                           {pageNumber}
-
                                         </button>
-
                                       );
-
                                     } else if (
-
                                       pageNumber === currentPage - 2 ||
-
                                       pageNumber === currentPage + 2
-
                                     ) {
-
                                       return <span key={pageNumber} className="stats-pagination-ellipsis">...</span>;
-
                                     }
-
                                     return null;
-
                                   })}
-
                                 </div>
-
                                 
-
                                 <button 
-
                                   className="stats-pagination-btn"
-
                                   onClick={() => paginate(currentPage + 1)}
-
                                   disabled={currentPage === totalPagesTeams}
-
                                 >
-
                                   Next
-
                                 </button>
-
                               </div>
-
                             </div>
-
                           )}
 
-
-
                           <div className="stats-table-footer">
-
                             <div>Total {filteredTeams.length} teams  Last updated: {new Date().toLocaleString()}</div>
-
                           </div>
-
                         </div>
-
                       )}
-
                     </>
-
                   )}
-
                 </>
-
               )}
-
             </div>
-
           )}
-
         </div>
-
       </div>
-
     </div>
-
   );
-
 };
 
-
-
 export default UserStatsPage;
-
-
-
-
-
-
-
-
-
