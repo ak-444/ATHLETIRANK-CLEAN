@@ -619,24 +619,17 @@ useEffect(() => {
     loadAwardsData();
   }, [contentTab, selectedBracket]);
 
-  // Export standings to CSV
+  // Export standings to CSV - UPDATED to remove extra columns
   const exportStandings = () => {
     if (standings.length === 0 || !selectedBracket) return;
     
     const exportList = standingsWithDisplayPosition;
     let csvContent = "data:text/csv;charset=utf-8,";
     
-    if (selectedBracket.sport_type === "basketball") {
-      csvContent += "Position,Team,Wins,Losses,Points For,Points Against,Point Diff,Win%\n";
-      exportList.forEach(team => {
-        csvContent += `${team.display_position},${team.team},${team.wins},${team.losses},${team.points_for},${team.points_against},${team.point_diff},${team.win_percentage}\n`;
-      });
-    } else {
-      csvContent += "Position,Team,Wins,Losses,Sets For,Sets Against,Set Ratio,Win%\n";
-      exportList.forEach(team => {
-        csvContent += `${team.display_position},${team.team},${team.wins},${team.losses},${team.sets_for},${team.sets_against},${team.set_ratio},${team.win_percentage}\n`;
-      });
-    }
+    csvContent += "Position,Team,Wins,Losses,Win%\n";
+    exportList.forEach(team => {
+      csvContent += `${team.display_position},${team.team},${team.wins},${team.losses},${team.win_percentage}\n`;
+    });
     
     const encodedUri = encodeURI(csvContent);
     const link = document.createElement("a");
@@ -2464,25 +2457,13 @@ const closeEditTeamModal = () => {
 
                                 <div className="awards_standings_table_container">
                                   <table className="awards_standings_table">
+                                    {/* FIXED TABLE HEADER - Removed extra columns */}
                                     <thead>
                                       <tr>
                                         <th>Rank</th>
                                         <th>Team</th>
                                         <th>W</th>
                                         <th>L</th>
-                                        {selectedBracket.sport_type === "basketball" ? (
-                                          <>
-                                            <th>PF</th>
-                                            <th>PA</th>
-                                            <th>Diff</th>
-                                          </>
-                                        ) : (
-                                          <>
-                                            <th>SF</th>
-                                            <th>SA</th>
-                                            <th>Ratio</th>
-                                          </>
-                                        )}
                                         <th>Win%</th>
                                       </tr>
                                     </thead>
@@ -2502,23 +2483,9 @@ const closeEditTeamModal = () => {
                                           <td className="awards_standings_team_name">
                                             <strong>{team.team}</strong>
                                           </td>
+                                          {/* FIXED TABLE BODY - Removed extra columns */}
                                           <td>{team.wins}</td>
                                           <td>{team.losses}</td>
-                                          {selectedBracket.sport_type === "basketball" ? (
-                                            <>
-                                              <td>{team.points_for}</td>
-                                              <td>{team.points_against}</td>
-                                              <td className={String(team.point_diff).startsWith('+') ? 'awards_standings_positive' : String(team.point_diff).startsWith('-') ? 'awards_standings_negative' : ''}>
-                                                {team.point_diff}
-                                              </td>
-                                            </>
-                                          ) : (
-                                            <>
-                                              <td>{team.sets_for}</td>
-                                              <td>{team.sets_against}</td>
-                                              <td>{team.set_ratio}</td>
-                                            </>
-                                          )}
                                           <td>{team.win_percentage}</td>
                                         </tr>
                                       );

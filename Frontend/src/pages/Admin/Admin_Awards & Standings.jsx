@@ -646,27 +646,14 @@ const AdminAwardsStandings = ({ sidebarOpen }) => {
                         <div className="awards_standings_table_container">
                           <table className="awards_standings_table">
                             <thead>
-                              <tr>
-                                <th>Rank</th>
-                                <th>Team</th>
-                                <th>W</th>
-                                <th>L</th>
-                                {selectedBracket.sport_type === "basketball" ? (
-                                  <>
-                                    <th>PF</th>
-                                    <th>PA</th>
-                                    <th>Diff</th>
-                                  </>
-                                ) : (
-                                  <>
-                                    <th>SF</th>
-                                    <th>SA</th>
-                                    <th>Ratio</th>
-                                  </>
-                                )}
-                                <th>Win%</th>
-                              </tr>
-                            </thead>
+  <tr>
+    <th>Rank</th>
+    <th>Team</th>
+    <th>W</th>
+    <th>L</th>
+    <th>Win%</th>
+  </tr>
+</thead>
                             <tbody>
                               {filteredStandings.map((team, index) => (
                                 <tr key={index} className={team.position <= 3 ? `awards_standings_podium_${team.position}` : ""}>
